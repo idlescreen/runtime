@@ -1,0 +1,41 @@
+name: vigil
+on:
+  push: { branches: [ master, main ] }
+  pull_request: { branches: [ master, main ] }
+  workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+permissions: { contents: read }
+jobs:
+  vigil:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Install vigil
+        run: |
+          curl -fsSL https://studio2201.com/install.sh | sh -s vigil
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Vigil dormancy audit
+        run: |
+          MANIFEST=$(find . -maxdepth 3 \( -name Cargo.lock -o -name package.json -o -name requirements.txt -o -name go.mod \) | head -n 1)
+          if [ -z "$MANIFEST" ]; then
+            echo "No supported dependency manifest found." | tee vigil_report.md
+            exit 0
+          fi
+          set +e
+          vigil scan "$MANIFEST" --format markdown > vigil_report.md 2>&1
+          vigil scan "$MANIFEST" --format json > vigil_report.json 2>/dev/null
+          set -e
+          cat vigil_report.md
+          ABANDONED=$(jq -r '[.. | objects | select(has("days_dormant")) | select((.days_dormant | tonumber) > 730) | .name // "?"] | .[]' vigil_report.json 2>/dev/null || true)
+          if [ -n "$ABANDONED" ]; then
+            echo "$ABANDONED" | while read -r n; do
+              echo "::error file=$MANIFEST,title=Vigil Abandoned Dependency::$n dormant >730 days"
+            done
+            exit 1
+          fi
+          echo "No dependencies dormant >730 days."
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with: { name: vigil-report, path: vigil_report.md, if-no-files-found: ignore }

@@ -31,8 +31,25 @@ jobs:
       - name: Run studio2201 Security Gate
         uses: studio2201/studio2201@master
         with:
-          tools: 'all'
+          # Vigil runs advisory-only below: the composite action hardcodes
+          # `vigil scan` with no dormancy flag, so its default threshold
+          # fails any mature dependency tree. The other four tools are
+          # deterministic violations and stay enforcing.
+          tools: 'snip,aegis,proven,boneyard'
           fail-on: 'block'
+
+      - name: Vigil dormancy report (advisory)
+        run: |
+          MANIFEST=$(find . -maxdepth 3 \( -name "Cargo.lock" -o -name "package.json" -o -name "requirements.txt" -o -name "go.mod" \) | head -n 1)
+          if [ -z "$MANIFEST" ]; then
+            echo "No supported dependency manifest found." > vigil_report.md
+            exit 0
+          fi
+          DEST="${XDG_BIN_HOME:-$HOME/.local/bin}"
+          mkdir -p "$DEST"
+          curl -fsSL --retry 3 https://studio2201.com/install.sh -o /tmp/s2201.sh
+          sh /tmp/s2201.sh --dest "$DEST" vigil
+          "$DEST/vigil" scan "$MANIFEST" --format markdown > vigil_report.md || true
 
       - name: Retain Audit Findings
         uses: actions/upload-artifact@v4

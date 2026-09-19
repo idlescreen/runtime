@@ -1,0 +1,44 @@
+name: studio2201 Security Gate
+
+# Supply-chain / secrets / governance gate — Snip, Vigil, Aegis, Proven,
+# Boneyard — via the studio2201 composite action. Findings upload as an
+# artifact on every run.
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  security-gate:
+    name: studio2201 Security Gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+
+      - name: Run studio2201 Security Gate
+        uses: studio2201/studio2201@master
+        with:
+          tools: 'all'
+          fail-on: 'block'
+
+      - name: Retain Audit Findings
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: studio2201-audit-findings
+          path: |
+            *_report.md
+          if-no-files-found: ignore

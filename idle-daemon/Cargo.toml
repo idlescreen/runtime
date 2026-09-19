@@ -2,7 +2,7 @@
 authors = ["idlescreen developers"]
 repository = "https://github.com/idlescreen/idlescreen"
 name = "idle-daemon"
-version = "3.5.18"
+version = "3.5.19"
 edition = "2024"
 description = "IdleScreen background idle daemon (Wayland screensaver host)"
 license = "Apache-2.0"

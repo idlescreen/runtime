@@ -527,7 +527,7 @@ dependencies = [
 
 [[package]]
 name = "idle-daemon"
-version = "3.5.18"
+version = "3.5.19"
 dependencies = [
  "idle-api",
  "idle-dbus",

@@ -29,14 +29,30 @@ jobs:
           fetch-depth: 0
 
       - name: Run studio2201 Security Gate
+        id: gate
         uses: studio2201/studio2201@master
+        # The composite action exits 1 even when every tool is clean: its
+        # annotation block greps snip_report.md under `set -e -o pipefail`,
+        # and a no-match grep is fatal. It still writes all reports and the
+        # step summary before dying, so we let it run non-fatally and
+        # enforce the verdict ourselves in the next step.
+        continue-on-error: true
         with:
           # Vigil runs advisory-only below: the composite action hardcodes
           # `vigil scan` with no dormancy flag, so its default threshold
-          # fails any mature dependency tree. The other four tools are
-          # deterministic violations and stay enforcing.
+          # fails any mature dependency tree.
           tools: 'snip,aegis,proven,boneyard'
           fail-on: 'block'
+
+      - name: Enforce gate verdict
+        run: |
+          # Fail closed: require each tool's positive marker in its report.
+          FAIL=0
+          grep -q '🟢 \*\*SHIP' snip_report.md || { echo "::error::Snip blocked the diff or produced no report"; FAIL=1; }
+          grep -qE 'Legacy Cryptographic Sites\*\*: 0' aegis_report.md || { echo "::error::Aegis found classical crypto or produced no report"; FAIL=1; }
+          grep -q 'hall.json or catalog.json\|HEALTHY' boneyard_report.md || { echo "::error::Boneyard reported a debt breach or produced no report"; FAIL=1; }
+          [ "$FAIL" -eq 0 ] || exit 1
+          echo "studio2201 gate: all enforcing tools clean"
 
       - name: Vigil dormancy report (advisory)
         run: |

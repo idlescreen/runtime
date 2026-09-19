@@ -5,6 +5,8 @@
 //! `lib.get::<T>(name)` — with the same error surface (`dlerror()` text).
 
 use std::ffi::CString;
+use std::marker::PhantomData;
+use std::ops::Deref;
 use std::os::unix::ffi::OsStrExt;
 use std::path::Path;
 
@@ -58,18 +60,24 @@ impl Library {
     }
 
     /// `dlsym` for `symbol` (a NUL is appended if missing — `OPS_SYMBOL` and
-    /// friends are plain `b"..."` slices). The returned `T` is a plain value
-    /// (typically a fn pointer); callers keep the `Library` alive as long as
-    /// the symbol may be used, same as libloading's `Symbol` borrow contract.
+    /// friends are plain `b"..."` slices). The returned [`Symbol`] borrows
+    /// this `Library`, so holding a symbol past `dlclose` is a compile
+    /// error — libloading's `Symbol<'lib>` contract. Copying the raw value
+    /// out (`*sym`) is the explicit escape hatch; anything doing so must
+    /// keep the `Library` alive itself (see `PluginGuard._lib`).
     ///
     /// # Safety
-    /// `T` must be a pointer-sized type matching the symbol's real type.
-    pub unsafe fn get<T: Copy>(&self, symbol: &[u8]) -> Result<T, Error> {
-        assert_eq!(
-            std::mem::size_of::<T>(),
-            std::mem::size_of::<*mut std::ffi::c_void>(),
-            "Library::get requires a pointer-sized type"
-        );
+    /// `T` must be a pointer-sized type matching the symbol's real type —
+    /// enforced at compile time by the inline const assertion (a
+    /// non-pointer-sized `T` fails to build, so `transmute_copy` below
+    /// always copies exactly one pointer).
+    pub unsafe fn get<'lib, T: Copy>(&'lib self, symbol: &[u8]) -> Result<Symbol<'lib, T>, Error> {
+        const {
+            assert!(
+                std::mem::size_of::<T>() == std::mem::size_of::<*mut std::ffi::c_void>(),
+                "Library::get requires a pointer-sized T"
+            );
+        }
         let trimmed = match symbol.iter().position(|&b| b == 0) {
             Some(i) => &symbol[..i],
             None => symbol,
@@ -92,7 +100,25 @@ impl Library {
                 String::from_utf8_lossy(trimmed)
             )));
         }
-        Ok(unsafe { std::mem::transmute_copy::<*mut std::ffi::c_void, T>(&ptr) })
+        Ok(Symbol {
+            inner: unsafe { std::mem::transmute_copy::<*mut std::ffi::c_void, T>(&ptr) },
+            _lib: PhantomData,
+        })
+    }
+}
+
+/// A symbol borrowed from a [`Library`] — libloading `Symbol<'lib, T>`
+/// equivalent. `Deref` yields the wrapped value (typically a fn pointer);
+/// `*sym` copies it out, which ends the borrow's protection.
+pub struct Symbol<'lib, T> {
+    inner: T,
+    _lib: PhantomData<&'lib Library>,
+}
+
+impl<T> Deref for Symbol<'_, T> {
+    type Target = T;
+    fn deref(&self) -> &T {
+        &self.inner
     }
 }
 

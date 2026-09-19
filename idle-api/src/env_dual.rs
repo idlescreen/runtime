@@ -76,9 +76,13 @@ pub fn param_f32(key: &str) -> Option<f32> {
 mod tests {
     use super::*;
 
+    // Env is process-global — serialize every mutating test in this file.
+    static ENV_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
     #[test]
     fn first_prefers_left() {
-        // SAFETY: test process isolation for env keys we own.
+        let _g = ENV_LOCK.lock().unwrap();
+        // SAFETY: serialized by ENV_LOCK; keys are test-only.
         unsafe {
             std::env::set_var("IDLE_TEST_A", "new");
             std::env::set_var("IDLE_TEST_B", "old");
@@ -109,7 +113,8 @@ mod tests {
 
     #[test]
     fn param_round_trips_and_parses() {
-        // SAFETY: key is ours; test process only.
+        let _g = ENV_LOCK.lock().unwrap();
+        // SAFETY: serialized by ENV_LOCK; key is test-only.
         unsafe { std::env::set_var("IDLE_SAVER_PARAM_HEARTH_FIRE_SIZE", "1.5") };
         assert_eq!(param("hearth.fire_size").as_deref(), Some("1.5"));
         assert_eq!(param_f32("hearth.fire_size"), Some(1.5));
@@ -120,7 +125,8 @@ mod tests {
 
     #[test]
     fn param_f32_rejects_garbage() {
-        // SAFETY: key is ours; test process only.
+        let _g = ENV_LOCK.lock().unwrap();
+        // SAFETY: serialized by ENV_LOCK; key is test-only.
         unsafe { std::env::set_var("IDLE_SAVER_PARAM_X", "not_a_float") };
         assert_eq!(param_f32("x"), None);
         unsafe { std::env::set_var("IDLE_SAVER_PARAM_X", "inf") };

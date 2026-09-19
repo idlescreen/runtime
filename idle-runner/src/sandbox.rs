@@ -38,6 +38,14 @@ struct PathBeneathAttr {
     parent_fd: libc::c_int,
 }
 
+/// Close an fd on drop — keeps `?` early-returns from leaking descriptors.
+struct FdGuard(std::os::fd::RawFd);
+impl Drop for FdGuard {
+    fn drop(&mut self) {
+        unsafe { libc::close(self.0) };
+    }
+}
+
 /// `landlock_create_ruleset` syscall → ruleset fd.
 fn ll_create_ruleset() -> Result<std::os::fd::RawFd, String> {
     let attr = RulesetAttr {
@@ -203,11 +211,11 @@ fn enforce_with_rules(
         .parent()
         .ok_or_else(|| "plugin path has no parent directory".to_string())?;
 
-    let ruleset_fd = ll_create_ruleset()?;
+    let ruleset_fd = FdGuard(ll_create_ruleset()?);
 
     // Plugin dir: ReadFile|ReadDir|Execute so `dlopen` of the .so works.
     let plugin_dir_fd = ll_path_fd(parent)?;
-    let add_result = ll_add_rule(ruleset_fd, ll::READ_EXEC, plugin_dir_fd);
+    let add_result = ll_add_rule(ruleset_fd.0, ll::READ_EXEC, plugin_dir_fd);
     unsafe { libc::close(plugin_dir_fd) };
     add_result.map_err(|e| format!("add_rule plugin dir: {e}"))?;
 
@@ -226,7 +234,7 @@ fn enforce_with_rules(
         };
         match ll_path_fd(&rule.path) {
             Ok(fd) => {
-                let r = ll_add_rule(ruleset_fd, access, fd);
+                let r = ll_add_rule(ruleset_fd.0, access, fd);
                 unsafe { libc::close(fd) };
                 r.map_err(|e| format!("add_rule {}: {e}", rule.path.display()))?;
             }
@@ -234,8 +242,7 @@ fn enforce_with_rules(
         }
     }
 
-    let fully_enforced = ll_restrict_self(ruleset_fd)?;
-    unsafe { libc::close(ruleset_fd) };
+    let fully_enforced = ll_restrict_self(ruleset_fd.0)?;
 
     idle_log::info!(
         plugin = %plugin_path.display(),

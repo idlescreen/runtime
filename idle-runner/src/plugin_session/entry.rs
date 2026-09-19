@@ -53,7 +53,7 @@ pub(crate) unsafe fn resolve_entry(
     if let Ok(ops_fn) = unsafe {
         lib.get::<unsafe extern "C" fn() -> *const idle_api::IdleSaverOps>(idle_api::OPS_SYMBOL)
     } {
-        let ops_ptr = unsafe { ops_fn() };
+        let ops_ptr = unsafe { (*ops_fn)() };
         if ops_ptr.is_null() {
             return Err(PluginError::SymbolMissing("idle_saver_ops (null)"));
         }
@@ -73,16 +73,18 @@ pub(crate) unsafe fn resolve_entry(
         return Ok((instance, drop_c_abi_instance));
     }
 
-    let create_fn: unsafe extern "C" fn() -> *mut ScreensaverInstance =
-        unsafe { lib.get(b"create_screensaver") }
+    let create_fn =
+        unsafe { lib.get::<unsafe extern "C" fn() -> *mut ScreensaverInstance>(b"create_screensaver") }
             .map_err(|_| PluginError::SymbolMissing("create_screensaver"))?;
-    let destroy_fn: unsafe extern "C" fn(*mut ScreensaverInstance) =
-        unsafe { lib.get(b"destroy_screensaver") }
+    let destroy_fn =
+        unsafe { lib.get::<unsafe extern "C" fn(*mut ScreensaverInstance)>(b"destroy_screensaver") }
             .map_err(|_| PluginError::SymbolMissing("destroy_screensaver"))?;
 
-    let raw_ptr = unsafe { create_fn() };
+    let raw_ptr = unsafe { (*create_fn)() };
     if raw_ptr.is_null() {
         return Err(PluginError::SymbolMissing("create_screensaver (null)"));
     }
-    Ok((raw_ptr, destroy_fn))
+    // `*destroy_fn` copies the fn ptr out of its `Symbol` — the caller's
+    // `PluginGuard._lib` keeps the library loaded until after it fires.
+    Ok((raw_ptr, *destroy_fn))
 }

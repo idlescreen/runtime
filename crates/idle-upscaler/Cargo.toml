@@ -12,4 +12,3 @@ workspace = true
 
 [dependencies]
 idle-api = { path = "../../idle-api" }
-idle-log.workspace = true

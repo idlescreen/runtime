@@ -218,11 +218,14 @@ macro_rules! trace {
 mod tests {
     use super::*;
 
-    // `init` mutates the global threshold — keep every level assertion in
-    // this one test so parallel tests can't interleave on ENABLED.
+    // `init` mutates the global threshold AND reads RUST_LOG — every env-
+    // touching test here must hold the same lock so they can't interleave.
+    static ENV_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
     #[test]
     fn level_filtering_follows_rust_log_and_default() {
-        // SAFETY: only this test in the crate reads/writes RUST_LOG.
+        let _g = ENV_LOCK.lock().unwrap();
+        // SAFETY: serialized by ENV_LOCK.
         unsafe { std::env::remove_var("RUST_LOG") };
 
         init("debug");
@@ -249,8 +252,9 @@ mod tests {
 
     #[test]
     fn rust_log_env_overrides_default() {
-        // SAFETY: only this test reads/writes RUST_LOG; runs in the same
-        // process as the test above but re-asserts env each time.
+        let _g = ENV_LOCK.lock().unwrap();
+        // SAFETY: serialized by ENV_LOCK — this test and the one above both
+        // mutate RUST_LOG and would race under parallel test threads.
         unsafe { std::env::set_var("RUST_LOG", "trace") };
         init("error");
         assert!(enabled(Level::Trace), "env must beat the default");

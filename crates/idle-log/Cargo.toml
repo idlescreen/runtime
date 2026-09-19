@@ -7,4 +7,3 @@ license = "Apache-2.0"
 description = "Minimal stderr/journald logging for the idle workspace"
 
 [dependencies]
-libc = "0.2"

@@ -1,3 +1,12 @@
+idle-daemon (3.5.17-1) unstable; urgency=medium
+
+  * Replace convenience crates with in-tree implementations (idle-err,
+    idle-log, TOML parsing, file watching, futures helper); harden the
+    dlopen wrapper so dlclose-then-call is a compile error; fix env-var
+    test races and a Landlock ruleset fd leak on error paths.
+
+ -- IdleScreen <jerydleuck@gmail.com>  Sun, 14 Sep 2026 10:00:00 +0000
+
 idle-daemon (3.5.15-1) unstable; urgency=medium
 
   * Trust idle-cli in D-Bus control auth: after the cli repo split the

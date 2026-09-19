@@ -7,8 +7,12 @@
 use super::*;
 use std::sync::Arc;
 
+// WAYLAND_DISPLAY is process-global — tests mutating it must serialize.
+static ENV_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
 #[test]
 fn wayland_overlay_is_unavailable_without_session() {
+    let _g = ENV_LOCK.lock().unwrap();
     let backup = std::env::var("WAYLAND_DISPLAY").ok();
     unsafe { std::env::remove_var("WAYLAND_DISPLAY") };
     assert!(!WaylandOverlay::is_available());
@@ -21,6 +25,7 @@ fn wayland_overlay_is_unavailable_without_session() {
 fn wayland_overlay_lifecycle_smoke() {
     // With no real Wayland session, `new()` returns None. The test just
     // asserts the adapter never panics in either path.
+    let _g = ENV_LOCK.lock().unwrap();
     let backup = std::env::var("WAYLAND_DISPLAY").ok();
     unsafe { std::env::remove_var("WAYLAND_DISPLAY") };
     let w = WaylandOverlay::new();

@@ -192,9 +192,14 @@ impl<'a> Parser<'a> {
         match self.peek() {
             Some(b'"') => return self.string(),
             Some(c) if c.is_ascii_alphanumeric() || c == b'_' || c == b'-' => {
-                while matches!(self.peek(), Some(c) if c.is_ascii_alphanumeric() || c == b'_' || c == b'-' || c == b'.')
+                while matches!(self.peek(), Some(c) if c.is_ascii_alphanumeric() || c == b'_' || c == b'-')
                 {
                     self.bump();
+                }
+                // `a.b = 1` is a nested-table key in real TOML — outside this
+                // subset, and storing it flat would silently misparse.
+                if self.peek() == Some(b'.') {
+                    return Err(self.err("dotted keys are not supported"));
                 }
             }
             _ => return Err(self.err("expected key")),
@@ -525,13 +530,30 @@ gpu_optional       = true
     }
 
     #[test]
-    fn dotted_key_parses_as_flat_name() {
-        // NOTE: doc says dotted keys are "rejected" — in practice `key()`
-        // accepts '.', so `a.b` becomes one flat key (never queried by the
-        // schema, so effectively ignored). Pin the real behavior.
-        let doc = parse("a.b = 1").unwrap();
-        assert_eq!(doc.get("a.b").unwrap().as_int(), Some(1));
-        assert!(doc.get("a").is_none());
+    fn dotted_keys_rejected() {
+        // `a.b` is a nested-table key in real TOML — outside this subset,
+        // so it's an error rather than silently stored as a flat name.
+        let err = parse("a.b = 1").unwrap_err();
+        assert!(format!("{err}").contains("dotted"), "{err}");
+        assert!(parse("a.b.c = 1").is_err());
+    }
+
+    #[test]
+    fn malformed_inputs_never_panic() {
+        // Every prefix of a valid manifest — Err or Ok, never panic.
+        let good = "[entry]\nlibrary = \"x.so\"\n[caps]\nnet = false\nlist = [\"a\", \"b\"]\nn = -4_2\n";
+        for i in 0..=good.len() {
+            let _ = parse(&good[..i]);
+        }
+        for bad in [
+            "", "[", "]", "[a", "a", "=", "a =", "a = [", "a = [1", "\"", "'",
+            "a = \"\\", "a = \"\\u", "a = \"\\uZZZZ\"", "[[]]", "[a]", "[[a]]",
+            "a = {", "a = 0x", "a = 18446744073709551616", "a = +", "a = -",
+            "\u{feff}a = 1", "a = '''x", "a = t", "a = truex", "a = \"x\"\ny",
+            ".a = 1", "a. = 1", "- = 1", "_ = 1",
+        ] {
+            let _ = parse(bad);
+        }
     }
 
     #[test]

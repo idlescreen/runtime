@@ -142,7 +142,7 @@ impl PluginSession {
             // stale plugin cannot slip past the version check.
             let ver_sym = lib.get::<unsafe extern "C" fn() -> u32>(b"idle_api_version");
             let ver_fn = match ver_sym {
-                Ok(f) => f,
+                Ok(f) => *f,
                 Err(_) => {
                     return Err(PluginError::MissingVersion);
                 }

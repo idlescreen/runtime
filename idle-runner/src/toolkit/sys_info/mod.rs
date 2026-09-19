@@ -31,10 +31,9 @@ pub use monitors::{
 pub use theme::{SystemTheme, query_current_palette, query_dark_mode, query_system_theme};
 
 use std::sync::RwLock;
-use sysinfo::{CpuRefreshKind, MemoryRefreshKind, RefreshKind};
 
 static SYSTEM_INFO_CACHE: OnceLock<RwLock<(Option<SystemInfo>, Instant)>> = OnceLock::new();
-static SYSTEM_OBJECT: OnceLock<Mutex<sysinfo::System>> = OnceLock::new();
+static SYSTEM_OBJECT: OnceLock<Mutex<linux_proc::ProcStats>> = OnceLock::new();
 /// Host identity strings that do not change while the process is running.
 static STATIC_HOST: OnceLock<StaticHostInfo> = OnceLock::new();
 
@@ -48,37 +47,24 @@ struct StaticHostInfo {
     monitors: String,
 }
 
-fn get_system() -> std::sync::MutexGuard<'static, sysinfo::System> {
+fn get_system() -> std::sync::MutexGuard<'static, linux_proc::ProcStats> {
     SYSTEM_OBJECT
-        .get_or_init(|| {
-            // Only memory + CPU — skip process/disk/component scans on construct.
-            let kind = RefreshKind::nothing()
-                .with_cpu(CpuRefreshKind::nothing().with_cpu_usage())
-                .with_memory(MemoryRefreshKind::everything());
-            Mutex::new(sysinfo::System::new_with_specifics(kind))
-        })
+        .get_or_init(|| Mutex::new(linux_proc::ProcStats::new()))
         .lock()
         .unwrap_or_else(|e| {
-            tracing::error!("mutex poisoned: {e}");
+            idle_log::error!("mutex poisoned: {e}");
             std::process::abort()
         })
 }
 
 fn static_host() -> &'static StaticHostInfo {
     STATIC_HOST.get_or_init(|| {
-        let mut sys = get_system();
-        // One-shot CPU list read for brand string.
-        sys.refresh_cpu_specifics(CpuRefreshKind::nothing().with_cpu_usage());
-        let os = sysinfo::System::long_os_version().unwrap_or_else(|| "Linux".to_string());
-        let kernel = sysinfo::System::kernel_version().unwrap_or_else(|| "unknown".to_string());
+        let os = linux_proc::long_os_version().unwrap_or_else(|| "Linux".to_string());
+        let kernel = linux_proc::kernel_version().unwrap_or_else(|| "unknown".to_string());
         let kernel_short = kernel.split('-').next().unwrap_or(&kernel);
         let logo_text = format!("Linux {}", kernel_short);
-        let hostname = sysinfo::System::host_name().unwrap_or_else(|| "localhost".to_string());
-        let cpu = sys
-            .cpus()
-            .first()
-            .map(|c| c.brand().to_string())
-            .unwrap_or_else(|| "CPU".to_string());
+        let hostname = linux_proc::host_name().unwrap_or_else(|| "localhost".to_string());
+        let cpu = linux_proc::cpu_brand().unwrap_or_else(|| "CPU".to_string());
         let gpus = {
             let joined = query_gpu_names().join(", ");
             if joined.is_empty() {
@@ -110,7 +96,7 @@ pub fn get_system_info() -> SystemInfo {
         return val.clone();
     }
     let mut cache = cache_rw.write().unwrap_or_else(|e| {
-        tracing::error!("mutex poisoned: {e}");
+        idle_log::error!("mutex poisoned: {e}");
         std::process::abort()
     });
     if let Some(ref val) = cache.0
@@ -132,8 +118,8 @@ fn get_system_info_raw() -> SystemInfo {
     sys.refresh_memory();
     sys.refresh_cpu_usage();
 
-    let total = sys.total_memory();
-    let available = sys.available_memory();
+    let total = sys.total_memory_bytes();
+    let available = sys.available_memory_bytes();
     let used = total.saturating_sub(available);
     let mem_total_mb = total / (1024 * 1024);
     let mem_used_mb = used / (1024 * 1024);
@@ -144,7 +130,7 @@ fn get_system_info_raw() -> SystemInfo {
     };
 
     let cpu_usage_pct = sys.global_cpu_usage();
-    let uptime_secs = sysinfo::System::uptime();
+    let uptime_secs = linux_proc::uptime_secs();
 
     let power = query_power_status().unwrap_or_default();
     let power_status = if power.ac_online {

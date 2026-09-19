@@ -11,7 +11,7 @@
 //! platform-agnostic trait. Sprint 05 H1/H2 drop in macOS/Windows impls
 //! without changing daemon call sites.
 
-use anyhow::anyhow;
+use idle_err::anyhow;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -32,7 +32,7 @@ pub fn log_posture() {
     let unsigned_off = std::env::var_os("IDLE_ALLOW_UNSIGNED_PLUGINS").is_some();
 
     if !manifest_sig || !gpu_budget || !cpu_fail_closed {
-        tracing::warn!(
+        idle_log::warn!(
             manifest_signature_enforced = manifest_sig,
             gpu_budget_enforced = gpu_budget,
             cpu_budget_fail_closed = cpu_fail_closed,
@@ -43,14 +43,14 @@ pub fn log_posture() {
         );
     }
     if sandbox_off {
-        tracing::error!(
+        idle_log::error!(
             "IDLE_DISABLE_SANDBOX=1 — Landlock sandbox BYPASSED. \
              Plugins run with full filesystem + network access. \
              This is a debug-only flag; production deployments MUST NOT set it."
         );
     }
     if unsigned_off {
-        tracing::error!(
+        idle_log::error!(
             "IDLE_ALLOW_UNSIGNED_PLUGINS=1 — manifest gate BYPASSED. \
              Plugins without an .idleplugin.toml are accepted. \
              This is a debug-only flag; production deployments MUST NOT set it."
@@ -60,7 +60,7 @@ pub fn log_posture() {
 
 pub fn initialize_runtime(
     controller: &DaemonController,
-) -> anyhow::Result<(Box<dyn IdleSource>, Arc<dyn OverlaySurface>)> {
+) -> idle_err::Result<(Box<dyn IdleSource>, Arc<dyn OverlaySurface>)> {
     let idle_timeout = controller
         .config
         .lock()
@@ -84,7 +84,7 @@ pub fn initialize_runtime(
         idle_api::platform_idle(Duration::from_secs(idle_timeout.saturating_mul(60) as u64))
             .ok_or_else(|| anyhow!("DEGRADED: idle source unavailable on this platform."))?;
 
-    tracing::info!("using platform idle source");
+    idle_log::info!("using platform idle source");
     if !idle_monitor.is_alive() {
         return Err(anyhow!(
             "DEGRADED: idle source reports dead at startup; refusing to load"
@@ -97,7 +97,7 @@ pub fn initialize_runtime(
         ));
     }
     if let Some(path) = idle_runner::cell_renderer::resolve_font_path() {
-        tracing::info!("using monospace font: {path}");
+        idle_log::info!("using monospace font: {path}");
     }
 
     // Trait seam: prefer `WaylandOverlay::new()` so the daemon can later
@@ -116,7 +116,7 @@ pub fn initialize_runtime(
                  host it (e.g. some GNOME configurations). See docs/BOUNDARIES.md. Run: idle doctor --json"
             )
         })?;
-    tracing::info!("using Wayland layer-shell presenter");
+    idle_log::info!("using Wayland layer-shell presenter");
     Ok((idle_monitor, overlay_presenter))
 }
 

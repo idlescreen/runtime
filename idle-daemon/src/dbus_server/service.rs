@@ -36,7 +36,7 @@ impl TranceService {
     ) -> zbus::fdo::Result<()> {
         authorize_control(&self.controller, &header).await?;
         if let Err(error) = self.controller.apply_command(DaemonCommand::Disable) {
-            tracing::error!(target: "idle_daemon::dbus", "Disable failed: {error:?}");
+            idle_log::error!(target: "idle_daemon::dbus", "Disable failed: {error:?}");
             return Err(zbus::fdo::Error::Failed(error.to_string()));
         }
         self.controller
@@ -195,7 +195,7 @@ impl TranceService {
     ) -> zbus::fdo::Result<()> {
         authorize_control(&self.controller, &header).await?;
         // debug: old clients still call this; do not warn-spam the journal.
-        tracing::debug!(target: "idle_daemon::deprecation", "set_gpu_enabled ignored (GPU upscaler removed)");
+        idle_log::debug!(target: "idle_daemon::deprecation", "set_gpu_enabled ignored (GPU upscaler removed)");
         Ok(())
     }
 

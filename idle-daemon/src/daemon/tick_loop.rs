@@ -9,7 +9,7 @@ use crate::controller::{DaemonController, MAIN_LOOP_INTERVAL};
 use crate::daemon::watchdog;
 use crate::ooda::OodaLoopController;
 
-pub fn tick_loop_until_shutdown(controller: Arc<DaemonController>) -> anyhow::Result<()> {
+pub fn tick_loop_until_shutdown(controller: Arc<DaemonController>) -> idle_err::Result<()> {
     let (mut idle_monitor, mut overlay_presenter) =
         super::runtime::initialize_runtime(&controller)?;
 
@@ -34,7 +34,7 @@ pub fn tick_loop_until_shutdown(controller: Arc<DaemonController>) -> anyhow::Re
         if let Err(err) =
             ooda_loop.step_tick(&controller, &mut idle_monitor, &mut overlay_presenter)
         {
-            tracing::error!("error in openOODA tick cycle: {err:#}");
+            idle_log::error!("error in openOODA tick cycle: {err:#}");
         }
 
         watchdog.heartbeat();
@@ -42,7 +42,7 @@ pub fn tick_loop_until_shutdown(controller: Arc<DaemonController>) -> anyhow::Re
 
     ooda_loop.shutdown(&overlay_presenter);
     if controller.watchdog_stalled.load(Ordering::Relaxed) {
-        anyhow::bail!("render loop watchdog stall — exiting non-zero for systemd restart");
+        idle_err::bail!("render loop watchdog stall — exiting non-zero for systemd restart");
     }
     Ok(())
 }

@@ -62,7 +62,7 @@ impl OodaOrientator {
         for command in raw.commands {
             match command {
                 DaemonCommand::Preview(name) => {
-                    tracing::info!(saver = %name, "queued preview command");
+                    idle_log::info!(saver = %name, "queued preview command");
                     *present_cooldown_until = None;
                     *consecutive_faults = 0;
                     queue_preview(preview_name, name);
@@ -72,14 +72,14 @@ impl OodaOrientator {
                     // the same user-initiated path as preview, but tagged so
                     // decide launches it in Daemon mode (installed only).
                     let name = pick_saver_name(&raw.config, current_time_micros());
-                    tracing::info!(saver = %name, "queued activate command");
+                    idle_log::info!(saver = %name, "queued activate command");
                     *present_cooldown_until = None;
                     *consecutive_faults = 0;
                     queue_preview(preview_name, name);
                     manual_activate = true;
                 }
                 DaemonCommand::StopPresentation => {
-                    tracing::info!("queued stop-presentation command");
+                    idle_log::info!("queued stop-presentation command");
                     queue_stop(preview_name);
                     stop_presentation(Some(overlay_presenter), presentation);
                     current_saver.clear();
@@ -99,7 +99,7 @@ impl OodaOrientator {
             *consecutive_faults = consecutive_faults.saturating_add(1);
             let cooldown = present_cooldown_after_fault(*consecutive_faults);
             *present_cooldown_until = Some(Instant::now() + cooldown);
-            tracing::warn!(
+            idle_log::warn!(
                 consecutive_faults = *consecutive_faults,
                 cooldown_secs = cooldown.as_secs(),
                 "holding idle auto-start after Wayland fault"

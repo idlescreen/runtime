@@ -1,6 +1,15 @@
 // SPDX-License-Identifier: MIT
 
 use super::gpu_init::{GpuCell, GpuCellRenderer, Uniforms};
+
+/// Byte view of a `#[repr(C)]` value/slice for `queue.write_buffer`
+/// (bytemuck replacement — the structs are plain-Copy PODs).
+fn as_u8_slice<T>(v: &[T]) -> &[u8] {
+    unsafe { std::slice::from_raw_parts(v.as_ptr() as *const u8, std::mem::size_of_val(v)) }
+}
+fn as_u8_bytes<T>(v: &T) -> &[u8] {
+    unsafe { std::slice::from_raw_parts(v as *const T as *const u8, std::mem::size_of::<T>()) }
+}
 use idle_api::TerminalCell;
 use std::collections::HashMap;
 
@@ -66,8 +75,7 @@ impl GpuCellRenderer {
             scanlines: u32::from(scanlines),
             padding: 0,
         };
-        self.queue
-            .write_buffer(&uni_buf, 0, bytemuck::bytes_of(&uniforms));
+        self.queue.write_buffer(&uni_buf, 0, as_u8_bytes(&uniforms));
 
         super::gpu_cells::build_gpu_cells_into(
             grid,
@@ -80,7 +88,7 @@ impl GpuCellRenderer {
             &mut self.cells_scratch,
         );
         self.queue
-            .write_buffer(&cells_buf, 0, bytemuck::cast_slice(&self.cells_scratch));
+            .write_buffer(&cells_buf, 0, as_u8_slice(&self.cells_scratch));
 
         self.encode_draw_and_copy(
             cols,

@@ -18,7 +18,7 @@ impl ScreenSaverService {
         let sender = header.sender().ok_or_else(|| {
             zbus::fdo::Error::Failed("inhibit request missing D-Bus sender".into())
         })?;
-        tracing::info!(
+        idle_log::info!(
             "ScreenSaver: Inhibit requested by {} ({}): {}",
             sender,
             application_name,
@@ -48,7 +48,7 @@ impl ScreenSaverService {
         let sender = header.sender().ok_or_else(|| {
             zbus::fdo::Error::Failed("un_inhibit request missing D-Bus sender".into())
         })?;
-        tracing::info!(
+        idle_log::info!(
             "ScreenSaver: UnInhibit requested by {} for cookie {}",
             sender,
             cookie
@@ -63,7 +63,7 @@ impl ScreenSaverService {
     }
 
     pub(crate) async fn simulate_user_activity(&self) {
-        tracing::info!("ScreenSaver: SimulateUserActivity requested");
+        idle_log::info!("ScreenSaver: SimulateUserActivity requested");
         let _ = self
             .controller
             .send_command(DaemonCommand::StopPresentation);
@@ -76,7 +76,7 @@ impl ScreenSaverService {
             .lock()
             .unwrap_or_else(|p| crate::locks::poison_or_exit("lock", p))
             .presentation_active;
-        tracing::debug!("ScreenSaver: GetActive requested: {}", active);
+        idle_log::debug!("ScreenSaver: GetActive requested: {}", active);
         active
     }
 
@@ -85,7 +85,7 @@ impl ScreenSaverService {
         active: bool,
         #[zbus(header)] header: zbus::message::Header<'_>,
     ) -> zbus::fdo::Result<()> {
-        tracing::info!("ScreenSaver: SetActive requested: {}", active);
+        idle_log::info!("ScreenSaver: SetActive requested: {}", active);
         if active {
             super::service_helpers::authorize_control(&self.controller, &header).await?;
             let config = self
@@ -111,7 +111,7 @@ impl ScreenSaverService {
     }
 
     pub(crate) async fn lock(&self) {
-        tracing::info!("ScreenSaver: Lock requested");
+        idle_log::info!("ScreenSaver: Lock requested");
         let _ = self
             .controller
             .send_command(DaemonCommand::StopPresentation);

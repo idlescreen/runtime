@@ -13,7 +13,7 @@ type LogoCacheEntry = (String, Option<String>, Vec<String>);
 pub fn render_logo_block(text: &str, sub_text: Option<&str>) -> Vec<String> {
     static CACHE: std::sync::Mutex<Option<LogoCacheEntry>> = std::sync::Mutex::new(None);
     let mut lock = CACHE.lock().unwrap_or_else(|e| {
-        tracing::error!("mutex poisoned: {e}");
+        idle_log::error!("mutex poisoned: {e}");
         std::process::abort()
     });
     if let Some((cached_text, cached_sub, cached_val)) = &*lock

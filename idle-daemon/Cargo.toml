@@ -2,7 +2,7 @@
 authors = ["idlescreen developers"]
 repository = "https://github.com/idlescreen/idlescreen"
 name = "idle-daemon"
-version = "3.5.15"
+version = "3.5.16"
 edition = "2024"
 description = "IdleScreen background idle daemon (Wayland screensaver host)"
 license = "Apache-2.0"
@@ -30,15 +30,10 @@ idle-upscaler = { workspace = true }
 idle-ipc = { path = "../crates/idle-ipc" }
 wayland-idle = { workspace = true }
 libc = { workspace = true }
-signal-hook = "0.4"
 zbus = { workspace = true }
-futures-lite = "2.6"
 tokio = { workspace = true }
-anyhow.workspace = true
-notify = "8.2"
-tracing = "0.1.44"
-tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
-tracing-journald = "0.3.2"
+idle-err = { workspace = true }
+idle-log = { workspace = true }
 
 [package.metadata.deb]
 name = "idle-daemon"

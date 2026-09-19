@@ -8,10 +8,122 @@
 
 use crate::sandbox_profiles::{AccessRule, profile_rules_for};
 use idle_api::plugin_manifest::Manifest;
-use landlock::{
-    ABI, Access, AccessFs, PathBeneath, PathFd, Ruleset, RulesetAttr, RulesetCreatedAttr,
-};
 use std::path::Path;
+
+// ---- Landlock ABI v1 over raw syscalls (was the `landlock` crate) ----
+
+/// Landlock v1 access rights (linux/landlock.h).
+mod ll {
+    pub const ACCESS_FS_EXECUTE: u64 = 1 << 0;
+    pub const ACCESS_FS_READ_FILE: u64 = 1 << 2;
+    pub const ACCESS_FS_READ_DIR: u64 = 1 << 3;
+    /// Every v1 right: execute, read, write, all make/remove rights.
+    pub const ACCESS_FS_ALL_V1: u64 = 0x1FFF;
+    /// `AccessFs::from_read(ABI::V1)` — read + traverse + execute (dlopen needs this).
+    pub const READ_EXEC: u64 = ACCESS_FS_EXECUTE | ACCESS_FS_READ_FILE | ACCESS_FS_READ_DIR;
+    /// `AccessFs::from_read | AccessFs::from_write` — all v1 rights.
+    pub const READ_WRITE: u64 = ACCESS_FS_ALL_V1;
+    /// `LANDLOCK_RULE_PATH_BENEATH`.
+    pub const RULE_PATH_BENEATH: libc::c_int = 1;
+}
+
+#[repr(C)]
+struct RulesetAttr {
+    handled_access_fs: u64,
+}
+
+#[repr(C)]
+struct PathBeneathAttr {
+    allowed_access: u64,
+    parent_fd: libc::c_int,
+}
+
+/// `landlock_create_ruleset` syscall → ruleset fd.
+fn ll_create_ruleset() -> Result<std::os::fd::RawFd, String> {
+    let attr = RulesetAttr {
+        handled_access_fs: ll::ACCESS_FS_ALL_V1,
+    };
+    let fd = unsafe {
+        libc::syscall(
+            libc::SYS_landlock_create_ruleset,
+            &attr,
+            std::mem::size_of::<RulesetAttr>(),
+            0,
+        )
+    };
+    if fd < 0 {
+        Err(format!(
+            "Failed to create ruleset: {}",
+            std::io::Error::last_os_error()
+        ))
+    } else {
+        Ok(fd as std::os::fd::RawFd)
+    }
+}
+
+/// `landlock_add_rule(fd, PATH_BENEATH, {access, parent_fd})`.
+fn ll_add_rule(
+    ruleset_fd: std::os::fd::RawFd,
+    access: u64,
+    parent_fd: std::os::fd::RawFd,
+) -> Result<(), String> {
+    let attr = PathBeneathAttr {
+        allowed_access: access,
+        parent_fd,
+    };
+    let r = unsafe {
+        libc::syscall(
+            libc::SYS_landlock_add_rule,
+            ruleset_fd,
+            ll::RULE_PATH_BENEATH,
+            &attr,
+            0,
+        )
+    };
+    if r < 0 {
+        Err(format!("add_rule: {}", std::io::Error::last_os_error()))
+    } else {
+        Ok(())
+    }
+}
+
+/// `PathFd::new(path)` — O_PATH handle for rule attachment.
+fn ll_path_fd(path: &Path) -> Result<std::os::fd::RawFd, String> {
+    use std::os::unix::ffi::OsStrExt;
+    let c_path = std::ffi::CString::new(path.as_os_str().as_bytes())
+        .map_err(|e| format!("invalid path: {e}"))?;
+    let fd = unsafe { libc::open(c_path.as_ptr(), libc::O_PATH | libc::O_CLOEXEC) };
+    if fd < 0 {
+        Err(format!(
+            "PathFd {}: {}",
+            path.display(),
+            std::io::Error::last_os_error()
+        ))
+    } else {
+        Ok(fd)
+    }
+}
+
+/// `prctl(NO_NEW_PRIVS)` + `landlock_restrict_self` — returns true when the
+/// ruleset was fully enforced (mirrors `RulesetStatus::FullyEnforced`).
+fn ll_restrict_self(ruleset_fd: std::os::fd::RawFd) -> Result<bool, String> {
+    // Landlock requires no_new_privs before restrict_self.
+    if unsafe { libc::prctl(libc::PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) } != 0 {
+        return Err(format!(
+            "prctl(NO_NEW_PRIVS): {}",
+            std::io::Error::last_os_error()
+        ));
+    }
+    let r = unsafe { libc::syscall(libc::SYS_landlock_restrict_self, ruleset_fd, 0) };
+    if r < 0 {
+        Err(format!(
+            "Failed to enforce Landlock sandbox: {}",
+            std::io::Error::last_os_error()
+        ))
+    } else {
+        Ok(r == 0)
+    }
+}
 
 /// True when sandbox may be skipped.
 ///
@@ -78,7 +190,7 @@ fn enforce_with_rules(
     rules: &[AccessRule],
 ) -> Result<(), String> {
     if sandbox_skip_allowed() {
-        tracing::warn!(
+        idle_log::warn!(
             "Landlock sandbox DISABLED (IDLE_DISABLE_SANDBOX) — offline/render or debug only"
         );
         return Ok(());
@@ -91,52 +203,50 @@ fn enforce_with_rules(
         .parent()
         .ok_or_else(|| "plugin path has no parent directory".to_string())?;
 
-    let abi = ABI::V1;
-    let read_exec = AccessFs::from_read(abi);
-    let read_write = read_exec | AccessFs::from_write(abi);
-
-    let mut ruleset = Ruleset::default()
-        .handle_access(AccessFs::from_all(abi))
-        .map_err(|e| format!("Failed to initialize ruleset: {e}"))?
-        .create()
-        .map_err(|e| format!("Failed to create ruleset: {e}"))?;
+    let ruleset_fd = ll_create_ruleset()?;
 
     // Plugin dir: ReadFile|ReadDir|Execute so `dlopen` of the .so works.
-    let plugin_dir_fd =
-        PathFd::new(parent).map_err(|e| format!("PathFd plugin dir {}: {e}", parent.display()))?;
-    ruleset = ruleset
-        .add_rule(PathBeneath::new(plugin_dir_fd, read_exec))
-        .map_err(|e| format!("add_rule plugin dir: {e}"))?;
+    let plugin_dir_fd = ll_path_fd(parent)?;
+    let add_result = ll_add_rule(ruleset_fd, ll::READ_EXEC, plugin_dir_fd);
+    unsafe { libc::close(plugin_dir_fd) };
+    add_result.map_err(|e| format!("add_rule plugin dir: {e}"))?;
 
     // Profile + capability trees. Absent paths are skipped: Landlock cannot
     // pin a path that does not exist, and refusing here would make an
     // optional font/asset dir a hard load failure.
     for rule in rules {
         if !rule.path.exists() {
-            tracing::debug!("sandbox: skip absent path {}", rule.path.display());
+            idle_log::debug!("sandbox: skip absent path {}", rule.path.display());
             continue;
         }
-        let access = if rule.write { read_write } else { read_exec };
-        match PathFd::new(&rule.path) {
+        let access = if rule.write {
+            ll::READ_WRITE
+        } else {
+            ll::READ_EXEC
+        };
+        match ll_path_fd(&rule.path) {
             Ok(fd) => {
-                ruleset = ruleset
-                    .add_rule(PathBeneath::new(fd, access))
-                    .map_err(|e| format!("add_rule {}: {e}", rule.path.display()))?;
+                let r = ll_add_rule(ruleset_fd, access, fd);
+                unsafe { libc::close(fd) };
+                r.map_err(|e| format!("add_rule {}: {e}", rule.path.display()))?;
             }
-            Err(e) => tracing::debug!("skip {}: {e}", rule.path.display()),
+            Err(e) => idle_log::debug!("skip {}: {e}", rule.path.display()),
         }
     }
 
-    let status = ruleset
-        .restrict_self()
-        .map_err(|e| format!("Failed to enforce Landlock sandbox: {e}"))?;
+    let fully_enforced = ll_restrict_self(ruleset_fd)?;
+    unsafe { libc::close(ruleset_fd) };
 
-    tracing::info!(
+    idle_log::info!(
         plugin = %plugin_path.display(),
         profile,
         rules = rules.len(),
-        "Landlock filesystem sandbox enforced: {:?}",
-        status
+        "Landlock filesystem sandbox enforced: {}",
+        if fully_enforced {
+            "fully enforced"
+        } else {
+            "partially enforced"
+        }
     );
     Ok(())
 }
@@ -147,7 +257,7 @@ pub fn enforce_sandbox_or_skip_for_render() -> Result<(), String> {
     // Without a plugin path we cannot build a safe allowlist. Only allow skip
     // when the render/debug escape is set; otherwise fail closed.
     if sandbox_skip_allowed() {
-        tracing::warn!("Landlock sandbox DISABLED via escape hatch (no path)");
+        idle_log::warn!("Landlock sandbox DISABLED via escape hatch (no path)");
         return Ok(());
     }
     Err(

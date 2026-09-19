@@ -12,7 +12,7 @@ workspace = true
 
 [dependencies]
 libc = { workspace = true }
-tracing.workspace = true
+idle-log.workspace = true
 wayland-client = "0.31"
 wayland-protocols = { version = "0.32", features = ["client"] }
 wayland-protocols-wlr = { version = "0.3.12", features = ["client"] }

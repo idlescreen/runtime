@@ -46,8 +46,8 @@ gpu_optional       = true
 "#;
 
 /// Stage `libscreensaver_beams.so` plus an optional sibling manifest.
-fn staged(manifest: Option<&str>) -> (tempfile::TempDir, PathBuf) {
-    let dir = tempfile::tempdir().unwrap();
+fn staged(manifest: Option<&str>) -> (crate::test_util::TmpDir, PathBuf) {
+    let dir = crate::test_util::tempdir().unwrap();
     let so = dir.path().join("libscreensaver_beams.so");
     fs::write(&so, b"not-an-elf").unwrap();
     if let Some(text) = manifest {
@@ -108,7 +108,7 @@ fn manifest_invalid_plugin_id_fails() {
 #[test]
 fn manifest_round_trip_toml() {
     let first = parse(BASE);
-    let emitted = toml::to_string(&first).unwrap();
+    let emitted = first.to_toml_string();
     assert_eq!(
         first,
         parse(&emitted),

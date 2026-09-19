@@ -100,7 +100,7 @@ impl SessionState {
         // Prefer configured surface size; never invent a destination for an
         // unconfigured layer surface (would race the first configure).
         if !layer_surface_configured(overlay.width, overlay.height) {
-            tracing::debug!(
+            idle_log::debug!(
                 buffer_w = width,
                 buffer_h = height,
                 "wayland-present: skip frame — layer surface not configured yet"
@@ -111,7 +111,7 @@ impl SessionState {
         let dst_h = overlay.height;
 
         if !frame_geometry_ok(width, height, dst_w, dst_h) {
-            tracing::error!(
+            idle_log::error!(
                 buffer_w = width,
                 buffer_h = height,
                 dst_w,
@@ -126,7 +126,7 @@ impl SessionState {
             viewport.set_destination(dst_w as i32, dst_h as i32);
         }
 
-        tracing::debug!(
+        idle_log::debug!(
             buffer_w = width,
             buffer_h = height,
             surface_w = dst_w,

@@ -1,0 +1,9 @@
+[package]
+authors = ["idlescreen developers"]
+name = "idle-err"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "Minimal anyhow-style error plumbing for the idle workspace"
+
+[dependencies]

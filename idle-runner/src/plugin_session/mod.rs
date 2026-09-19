@@ -17,7 +17,7 @@ mod viewport;
 pub(crate) struct PluginGuard {
     pub(crate) ptr: *mut ScreensaverInstance,
     pub(crate) destroy: unsafe extern "C" fn(*mut ScreensaverInstance),
-    pub(crate) _lib: libloading::Library,
+    pub(crate) _lib: crate::dylib::Library,
 }
 
 impl Drop for PluginGuard {
@@ -53,7 +53,7 @@ pub struct PluginSession {
     pub(crate) simulation_cols: usize,
     pub(crate) simulation_rows: usize,
     pub(crate) hardware_scaling: bool,
-    pub(crate) watcher: Option<notify::RecommendedWatcher>,
+    pub(crate) watcher: Option<crate::filewatch::DirWatcher>,
     pub(crate) needs_reload: std::sync::Arc<std::sync::atomic::AtomicBool>,
     pub(crate) cpu_budget: Option<CpuBudget>,
     pub(crate) gpu_budget: Option<crate::gpu_budget::GpuBudget>,
@@ -114,12 +114,11 @@ impl PluginSession {
         self.physics_duration = Duration::from_secs_f32(1.0 / hz);
     }
 
-    #[tracing::instrument(skip_all)]
     pub fn tick(&mut self, frame_dt: Duration) {
         if let Some(budget) = &self.cpu_budget
             && budget.exceeded_hard_limit()
         {
-            tracing::error!(
+            idle_log::error!(
                 plugin = %self.plugin_path.display(),
                 usage_us = budget.usage_micros(),
                 limit_us = budget.hard_limit_us(),
@@ -135,7 +134,7 @@ impl PluginSession {
         {
             match budget.sample() {
                 Ok(pct) if budget.exceeded() => {
-                    tracing::error!(
+                    idle_log::error!(
                         plugin = %self.plugin_path.display(),
                         backend = budget.backend().as_str(),
                         usage_pct = pct,
@@ -149,7 +148,7 @@ impl PluginSession {
                 }
                 Ok(_) => {
                     if budget.unhealthy() {
-                        tracing::warn!(
+                        idle_log::warn!(
                             plugin = %self.plugin_path.display(),
                             backend = budget.backend().as_str(),
                             consecutive_failures = crate::gpu_budget::DEFAULT_FAILURE_STREAK,
@@ -160,7 +159,7 @@ impl PluginSession {
                     }
                 }
                 Err(err) => {
-                    tracing::debug!(
+                    idle_log::debug!(
                         backend = budget.backend().as_str(),
                         "gpu sample failed: {err}"
                     );
@@ -190,7 +189,7 @@ impl PluginSession {
                 let guard = crate::watchdog::CallGuard::new(crate::watchdog::watchdog_timeout());
                 plugin.saver_mut().update(dt, cols, rows);
                 if guard.overflowed() {
-                    tracing::error!(
+                    idle_log::error!(
                         plugin = %self.plugin_path.display(),
                         elapsed_ms = guard.elapsed().as_millis(),
                         budget_ms = crate::watchdog::watchdog_timeout().as_millis(),

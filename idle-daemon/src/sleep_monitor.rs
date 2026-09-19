@@ -13,7 +13,7 @@
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use futures_lite::StreamExt;
+use crate::futures_util::next;
 
 use crate::daemon::watchdog::Watchdog;
 
@@ -32,7 +32,7 @@ pub async fn watch_prepare_for_sleep(watchdog: Watchdog, shutdown: Arc<AtomicBoo
     let connection = match zbus::Connection::system().await {
         Ok(connection) => connection,
         Err(error) => {
-            tracing::error!("logind sleep monitor unavailable: {error}");
+            idle_log::error!("logind sleep monitor unavailable: {error}");
             return;
         }
     };
@@ -40,7 +40,7 @@ pub async fn watch_prepare_for_sleep(watchdog: Watchdog, shutdown: Arc<AtomicBoo
     let proxy = match LogindManagerProxy::new(&connection).await {
         Ok(proxy) => proxy,
         Err(error) => {
-            tracing::error!("logind manager proxy unavailable: {error}");
+            idle_log::error!("logind manager proxy unavailable: {error}");
             return;
         }
     };
@@ -48,25 +48,25 @@ pub async fn watch_prepare_for_sleep(watchdog: Watchdog, shutdown: Arc<AtomicBoo
     let mut stream = match proxy.receive_prepare_for_sleep().await {
         Ok(stream) => stream,
         Err(error) => {
-            tracing::error!("PrepareForSleep subscription failed: {error}");
+            idle_log::error!("PrepareForSleep subscription failed: {error}");
             return;
         }
     };
 
     while !shutdown.load(Ordering::Relaxed) {
-        match stream.next().await {
+        match next(&mut stream).await {
             Some(signal) => match signal.args() {
                 Ok(args) if args.start => {
-                    tracing::debug!("logind PrepareForSleep(true) — system suspending");
+                    idle_log::debug!("logind PrepareForSleep(true) — system suspending");
                 }
                 Ok(_) => {
                     watchdog.heartbeat();
-                    tracing::info!(
+                    idle_log::info!(
                         "logind PrepareForSleep(false) — resumed; watchdog baseline reset"
                     );
                 }
                 Err(error) => {
-                    tracing::warn!("malformed PrepareForSleep signal: {error}");
+                    idle_log::warn!("malformed PrepareForSleep signal: {error}");
                 }
             },
             None => break,

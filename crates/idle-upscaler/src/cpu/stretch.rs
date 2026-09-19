@@ -3,6 +3,23 @@
 
 //! Nearest-neighbor stretch upscale (fills destination, may distort aspect).
 
+/// Checked `&[u8]` → `&[u32]` view (bytemuck `try_cast_slice` replacement):
+/// requires 4-byte alignment and a multiple-of-4 length.
+fn try_cast_u8_to_u32(src: &[u8]) -> Result<&[u32], ()> {
+    if src.len() % 4 != 0 || (src.as_ptr() as usize) % 4 != 0 {
+        return Err(());
+    }
+    Ok(unsafe { std::slice::from_raw_parts(src.as_ptr() as *const u32, src.len() / 4) })
+}
+
+/// Mutable counterpart of [`try_cast_u8_to_u32`].
+fn try_cast_u8_to_u32_mut(dst: &mut [u8]) -> Result<&mut [u32], ()> {
+    if dst.len() % 4 != 0 || (dst.as_ptr() as usize) % 4 != 0 {
+        return Err(());
+    }
+    Ok(unsafe { std::slice::from_raw_parts_mut(dst.as_mut_ptr() as *mut u32, dst.len() / 4) })
+}
+
 /// Cached nearest-neighbor column map for stretch upscale.
 pub struct StretchCache {
     /// Source width last used to build `x_map` (test/cache introspection).
@@ -35,7 +52,6 @@ impl StretchCache {
 }
 
 /// Fast integer nearest-neighbor stretch into `dst` (reuses `cache` x-map).
-#[tracing::instrument(skip_all, fields(src_w, src_h, dst_w, dst_h))]
 #[allow(clippy::too_many_arguments)]
 pub fn upscale_stretch_into(
     dst: &mut [u8],
@@ -68,8 +84,8 @@ pub fn upscale_stretch_into(
     }
 
     match (
-        bytemuck::try_cast_slice::<u8, u32>(src),
-        bytemuck::try_cast_slice_mut::<u8, u32>(&mut dst[..needed]),
+        try_cast_u8_to_u32(src),
+        try_cast_u8_to_u32_mut(&mut dst[..needed]),
     ) {
         (Ok(src_u32), Ok(dst_u32)) => {
             if dst_w < src_w {

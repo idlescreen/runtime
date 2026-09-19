@@ -4,9 +4,6 @@
 //! Shared binary entrypoint for the `idle-daemon` and `idlescreen-daemon` bins.
 //! Both names exec the same dispatch; keeping one body prevents drift.
 
-use anyhow::Context;
-use tracing_subscriber::prelude::*;
-
 use crate::{daemon, ipc_runner};
 
 /// argv must contain: prog, "run-ipc-runner", saver, socket, shm, cols, rows, scale.
@@ -14,28 +11,14 @@ use crate::{daemon, ipc_runner};
 const IPC_RUNNER_MIN_ARGC: usize = 8;
 
 /// Process entry: tracing setup, plugin callbacks, subcommand dispatch.
-pub fn run() -> anyhow::Result<()> {
+pub fn run() -> idle_err::Result<()> {
     // Mark multi-monitor span presentation for plugins/layout helpers.
     idle_api::set_env("IDLE_SPAN_MODE", "1");
 
-    // Initialize tracing with journald or stderr fallback
+    // RUST_LOG-filtered stderr logging; under systemd also mirror to journald.
+    idle_log::init("info");
     if std::env::var("JOURNAL_STREAM").is_ok() {
-        let filter = tracing_subscriber::EnvFilter::builder()
-            .with_default_directive(tracing_subscriber::filter::LevelFilter::INFO.into())
-            .from_env_lossy();
-        let registry = tracing_subscriber::registry()
-            .with(filter)
-            .with(tracing_journald::layer().context("initializing journald tracing layer")?);
-        tracing::subscriber::set_global_default(registry)
-            .context("installing journald tracing subscriber")?;
-    } else {
-        tracing_subscriber::fmt()
-            .with_env_filter(
-                tracing_subscriber::EnvFilter::builder()
-                    .with_default_directive(tracing_subscriber::filter::LevelFilter::INFO.into())
-                    .from_env_lossy(),
-            )
-            .init();
+        idle_log::enable_journald("idle-daemon");
     }
 
     // Register visual theme and system query callbacks for dynamically loaded screensaver plugins
@@ -65,7 +48,7 @@ usage:
                 );
                 Ok(())
             }
-            other => anyhow::bail!("unknown argument: {}\ntry --help", other),
+            other => idle_err::bail!("unknown argument: {}\ntry --help", other),
         }
     } else {
         // Run the daemon by default
@@ -73,13 +56,13 @@ usage:
     }
 }
 
-fn run_plugin_subcmd(args: &[String]) -> anyhow::Result<()> {
-    anyhow::ensure!(
+fn run_plugin_subcmd(args: &[String]) -> idle_err::Result<()> {
+    idle_err::ensure!(
         args.len() >= 3,
         "missing saver name.\nusage: idle-daemon run-plugin <saver>"
     );
     let name = &args[2];
-    anyhow::ensure!(
+    idle_err::ensure!(
         !name.contains('/') && !name.contains('\\'),
         "saver name must not be a path"
     );
@@ -90,14 +73,14 @@ fn run_plugin_subcmd(args: &[String]) -> anyhow::Result<()> {
     // run_plugin_fullscreen replaces this process image with the plugin;
     // exit the host with the plugin's status code on return.
     let code = idle_runner::idle_runner::run_plugin_fullscreen(path.to_string_lossy().as_ref())
-        .map_err(|e| anyhow::anyhow!("{e}"))?;
+        .map_err(|e| idle_err::anyhow!("{e}"))?;
     std::process::exit(code as i32);
 }
 
-fn run_ipc_runner_subcmd(args: &[String]) -> anyhow::Result<()> {
+fn run_ipc_runner_subcmd(args: &[String]) -> idle_err::Result<()> {
     // IPC children must never inherit ambient sandbox/dev escapes from the session.
     idle_runner::sandbox::clear_sandbox_escape_env();
-    anyhow::ensure!(
+    idle_err::ensure!(
         args.len() >= IPC_RUNNER_MIN_ARGC,
         "missing arguments.\nusage: idle-daemon run-ipc-runner <saver> <socket_path> <shm_name> <cols> <rows> <render_scale>"
     );
@@ -112,7 +95,7 @@ fn run_ipc_runner_subcmd(args: &[String]) -> anyhow::Result<()> {
         args[7].parse().ok()
     };
     ipc_runner::run_ipc_runner(saver, socket_path, shm_name, cols, rows, render_scale)
-        .map_err(|e| anyhow::anyhow!("{e}"))
+        .map_err(|e| idle_err::anyhow!("{e}"))
 }
 
 #[cfg(test)]

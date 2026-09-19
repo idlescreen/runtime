@@ -76,7 +76,7 @@ fn is_process_idle_daemon(pid: i32) -> bool {
     unsafe { libc::kill(pid, 0) == 0 }
 }
 
-pub(crate) fn acquire_pidfile() -> anyhow::Result<Option<PathBuf>> {
+pub(crate) fn acquire_pidfile() -> idle_err::Result<Option<PathBuf>> {
     use std::io::Write;
     use std::os::unix::fs::OpenOptionsExt;
 
@@ -100,10 +100,10 @@ pub(crate) fn acquire_pidfile() -> anyhow::Result<Option<PathBuf>> {
                 // We must refuse symlinks here — they may redirect writes
                 // elsewhere — and only operate on a regular file.
                 let md = fs::symlink_metadata(&path).map_err(|e| {
-                    anyhow::Error::new(e).context(format!("stat pidfile {}", path.display()))
+                    idle_err::Error::new(e).context(format!("stat pidfile {}", path.display()))
                 })?;
                 if md.file_type().is_symlink() {
-                    anyhow::bail!("refusing to follow symlinked pidfile at {}", path.display());
+                    idle_err::bail!("refusing to follow symlinked pidfile at {}", path.display());
                 }
                 let pid = fs::read_to_string(&path)
                     .ok()
@@ -128,12 +128,12 @@ pub(crate) fn acquire_pidfile() -> anyhow::Result<Option<PathBuf>> {
                                 }
                             }
                             if is_active {
-                                tracing::warn!(
+                                idle_log::warn!(
                                     "idle-daemon is already running (pid {pid}). Exiting."
                                 );
                                 return Ok(None);
                             }
-                            tracing::warn!(
+                            idle_log::warn!(
                                 "Overwriting stale PID file (pid {pid} is not idle-daemon)."
                             );
                         }
@@ -142,7 +142,7 @@ pub(crate) fn acquire_pidfile() -> anyhow::Result<Option<PathBuf>> {
                 let _ = fs::remove_file(&path);
                 std::thread::sleep(std::time::Duration::from_millis(50));
                 if attempt == 7 {
-                    anyhow::bail!(
+                    idle_err::bail!(
                         "could not acquire pid file at {} after {} attempts",
                         path.display(),
                         attempt + 1
@@ -150,14 +150,14 @@ pub(crate) fn acquire_pidfile() -> anyhow::Result<Option<PathBuf>> {
                 }
             }
             Err(e) => {
-                return Err(anyhow::Error::new(e)
+                return Err(idle_err::Error::new(e)
                     .context(format!("creating pid file at {}", path.display())));
             }
         }
     }
     // Unreachable: the for-loop runs at most 8 iterations and either
     // returns Ok(Some(path)) inside the loop or returns Err.
-    Err(anyhow::anyhow!(
+    Err(idle_err::anyhow!(
         "pidfile acquire loop exited without success or error (unreachable)"
     ))
 }
@@ -166,7 +166,7 @@ pub(crate) fn release_pidfile(path: &Path) {
     let _ = fs::remove_file(path);
 }
 
-use anyhow::Context;
+use idle_err::Context;
 
 #[cfg(test)]
 #[path = "pidfile_tests.rs"]

@@ -7,7 +7,6 @@ use crate::FilterMode;
 
 use super::sample::{sample_src, write_pixel};
 
-#[tracing::instrument(skip_all, fields(src_w, src_h, dst_w, dst_h, ?filter))]
 #[allow(clippy::too_many_arguments)]
 pub fn upscale_letterbox_into(
     dst: &mut [u8],

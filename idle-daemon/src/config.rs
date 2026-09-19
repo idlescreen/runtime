@@ -129,7 +129,7 @@ impl DaemonConfig {
                     let _ = fs::create_dir_all(parent);
                 }
                 if fs::copy(&src, &dst_path).is_ok() {
-                    tracing::info!(
+                    idle_log::info!(
                         target: "idle_daemon::config",
                         "migrated config {} → {}",
                         src.display(),

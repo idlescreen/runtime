@@ -25,28 +25,49 @@ use std::path::{Path, PathBuf};
 pub const SCHEMA_VERSION: u32 = 1;
 
 /// Why a manifest was rejected. Every variant is fail-closed at the loader.
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug)]
 pub enum ManifestError {
-    #[error("no manifest at {0} (plugin refused; set IDLE_ALLOW_UNSIGNED_PLUGINS=1 to override)")]
     Missing(PathBuf),
-    #[error("malformed manifest {path}: {source}")]
-    Parse {
-        path: PathBuf,
-        source: Box<toml::de::Error>,
-    },
-    #[error("manifest {path} declares schema_version {found}, host supports {SCHEMA_VERSION}")]
+    Parse { path: PathBuf, source: String },
     UnsupportedSchemaVersion { path: PathBuf, found: u32 },
-    #[error("manifest {0} has invalid plugin_id '{1}' (expected reverse-DNS, e.g. io.github.x.y)")]
     InvalidPluginId(PathBuf, String),
-    #[error("manifest {1} invalid: {0}")]
     Invalid(String, PathBuf),
-    #[error(
-        "manifest signature required but missing: {0} (set IDLE_REQUIRE_MANIFEST_SIGNATURE=1 to enforce)"
-    )]
     SignatureMissing(String),
-    #[error("manifest signature invalid: {0}")]
     SignatureInvalid(String),
 }
+
+impl std::fmt::Display for ManifestError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Missing(p) => write!(
+                f,
+                "no manifest at {} (plugin refused; set IDLE_ALLOW_UNSIGNED_PLUGINS=1 to override)",
+                p.display()
+            ),
+            Self::Parse { path, source } => {
+                write!(f, "malformed manifest {}: {source}", path.display())
+            }
+            Self::UnsupportedSchemaVersion { path, found } => write!(
+                f,
+                "manifest {} declares schema_version {found}, host supports {SCHEMA_VERSION}",
+                path.display()
+            ),
+            Self::InvalidPluginId(p, id) => write!(
+                f,
+                "manifest {} has invalid plugin_id '{id}' (expected reverse-DNS, e.g. io.github.x.y)",
+                p.display()
+            ),
+            Self::Invalid(m, p) => write!(f, "manifest {} invalid: {m}", p.display()),
+            Self::SignatureMissing(m) => write!(
+                f,
+                "manifest signature required but missing: {m} (set IDLE_REQUIRE_MANIFEST_SIGNATURE=1 to enforce)"
+            ),
+            Self::SignatureInvalid(m) => write!(f, "manifest signature invalid: {m}"),
+        }
+    }
+}
+
+impl std::error::Error for ManifestError {}
 
 /// Path of the manifest that belongs to `plugin_path`.
 pub fn sibling_path(plugin_path: &Path) -> PathBuf {
@@ -68,9 +89,13 @@ pub fn load_for(plugin_path: &Path) -> Result<Manifest, ManifestError> {
 
 /// Parse manifest text. `path` is used only for error reporting.
 pub fn parse_str(text: &str, path: &Path) -> Result<Manifest, ManifestError> {
-    toml::from_str(text).map_err(|source| ManifestError::Parse {
+    let doc = crate::toml::parse(text).map_err(|e| ManifestError::Parse {
         path: path.to_path_buf(),
-        source: Box::new(source),
+        source: e.to_string(),
+    })?;
+    Manifest::from_value(&doc).map_err(|e| ManifestError::Parse {
+        path: path.to_path_buf(),
+        source: e,
     })
 }
 

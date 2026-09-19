@@ -12,4 +12,3 @@ libc = { workspace = true }
 idle-api = { path = "../../idle-api" }
 
 [dev-dependencies]
-proptest = "1"

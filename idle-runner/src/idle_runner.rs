@@ -3,7 +3,6 @@
 
 use crate::core::screensaver::Screensaver;
 use std::sync::atomic::{AtomicBool, Ordering};
-use tracing_subscriber::EnvFilter;
 
 #[path = "args.rs"]
 mod args;
@@ -25,16 +24,10 @@ extern "C" fn handle_signal(_sig: libc::c_int) {
 }
 
 fn init_tracing() {
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter(
-            EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")),
-        )
-        .with_target(false)
-        .try_init();
+    idle_log::init("info");
 }
 
 /// Run the screensaver with the given effect.
-#[tracing::instrument(skip_all, fields(name = %name))]
 pub fn run_main<S: Screensaver + 'static>(mut saver: S, name: &str) {
     init_tracing();
     let mode = parse_args();
@@ -47,7 +40,7 @@ pub fn run_main<S: Screensaver + 'static>(mut saver: S, name: &str) {
             std::process::exit(code as i32);
         }
         Mode::Configure => {
-            tracing::warn!("({name}) configuration dialog: not yet implemented.");
+            idle_log::warn!("({name}) configuration dialog: not yet implemented.");
             std::process::exit(0);
         }
         Mode::Preview => {
@@ -74,7 +67,7 @@ pub fn run_main<S: Screensaver + 'static>(mut saver: S, name: &str) {
 
 #[cfg(target_os = "windows")]
 fn run_preview_stub(_saver: &mut dyn Screensaver) -> isize {
-    tracing::warn!("Windows preview mode is not supported in console mode.");
+    idle_log::warn!("Windows preview mode is not supported in console mode.");
     0
 }
 
@@ -103,7 +96,6 @@ fn run_preview_stub(_saver: &mut dyn Screensaver) -> isize {
 /// `idle_api::plugin_manifest::host::ALLOW_UNSIGNED_ENV`). Every gate is
 /// fail-closed: any error from the loader propagates here and the plugin is
 /// not run.
-#[tracing::instrument(skip_all, fields(plugin_path = %plugin_path))]
 pub fn run_plugin_fullscreen(plugin_path: &str) -> Result<isize, Box<dyn std::error::Error>> {
     // Manifest gate entry point: see the doc comment above. Routing through
     // `PluginSession` here closes the wave-3 reviewer hole where `run-plugin`
@@ -130,7 +122,6 @@ pub fn run_plugin_fullscreen(plugin_path: &str) -> Result<isize, Box<dyn std::er
 // Common Fullscreen Animation Loop
 // ---------------------------------------------------------------------------
 
-#[tracing::instrument(skip_all)]
 fn run_fullscreen(saver: &mut dyn Screensaver) -> Result<(), Box<dyn std::error::Error>> {
     let terminal = idle_runner_fullscreen::setup_terminal()?;
     let result = idle_runner_fullscreen::drive_plugin_loop(saver);

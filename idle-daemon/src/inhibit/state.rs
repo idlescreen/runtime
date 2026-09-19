@@ -188,7 +188,7 @@ impl InhibitorState {
             if let Some(live) = session_unique_names() {
                 let n = self.prune_not_in_live_set(&live);
                 if n > 0 {
-                    tracing::info!("pruned {n} inhibitor(s) from departed D-Bus clients");
+                    idle_log::info!("pruned {n} inhibitor(s) from departed D-Bus clients");
                 }
             }
         }

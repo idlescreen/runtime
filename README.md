@@ -15,6 +15,8 @@ for Linux.
 | `crates/idle-dbus` | D-Bus client helpers + systemd service lifecycle |
 | `crates/idle-ipc` | Daemon↔runner wire protocol |
 | `crates/idle-upscaler` | CPU frame upscaler |
+| `crates/idle-err` | Shared error plumbing (`Result`, `Context`, `bail!`/`ensure!`, `{:#}` chaining) |
+| `crates/idle-log` | Shared logging (`RUST_LOG` filter, `error!`..`trace!`, journald mirroring) |
 
 ## Install
 

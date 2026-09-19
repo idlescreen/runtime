@@ -21,13 +21,12 @@ pub fn spawn_event_thread(
 ) {
     thread::spawn(move || {
         if let Err(error) = run_event_loop(is_idle, shutdown, timeout_rx, initial_timeout_mins) {
-            tracing::warn!("wayland-idle: {error}");
+            idle_log::warn!("wayland-idle: {error}");
         }
         is_alive.store(false, Ordering::SeqCst);
     });
 }
 
-#[tracing::instrument(skip_all)]
 fn run_event_loop(
     is_idle: Arc<AtomicBool>,
     shutdown: Arc<AtomicBool>,

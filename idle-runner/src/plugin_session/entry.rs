@@ -7,8 +7,8 @@ use std::path::Path;
 
 use idle_api::ScreensaverInstance;
 
+use crate::dylib::Library;
 use idle_api::plugin_manifest::Manifest;
-use libloading::Library;
 
 use crate::launcher::PluginError;
 
@@ -69,14 +69,14 @@ pub(crate) unsafe fn resolve_entry(
         let instance = Box::into_raw(Box::new(ScreensaverInstance {
             inner: Box::new(saver),
         }));
-        tracing::info!("plugin uses C-ABI ops table (idle_saver_ops)");
+        idle_log::info!("plugin uses C-ABI ops table (idle_saver_ops)");
         return Ok((instance, drop_c_abi_instance));
     }
 
-    let create_fn: libloading::Symbol<unsafe extern "C" fn() -> *mut ScreensaverInstance> =
+    let create_fn: unsafe extern "C" fn() -> *mut ScreensaverInstance =
         unsafe { lib.get(b"create_screensaver") }
             .map_err(|_| PluginError::SymbolMissing("create_screensaver"))?;
-    let destroy_fn: libloading::Symbol<unsafe extern "C" fn(*mut ScreensaverInstance)> =
+    let destroy_fn: unsafe extern "C" fn(*mut ScreensaverInstance) =
         unsafe { lib.get(b"destroy_screensaver") }
             .map_err(|_| PluginError::SymbolMissing("destroy_screensaver"))?;
 
@@ -84,5 +84,5 @@ pub(crate) unsafe fn resolve_entry(
     if raw_ptr.is_null() {
         return Err(PluginError::SymbolMissing("create_screensaver (null)"));
     }
-    Ok((raw_ptr, *destroy_fn))
+    Ok((raw_ptr, destroy_fn))
 }

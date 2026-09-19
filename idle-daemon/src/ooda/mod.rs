@@ -68,7 +68,7 @@ impl OodaLoopController {
         controller: &Arc<DaemonController>,
         idle_monitor: &mut Box<dyn IdleSource>,
         overlay_presenter: &mut Arc<dyn OverlaySurface>,
-    ) -> anyhow::Result<()> {
+    ) -> idle_err::Result<()> {
         self.tick_counter = self.tick_counter.saturating_add(1);
         self.presentation
             .check_liveness(&mut self.preview_name, &mut self.current_saver);

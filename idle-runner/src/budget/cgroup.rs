@@ -40,7 +40,7 @@ pub(crate) fn try_attach_cgroup(
         * 1024
         * 1024;
     if let Err(e) = std::fs::write(dir.join("memory.max"), mem_bytes.to_string()) {
-        tracing::debug!("memory.max write skipped (controller not delegated?): {e}");
+        idle_log::debug!("memory.max write skipped (controller not delegated?): {e}");
     }
     // Attach the current thread (id matches cgroup.procs; thread-id is valid
     // when cgroup v2 is enabled with `cgroup.threads`).

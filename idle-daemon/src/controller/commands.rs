@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::{Context, anyhow};
+use idle_err::{Context, anyhow};
 use idle_runner::launcher::{LaunchMode, resolve_saver_binary, sanitize_saver_name};
 
 use super::{DaemonCommand, DaemonController};
 use crate::config::DaemonConfig;
 
 impl DaemonController {
-    pub fn mutate_config<F>(&self, f: F) -> anyhow::Result<()>
+    pub fn mutate_config<F>(&self, f: F) -> idle_err::Result<()>
     where
         F: FnOnce(&mut DaemonConfig),
     {
@@ -25,7 +25,7 @@ impl DaemonController {
     }
 
     /// Apply on-disk config without writing back (file-watcher path).
-    pub fn reload_config_from_disk(&self) -> anyhow::Result<()> {
+    pub fn reload_config_from_disk(&self) -> idle_err::Result<()> {
         let mut config = self
             .config
             .lock()
@@ -40,8 +40,7 @@ impl DaemonController {
         Ok(())
     }
 
-    #[tracing::instrument(skip_all, fields(command = ?command))]
-    pub fn apply_command(&self, command: DaemonCommand) -> anyhow::Result<()> {
+    pub fn apply_command(&self, command: DaemonCommand) -> idle_err::Result<()> {
         match command {
             DaemonCommand::Enable => self
                 .mutate_config(|c| c.idle_enabled = true)
@@ -88,14 +87,14 @@ impl DaemonController {
     }
 }
 
-fn validate_idle_timeout(minutes: u32) -> anyhow::Result<()> {
+fn validate_idle_timeout(minutes: u32) -> idle_err::Result<()> {
     if minutes == 0 || minutes > 240 {
-        anyhow::bail!("timeout must be between 1 and 240 minutes");
+        idle_err::bail!("timeout must be between 1 and 240 minutes");
     }
     Ok(())
 }
 
-fn validate_saver_choice(saver: Option<&str>) -> anyhow::Result<()> {
+fn validate_saver_choice(saver: Option<&str>) -> idle_err::Result<()> {
     if let Some(name) = saver {
         if name.is_empty()
             || name.eq_ignore_ascii_case("random")
@@ -112,14 +111,14 @@ fn validate_saver_choice(saver: Option<&str>) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn validate_render_scale(scale: f32) -> anyhow::Result<()> {
+fn validate_render_scale(scale: f32) -> idle_err::Result<()> {
     if !scale.is_finite() || !(0.25..=1.0).contains(&scale) {
-        anyhow::bail!("render_scale must be between 0.25 and 1.0");
+        idle_err::bail!("render_scale must be between 0.25 and 1.0");
     }
     Ok(())
 }
 
-fn normalize_render_scale(scale: Option<f32>) -> anyhow::Result<Option<f32>> {
+fn normalize_render_scale(scale: Option<f32>) -> idle_err::Result<Option<f32>> {
     let stored = match scale {
         None => None,
         Some(value) if value <= 0.0 => None,

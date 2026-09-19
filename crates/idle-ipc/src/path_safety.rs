@@ -141,30 +141,42 @@ mod tests {
 #[cfg(test)]
 mod proptests {
     use super::is_valid_shm_name;
-    use proptest::prelude::*;
 
-    proptest! {
-        #![proptest_config(ProptestConfig::with_cases(64))]
-
-        #[test]
-        fn idle_shm_pid_idx_always_valid(
-            pid in 1u32..=u32::MAX,
-            idx in 0u32..1000u32,
-        ) {
+    #[test]
+    fn idle_shm_pid_idx_always_valid() {
+        // Deterministic spread over the pid/idx domain (was proptest).
+        let mut x = 0x5AFE_0001u64;
+        for _ in 0..64 {
+            x ^= x >> 12;
+            x ^= x << 25;
+            x ^= x >> 27;
+            let pid = 1 + (x.wrapping_mul(0x2545_F491_4F6C_DD1D) % u32::MAX as u64) as u32;
+            x ^= x >> 12;
+            x ^= x << 25;
+            x ^= x >> 27;
+            let idx = (x.wrapping_mul(0x2545_F491_4F6C_DD1D) % 1000) as u32;
             let name = format!("/idle-shm-{pid}-{idx}");
-            prop_assert!(
+            assert!(
                 is_valid_shm_name(&name),
                 "daemon format must be valid: {name}"
             );
         }
+    }
 
-        #[test]
-        fn trance_legacy_pid_idx_always_valid(
-            pid in 1u32..=u32::MAX,
-            idx in 0u32..1000u32,
-        ) {
+    #[test]
+    fn trance_legacy_pid_idx_always_valid() {
+        let mut x = 0x5AFE_0002u64;
+        for _ in 0..64 {
+            x ^= x >> 12;
+            x ^= x << 25;
+            x ^= x >> 27;
+            let pid = 1 + (x.wrapping_mul(0x2545_F491_4F6C_DD1D) % u32::MAX as u64) as u32;
+            x ^= x >> 12;
+            x ^= x << 25;
+            x ^= x >> 27;
+            let idx = (x.wrapping_mul(0x2545_F491_4F6C_DD1D) % 1000) as u32;
             let name = format!("/trance-shm-{pid}-{idx}");
-            prop_assert!(is_valid_shm_name(&name));
+            assert!(is_valid_shm_name(&name));
         }
     }
 }

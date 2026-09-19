@@ -41,7 +41,7 @@ impl OodaActor {
                     stop_presentation(Some(overlay_presenter), presentation);
                     current_saver.clear();
                     if !system_idle && preview_name.is_none() {
-                        tracing::info!("system activity detected. presentation stopped.");
+                        idle_log::info!("system activity detected. presentation stopped.");
                     }
                 }
                 if clear_preview {
@@ -63,7 +63,7 @@ impl OodaActor {
                         config,
                     );
                     if !started && reason != "idle" {
-                        tracing::warn!("forced presentation launch failed; clearing queued state");
+                        idle_log::warn!("forced presentation launch failed; clearing queued state");
                         *preview_name = None;
                     }
                 }

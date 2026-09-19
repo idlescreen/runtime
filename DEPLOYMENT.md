@@ -5,6 +5,10 @@ rollout safety. Operators who want a fully enforced posture must opt
 in. This checklist enumerates every off-by-default knob and the env var
 that flips it.
 
+> **Presence, not value.** Every gate below checks `var_os().is_some()`
+> — setting `IDLE_REQUIRE_MANIFEST_SIGNATURE=0` still *enables* the gate.
+> To turn a knob off, unset the variable entirely.
+
 ## Mandatory for production deployments
 
 These capabilities exist but are **not enforced** unless the listed env
@@ -81,12 +85,12 @@ After deployment, confirm posture via the install-audit log:
 cat /var/log/idlescreen/install-audit.jsonl | tail -1 | jq .
 ```
 
-Each entry records the install-time defaults; if `id_required_signature`
+Each entry records the install-time defaults; if `signature.enforce`
 is `false`, your deployment is still permissive.
 
 ## See also
 
-- `RULES.md` §1.4 default-deny
-- `install_audit.sh` — records the audit log shape
-- `docs/SIGNING.md` — manifest signing SOP
-- `TRUST.md` — installer trust model
+- `RULES.md` §1.4 default-deny (in this repo)
+- `install_audit.sh` — records the audit log shape (packages repo)
+- `docs/SIGNING.md` — manifest signing SOP (packages repo)
+- `TRUST.md` — installer trust model (packages repo)

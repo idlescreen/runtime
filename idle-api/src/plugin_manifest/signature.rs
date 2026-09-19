@@ -62,7 +62,7 @@ pub fn verify_signature(manifest_path: &Path) -> Result<(), ManifestError> {
     // operating under the permissive default; log a warning so operators
     // notice they're shipping signed manifests without enforcement.
     if !signature_required() {
-        tracing::warn!(
+        idle_log::warn!(
             manifest = %manifest_path.display(),
             signature = %sig.display(),
             "manifest signature present but verification disabled (set IDLE_REQUIRE_MANIFEST_SIGNATURE=1)"

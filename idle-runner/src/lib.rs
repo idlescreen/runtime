@@ -29,6 +29,8 @@ pub mod caption_overlay;
 pub mod cell_renderer;
 pub mod core;
 pub mod discovery;
+pub mod dylib;
+pub mod filewatch;
 pub mod fps_overlay;
 pub mod gpu_budget;
 pub mod idle_runner;
@@ -48,6 +50,44 @@ pub mod watchdog;
 /// every env-touching test must take this one shared lock.
 #[cfg(test)]
 pub(crate) static ENV_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+#[cfg(test)]
+pub(crate) mod test_util {
+    /// `tempfile::tempdir` replacement: unique dir under the system temp
+    /// root, removed on drop.
+    pub(crate) struct TmpDir(std::path::PathBuf);
+
+    impl TmpDir {
+        pub(crate) fn path(&self) -> &std::path::Path {
+            &self.0
+        }
+    }
+
+    impl Drop for TmpDir {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+
+    pub(crate) fn tempdir() -> std::io::Result<TmpDir> {
+        use std::sync::atomic::{AtomicU64, Ordering};
+        static SEQ: AtomicU64 = AtomicU64::new(0);
+        let base = std::env::temp_dir();
+        for _ in 0..100 {
+            let n = SEQ.fetch_add(1, Ordering::Relaxed);
+            let dir = base.join(format!("idle-runner-test-{}-{n}", std::process::id()));
+            match std::fs::create_dir(&dir) {
+                Ok(()) => return Ok(TmpDir(dir)),
+                Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => continue,
+                Err(e) => return Err(e),
+            }
+        }
+        Err(std::io::Error::new(
+            std::io::ErrorKind::AlreadyExists,
+            "could not allocate unique temp dir",
+        ))
+    }
+}
 
 #[cfg(test)]
 #[path = "abi_version_tests.rs"]

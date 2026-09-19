@@ -12,26 +12,24 @@ use crate::budget::{self, AttachOutcome};
 use crate::cell_renderer::CellRenderer;
 use crate::launcher::{LaunchMode, PluginError, resolve_saver_binary};
 
+use crate::dylib::Library;
 use idle_upscaler::{FilterMode, FrameUpscaler, resolve_render_scale};
-use libloading::Library;
 use std::path::Path;
 use std::time::Duration;
 
 /// Assert the manifest's entry block describes the library we resolved.
 impl PluginSession {
-    #[tracing::instrument(skip_all, fields(saver_name = %saver_name))]
     pub fn load(saver_name: &str) -> Result<Self, PluginError> {
         Self::load_with_options(saver_name, &LaunchMode::Daemon, None)
     }
 
-    #[tracing::instrument(skip_all, fields(saver_name = %saver_name))]
     pub fn load_with_options(
         saver_name: &str,
         launch_mode: &LaunchMode,
         render_scale: Option<f32>,
     ) -> Result<Self, PluginError> {
         let path = resolve_saver_binary(saver_name, launch_mode)?;
-        tracing::info!(
+        idle_log::info!(
             "idle-runner: loading plugin '{}' from {}",
             saver_name,
             path.display()
@@ -39,7 +37,6 @@ impl PluginSession {
         Self::load_path_with_options(&path, render_scale)
     }
 
-    #[tracing::instrument(skip_all, fields(path = %path.display()))]
     pub fn load_path_with_options(
         path: &Path,
         render_scale: Option<f32>,
@@ -49,7 +46,7 @@ impl PluginSession {
         })?;
         let render_scale = resolve_render_scale(render_scale);
         let upscaler = FrameUpscaler::new(FilterMode::from_env());
-        tracing::info!("CPU upscale (render scale {:.0}%)", render_scale * 100.0);
+        idle_log::info!("CPU upscale (render scale {:.0}%)", render_scale * 100.0);
 
         if std::env::var_os("IDLESCREEN_RENDER_SEED").is_some()
             || std::env::var_os("RENDER_SEED").is_some()
@@ -78,7 +75,7 @@ impl PluginSession {
         // CPU budget (Sprint 03 B)
         let cpu_budget = match budget::attach_for_path(path)? {
             AttachOutcome::Enforced(b) => {
-                tracing::info!(
+                idle_log::info!(
                     quota_us = b.quota_us(),
                     period_us = b.period_us(),
                     "CPU budget enforced via cgroup v2"
@@ -93,7 +90,7 @@ impl PluginSession {
                         "IDLE_REQUIRE_CPU_BUDGET=1 but cgroup v2 is not writable",
                     )));
                 }
-                tracing::warn!(
+                idle_log::warn!(
                     "CPU budget UNENFORCED — cgroup v2 unavailable; \
                      in-process measurement only. Set IDLE_REQUIRE_CPU_BUDGET=1 \
                      to refuse this state."
@@ -109,7 +106,7 @@ impl PluginSession {
         let gpu_budget = if crate::gpu_budget::gpu_budget_enabled() {
             match crate::gpu_budget::GpuBudget::detect() {
                 crate::gpu_budget::GpuStatus::Active(backend) => {
-                    tracing::info!(
+                    idle_log::info!(
                         backend = backend.as_str(),
                         quota_pct = crate::gpu_budget::DEFAULT_GPU_QUOTA_PCT,
                         "GPU budget active"
@@ -117,7 +114,7 @@ impl PluginSession {
                     Some(crate::gpu_budget::GpuBudget::new_active(backend))
                 }
                 crate::gpu_budget::GpuStatus::Unavailable => {
-                    tracing::warn!(
+                    idle_log::warn!(
                         "IDLE_GPU_BUDGET=1 but no vendor tool found (nvidia-smi / \
                          intel_gpu_top / amdgpu_top); budget unenforced"
                     );
@@ -155,7 +152,7 @@ impl PluginSession {
             if found != expected {
                 return Err(PluginError::ApiVersionMismatch { found, expected });
             }
-            tracing::info!(found, expected, "plugin API version ok");
+            idle_log::info!(found, expected, "plugin API version ok");
 
             let (raw_ptr, destroy) = resolve_entry(&lib)?;
 

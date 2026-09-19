@@ -43,7 +43,7 @@ pub fn span_simulation_grid(
     let scale = (MAX_SPAN_CELLS as f32 / cells as f32).sqrt();
     let capped_cols = ((cols as f32 * scale).floor() as usize).max(1);
     let capped_rows = ((rows as f32 * scale).floor() as usize).max(1);
-    tracing::warn!(
+    idle_log::warn!(
         "span grid capped from {cols}x{rows} ({cells} cells) to {capped_cols}x{capped_rows}",
         capped_cols = capped_cols,
         capped_rows = capped_rows,

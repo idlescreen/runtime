@@ -3,12 +3,10 @@
 //! Hot-reload `~/.config/idle/config.yaml` (or legacy `trance`) without Tokio.
 //!
 //! The daemon main path is not Tokio-driven; only the D-Bus thread owns a
-//! runtime. Keep the notify watcher on a plain OS thread so startup cannot
+//! runtime. The inotify watcher runs on its own OS thread so startup cannot
 //! panic with "there is no reactor running".
 
-use notify::{Event, EventKind, RecursiveMode, Watcher};
 use std::sync::Arc;
-use std::thread;
 use std::time::Duration;
 
 use crate::config::DaemonConfig;
@@ -27,9 +25,9 @@ pub fn start_config_watcher(controller: Arc<DaemonController>) {
     }
 
     let controller_clone = controller.clone();
-    let target_path = path.clone();
+    let target_name = path.file_name().map(|n| n.to_os_string());
 
-    // Debounce: atomic write is tmp→rename; notify may fire Create+Modify+Rename.
+    // Debounce: atomic write is tmp→rename; inotify may fire several events.
     let last_reload = std::sync::Arc::new(std::sync::Mutex::new(
         std::time::Instant::now()
             .checked_sub(Duration::from_secs(10))
@@ -37,17 +35,17 @@ pub fn start_config_watcher(controller: Arc<DaemonController>) {
     ));
     let last_reload_cb = last_reload.clone();
 
-    let mut watcher = match notify::recommended_watcher(move |res: Result<Event, _>| {
-        if let Ok(event) = res
-            && matches!(
-                event.kind,
-                EventKind::Modify(_) | EventKind::Create(_) | EventKind::Any
-            )
-            && event
-                .paths
-                .iter()
-                .any(|p| p == &target_path || p.file_name() == target_path.file_name())
-        {
+    let watcher = match idle_runner::filewatch::DirWatcher::watch(
+        parent_dir,
+        move |name: Option<&std::ffi::OsStr>| {
+            let hits = match (name, &target_name) {
+                (Some(n), Some(t)) => n == t,
+                (None, _) => true, // self-event/overflow — reload is the safe reaction
+                _ => false,
+            };
+            if !hits {
+                return;
+            }
             // Ignore rename/write storms within 400ms.
             if let Ok(mut last) = last_reload_cb.lock() {
                 if last.elapsed() < Duration::from_millis(400) {
@@ -55,36 +53,24 @@ pub fn start_config_watcher(controller: Arc<DaemonController>) {
                 }
                 *last = std::time::Instant::now();
             }
-            tracing::info!("Config file modified on disk; hot-reloading settings...");
+            idle_log::info!("Config file modified on disk; hot-reloading settings...");
             // Disk is source of truth: apply under lock and **never** save back
             // (avoids lost-update races with D-Bus mutate_config + self-echo loops).
             if let Err(e) = controller_clone.reload_config_from_disk() {
-                tracing::warn!("config hot-reload failed: {e:#}");
+                idle_log::warn!("config hot-reload failed: {e:#}");
             }
-        }
-    }) {
+        },
+    ) {
         Ok(w) => w,
         Err(e) => {
-            tracing::warn!("Failed to initialize config file watcher: {e}");
+            idle_log::warn!("Failed to initialize config file watcher: {e}");
             return;
         }
     };
 
-    if let Err(e) = watcher.watch(parent_dir, RecursiveMode::NonRecursive) {
-        tracing::warn!("Failed to watch config directory {:?}: {e}", parent_dir);
-        return;
-    }
-
-    // Retain the watcher for process lifetime without requiring a Tokio runtime.
-    thread::Builder::new()
-        .name("idle-config-watch".into())
-        .spawn(move || {
-            let _watcher = watcher;
-            loop {
-                thread::sleep(Duration::from_hours(1));
-            }
-        })
-        .ok();
+    // The watcher thread dies when the struct is dropped; keep it alive for
+    // the process lifetime, same contract the notify watcher had.
+    std::mem::forget(watcher);
 }
 
 #[cfg(test)]

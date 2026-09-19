@@ -9,7 +9,7 @@
 
 use std::sync::Arc;
 
-use futures_lite::StreamExt;
+use crate::futures_util::next;
 use zbus::fdo::DBusProxy;
 use zbus::names::BusName;
 
@@ -25,7 +25,7 @@ pub async fn watch_inhibitor_clients(
     let dbus = match DBusProxy::new(&connection).await {
         Ok(proxy) => proxy,
         Err(error) => {
-            tracing::error!("failed to watch inhibitor clients: {error}");
+            idle_log::error!("failed to watch inhibitor clients: {error}");
             return;
         }
     };
@@ -33,12 +33,12 @@ pub async fn watch_inhibitor_clients(
     let mut stream = match dbus.receive_name_owner_changed().await {
         Ok(stream) => stream,
         Err(error) => {
-            tracing::error!("failed to subscribe to NameOwnerChanged: {error}");
+            idle_log::error!("failed to subscribe to NameOwnerChanged: {error}");
             return;
         }
     };
 
-    while let Some(event) = stream.next().await {
+    while let Some(event) = next(&mut stream).await {
         let args = match event.args() {
             Ok(args) => args,
             Err(_) => continue,
@@ -55,7 +55,7 @@ pub async fn watch_inhibitor_clients(
         inhibitors.remove_client(name);
         let after = inhibitors.len();
         if before != after {
-            tracing::info!(
+            idle_log::info!(
                 "cleared {} inhibitor(s) for departed peer {}",
                 before - after,
                 name
@@ -101,7 +101,7 @@ pub async fn watch_external_dbus_inhibits(
                 });
             }
             Err(err) => {
-                tracing::debug!("No {iface} match (ok if unused on this DE): {err}");
+                idle_log::debug!("No {iface} match (ok if unused on this DE): {err}");
             }
         }
     }
@@ -120,7 +120,7 @@ async fn process_message_stream(
     inhibitors: Arc<InhibitorState>,
     controller: Arc<DaemonController>,
 ) {
-    while let Some(Ok(msg)) = stream.next().await {
+    while let Some(Ok(msg)) = next(&mut stream).await {
         let header = msg.header();
         let member = match header.member() {
             Some(m) => m.as_str(),
@@ -138,7 +138,7 @@ async fn process_message_stream(
                     // Coalesced add: same client/app/reason reuses one hold.
                     match inhibitors.add(app.clone(), reason.clone(), sender.clone()) {
                         Ok(cookie) => {
-                            tracing::info!(
+                            idle_log::info!(
                                 "GNOME ScreenSaver Inhibit from {} ({}: {}) cookie={}",
                                 sender,
                                 app,
@@ -148,7 +148,7 @@ async fn process_message_stream(
                             controller.mark_dirty();
                         }
                         Err(e) => {
-                            tracing::warn!("GNOME ScreenSaver Inhibit rejected: {e}");
+                            idle_log::warn!("GNOME ScreenSaver Inhibit rejected: {e}");
                         }
                     }
                 }
@@ -157,7 +157,7 @@ async fn process_message_stream(
                 if let Ok(cookie) = msg.body().deserialize::<u32>()
                     && inhibitors.remove_for_client(cookie, &sender)
                 {
-                    tracing::info!(
+                    idle_log::info!(
                         "GNOME ScreenSaver UnInhibit from {} cookie={}",
                         sender,
                         cookie

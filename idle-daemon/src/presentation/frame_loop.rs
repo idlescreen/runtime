@@ -72,11 +72,11 @@ pub fn run_frame_loop(
         s.session.set_hardware_scaling(use_hw_scaling);
     }
     if use_hw_scaling {
-        tracing::info!(
+        idle_log::info!(
             "wayland-present: hardware scaling enabled via wp_viewporter (IDLE_HW_VIEWPORT)"
         );
     } else if presenter.supports_scaling() {
-        tracing::debug!(
+        idle_log::debug!(
             "wayland-present: wp_viewporter available but disabled (set IDLE_HW_VIEWPORT=1 to enable)"
         );
     }
@@ -138,7 +138,7 @@ fn update_fps_counter(state: &mut FrameLoopState, frame_index: u64) {
         if frame_index >= state.present_fps as u64
             || state.fps_report.elapsed() >= Duration::from_secs(5)
         {
-            tracing::info!(
+            idle_log::info!(
                 "achieved {:.1} FPS (target {:.0}, tick {:.0})",
                 state.achieved_fps,
                 state.present_fps,

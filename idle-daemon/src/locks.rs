@@ -17,7 +17,7 @@
 /// before `abort` runs destructors). We use `abort()` rather than `exit()` to
 /// avoid invoking destructors on other threads while state may be torn.
 pub fn poison_or_exit<T>(name: &str, p: std::sync::PoisonError<T>) -> ! {
-    tracing::error!(
+    idle_log::error!(
         lock = name,
         error = %p,
         "mutex poisoned (holder panicked); daemon state may be torn, aborting for clean restart",

@@ -55,7 +55,7 @@ impl FramePacing {
         if sys.power_status.contains("Battery") {
             present_fps = present_fps.min(30.0);
             tick_hz = tick_hz.min(30.0);
-            tracing::info!(
+            idle_log::info!(
                 "Battery power detected: capping physics simulation and rendering frame rate targets to 30 FPS/Hz"
             );
         }
@@ -122,7 +122,7 @@ pub(super) fn log_run_startup(
     pacing: &FramePacing,
     session: &IpcPluginSession,
 ) {
-    tracing::info!(
+    idle_log::info!(
         "running plugin '{}' on {} monitor(s) at {:.0} FPS / {:.0} tick (render scale {:.0}%, GPU: {})",
         saver_name,
         layouts.len(),

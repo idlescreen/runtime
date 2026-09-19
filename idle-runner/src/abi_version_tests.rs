@@ -36,7 +36,7 @@ fn f102_missing_version_symbol_refuses() {
     // error path triggers, it's NOT silently OK. The version-mismatch
     // path is covered by the version-symbol regression below; here we
     // only pin the fail-closed behavior on the no-symbol case.
-    let dir = tempfile::tempdir().expect("tempdir");
+    let dir = crate::test_util::tempdir().expect("tempdir");
     let so = dir.path().join("libscreensaver_x.idleplugin.toml.so");
     std::fs::write(&so, b"not-an-elf").expect("write fake so");
     let result = run_plugin_fullscreen(so.to_string_lossy().as_ref());

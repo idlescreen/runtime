@@ -13,22 +13,8 @@ workspace = true
 [dependencies]
 libc = { workspace = true }
 idle-api = { workspace = true }
-libloading = "0.9"
-crossterm = "0.29"
-notify = "8.2.0"
-sysinfo = "0.39"
 fontdue = "0.9"
 idle-upscaler = { workspace = true }
-thiserror = { workspace = true }
-tracing = { workspace = true }
-tracing-subscriber = { workspace = true }
-landlock = { workspace = true }
+idle-log = { workspace = true }
 wgpu = "28.0.0"
-bytemuck = { version = "1.25.1", features = ["derive"] }
-futures-lite = { workspace = true }
 tokio = { workspace = true }
-
-[dev-dependencies]
-proptest = "1"
-tempfile = "3"
-toml = { workspace = true }

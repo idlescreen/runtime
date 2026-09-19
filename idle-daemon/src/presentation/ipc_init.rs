@@ -97,7 +97,7 @@ pub fn initialize_ipc_session(
             Ok((stream, _)) => match require_child_peer(&stream, &child) {
                 Ok(()) => break stream,
                 Err(e) => {
-                    tracing::warn!("rejecting IPC peer: {e}");
+                    idle_log::warn!("rejecting IPC peer: {e}");
                     if start.elapsed() > timeout {
                         kill_and_reap(&mut child, &socket_path);
                         return Err(e);

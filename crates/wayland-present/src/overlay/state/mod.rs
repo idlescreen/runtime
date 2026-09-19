@@ -23,7 +23,7 @@ impl SessionState {
         self.screensaver_mode = true;
         self.appearance = None;
         self.begin_presentation();
-        tracing::info!("wayland-present: screensaver surfaces ready for frames");
+        idle_log::info!("wayland-present: screensaver surfaces ready for frames");
     }
 
     pub fn hide_pointer(&mut self, serial: u32) {
@@ -55,7 +55,7 @@ impl SessionState {
             self.create_overlay(output_id);
         }
 
-        tracing::info!(
+        idle_log::info!(
             "wayland-present: showing overlay on {} output(s)",
             self.overlays.len()
         );
@@ -75,7 +75,7 @@ impl SessionState {
             overlay.surface.destroy();
         }
 
-        tracing::info!("wayland-present: overlay hidden");
+        idle_log::info!("wayland-present: overlay hidden");
     }
 
     pub fn dismiss_from_input(&mut self) {
@@ -88,7 +88,7 @@ impl SessionState {
         {
             return;
         }
-        tracing::info!("wayland-present: dismissed by user input");
+        idle_log::info!("wayland-present: dismissed by user input");
         self.hide();
     }
 }

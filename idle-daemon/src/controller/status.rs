@@ -5,7 +5,6 @@ use std::sync::atomic::Ordering;
 use super::DaemonController;
 
 impl DaemonController {
-    #[tracing::instrument(skip_all, fields(system_idle, presentation_active, preview_active, current_saver = %current_saver, effective_inhibited))]
     #[allow(clippy::fn_params_excessive_bools)]
     pub fn update_live_state(
         &self,
@@ -43,7 +42,6 @@ impl DaemonController {
         }
     }
 
-    #[tracing::instrument(skip_all, fields(tick_counter))]
     pub fn reload_config_if_due(&self, tick_counter: u32) -> Option<u32> {
         if !tick_counter.is_multiple_of(10) {
             return None;

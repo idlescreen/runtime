@@ -34,14 +34,14 @@ impl IpcPluginSession {
             Ok(None) => true,
             Ok(Some(status)) => {
                 if !self.expected_stop.load(Ordering::Relaxed) {
-                    tracing::error!(?status, "plugin child exited unexpectedly");
+                    idle_log::error!(?status, "plugin child exited unexpectedly");
                     self.trigger_failsafe_once();
                 }
                 false
             }
             Err(e) => {
                 // ECHILD should not occur under the single-reaper rule; treat as dead.
-                tracing::error!(%e, "plugin child status query failed");
+                idle_log::error!(%e, "plugin child status query failed");
                 if !self.expected_stop.load(Ordering::Relaxed) {
                     self.trigger_failsafe_once();
                 }
@@ -55,13 +55,13 @@ impl IpcPluginSession {
         if take_failsafe_arm(&self.failsafe_armed)
             && let Err(e) = crate::failsafe::spawn_failsafe_locker()
         {
-            tracing::error!("failsafe: failed to spawn locker after runner death: {e}");
+            idle_log::error!("failsafe: failed to spawn locker after runner death: {e}");
         }
     }
 
     /// Tear down and re-spawn the OOP plugin process (crash isolation).
     pub fn recover(&mut self, cols: usize, rows: usize) -> Result<(), String> {
-        tracing::warn!(saver = %self.saver_name, "recovering OOP plugin session");
+        idle_log::warn!(saver = %self.saver_name, "recovering OOP plugin session");
         self.expected_stop.store(true, Ordering::Relaxed);
         if let Some(mut child) = self.child.take() {
             let _ = child.kill();

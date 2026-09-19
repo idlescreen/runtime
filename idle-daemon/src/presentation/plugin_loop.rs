@@ -14,7 +14,6 @@ use super::layout::{
 use super::refresh::wait_for_output_layouts;
 use crate::presentation::PresentationOptions;
 
-#[tracing::instrument(skip_all, fields(saver_name = %saver_name))]
 /// Run presentation using **out-of-process** plugin sessions only (crash isolation).
 pub fn run_plugin_loop(
     presenter: &dyn OverlaySurface,
@@ -155,7 +154,7 @@ fn build_sessions(
 
 fn log_output_layouts(layouts: &[OutputLayout]) {
     for layout in layouts {
-        tracing::info!(
+        idle_log::info!(
             "output {} @ ({}, {}) — {}x{} @ {} Hz",
             layout.id,
             layout.x,

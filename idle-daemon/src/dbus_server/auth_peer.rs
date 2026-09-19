@@ -44,7 +44,7 @@ pub(super) fn check_peer_exe(pid: u32) -> PeerExeCheck {
             // `/proc/<pid>/exe` (Yama / ProtectProc). ENOENT: peer already exited.
             // Expected path — fall through to same-UID + /proc/pid/comm. Do not
             // warn; that spams journal on every control call from CLI/TUI.
-            tracing::debug!(
+            idle_log::debug!(
                 "D-Bus auth check: /proc/{pid}/exe unreadable ({e}); will try peer comm"
             );
             return PeerExeCheck::Unreadable;
@@ -53,12 +53,12 @@ pub(super) fn check_peer_exe(pid: u32) -> PeerExeCheck {
     let name = match target.file_name().and_then(|n| n.to_str()) {
         Some(n) => n,
         None => {
-            tracing::warn!("D-Bus auth check: failed to get file name from {target:?}");
+            idle_log::warn!("D-Bus auth check: failed to get file name from {target:?}");
             return PeerExeCheck::Untrusted;
         }
     };
     if !TRUSTED_CONTROL_PEERS.contains(&name) {
-        tracing::warn!(
+        idle_log::warn!(
             "D-Bus auth check: process name {name:?} is not in trusted control peers list"
         );
         return PeerExeCheck::Untrusted;
@@ -72,7 +72,7 @@ pub(super) fn check_peer_exe(pid: u32) -> PeerExeCheck {
         || is_cargo_target_bin_dir(parent)
         || same_dir_as_current_exe(&target);
     if !path_ok {
-        tracing::warn!("D-Bus auth check: path {target:?} parent {parent:?} not trusted");
+        idle_log::warn!("D-Bus auth check: path {target:?} parent {parent:?} not trusted");
         return PeerExeCheck::Untrusted;
     }
 
@@ -83,13 +83,13 @@ pub(super) fn check_peer_exe(pid: u32) -> PeerExeCheck {
         match std::fs::metadata(&target) {
             Ok(meta) => {
                 if meta.mode() & 0o002 != 0 {
-                    tracing::warn!(
+                    idle_log::warn!(
                         "D-Bus auth check: refusing world-writable peer binary {target:?}"
                     );
                     return PeerExeCheck::Untrusted;
                 }
                 if is_system_bin_dir(parent) && meta.uid() != 0 && meta.uid() != 65534 {
-                    tracing::warn!(
+                    idle_log::warn!(
                         "D-Bus auth check: refusing non-root-owned peer binary {target:?} (uid {})",
                         meta.uid()
                     );
@@ -99,7 +99,7 @@ pub(super) fn check_peer_exe(pid: u32) -> PeerExeCheck {
                 if is_cargo_target_bin_dir(parent) {
                     let our = unsafe { libc::geteuid() };
                     if meta.uid() != our {
-                        tracing::warn!(
+                        idle_log::warn!(
                             "D-Bus auth check: refusing cargo-target peer {target:?} owned by uid {} (ours {our})",
                             meta.uid()
                         );
@@ -108,7 +108,7 @@ pub(super) fn check_peer_exe(pid: u32) -> PeerExeCheck {
                 }
             }
             Err(e) => {
-                tracing::warn!("D-Bus auth check: cannot stat peer binary {target:?}: {e:?}");
+                idle_log::warn!("D-Bus auth check: cannot stat peer binary {target:?}: {e:?}");
                 return PeerExeCheck::Untrusted;
             }
         }

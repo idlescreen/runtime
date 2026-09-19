@@ -52,7 +52,7 @@ where
 {
     let value: Value<'static> = value.into();
     OwnedValue::try_from(value).unwrap_or_else(|error| {
-        tracing::error!(
+        idle_log::error!(
             error = %error,
             "idle-dbus: failed to convert daemon status field to OwnedValue"
         );

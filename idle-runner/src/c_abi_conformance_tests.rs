@@ -7,7 +7,7 @@
 
 use super::plugin_session::PluginGuard;
 use super::plugin_session::entry::resolve_entry;
-use libloading::Library;
+use crate::dylib::Library;
 use std::path::PathBuf;
 use std::process::Command;
 
@@ -57,7 +57,7 @@ const IdleSaverOps *idle_saver_ops(void) { return &OPS; }
 
 /// Compile `src` to a shared library; returns the .so path, or None when no
 /// C toolchain is available (test skips rather than fails the suite).
-fn compile_fixture(dir: &tempfile::TempDir, name: &str, src: &str) -> Option<PathBuf> {
+fn compile_fixture(dir: &crate::test_util::TmpDir, name: &str, src: &str) -> Option<PathBuf> {
     let header_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../idle-api/include");
     let src_path = dir.path().join(format!("{name}.c"));
     let so_path = dir.path().join(format!("lib{name}.so"));
@@ -86,7 +86,7 @@ fn compile_fixture(dir: &tempfile::TempDir, name: &str, src: &str) -> Option<Pat
 
 #[test]
 fn c_plugin_loads_and_drives_ops_table() {
-    let dir = tempfile::tempdir().unwrap();
+    let dir = crate::test_util::tempdir().unwrap();
     let Some(so) = compile_fixture(&dir, "fxsaver", FIXTURE) else {
         eprintln!("no C toolchain — skipping");
         return;
@@ -134,7 +134,7 @@ static const IdleSaverOps OPS = {
 uint32_t idle_api_version(void) { return IDLE_API_VERSION; }
 const IdleSaverOps *idle_saver_ops(void) { return &OPS; }
 "#;
-    let dir = tempfile::tempdir().unwrap();
+    let dir = crate::test_util::tempdir().unwrap();
     let Some(so) = compile_fixture(&dir, "fxbad", BAD) else {
         eprintln!("no C toolchain — skipping");
         return;

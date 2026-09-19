@@ -39,22 +39,34 @@ impl AccessRule {
 }
 
 /// Why a sandbox profile could not be expanded.
-#[derive(Debug, thiserror::Error, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum ProfileError {
-    #[error("unknown sandbox profile '{0}'")]
     Unknown(String),
-    #[error(
-        "sandbox profile 'experimental' requires IDLE_ALLOW_EXPERIMENTAL_PROFILES=1 \
-         (refusing to widen the sandbox implicitly)"
-    )]
     ExperimentalNotAllowed,
-    #[error(
-        "sandbox profile '{profile}' is not built on this platform; \
-         see Sprint 05 (macOS shim / Windows shim) for the seatbelt / \
-         appcontainer enforcers"
-    )]
     UnsupportedPlatform { profile: String },
 }
+
+impl std::fmt::Display for ProfileError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Unknown(p) => write!(f, "unknown sandbox profile '{p}'"),
+            Self::ExperimentalNotAllowed => write!(
+                f,
+                "sandbox profile 'experimental' requires \
+                 IDLE_ALLOW_EXPERIMENTAL_PROFILES=1 (refusing to widen the \
+                 sandbox implicitly)"
+            ),
+            Self::UnsupportedPlatform { profile } => write!(
+                f,
+                "sandbox profile '{profile}' is not built on this platform; \
+                 see Sprint 05 (macOS shim / Windows shim) for the seatbelt / \
+                 appcontainer enforcers"
+            ),
+        }
+    }
+}
+
+impl std::error::Error for ProfileError {}
 
 /// Font roots every profile may read; caption rendering needs them.
 pub const FONT_ROOTS: &[&str] = &["/usr/share/fonts", "/usr/share/fontconfig"];

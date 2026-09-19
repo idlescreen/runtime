@@ -49,7 +49,6 @@ impl ActivePresentation {
     }
 }
 
-#[tracing::instrument(skip(overlay_presenter, presentation, current_saver, config), fields(saver_name = %saver_name, reason = %reason))]
 pub fn start_presentation(
     overlay_presenter: &Arc<dyn OverlaySurface>,
     presentation: &mut ActivePresentation,
@@ -58,9 +57,9 @@ pub fn start_presentation(
     reason: &str,
     config: &DaemonConfig,
 ) -> bool {
-    tracing::info!("starting Wayland screensaver '{saver_name}' ({reason})...");
+    idle_log::info!("starting Wayland screensaver '{saver_name}' ({reason})...");
     if !is_allowed_saver(&saver_name) {
-        tracing::error!(
+        idle_log::error!(
             "failed to start screensaver: invalid or disallowed saver name '{saver_name}'"
         );
         return false;
@@ -83,13 +82,12 @@ pub fn start_presentation(
             true
         }
         Err(error) => {
-            tracing::error!("failed to start screensaver: {error}");
+            idle_log::error!("failed to start screensaver: {error}");
             false
         }
     }
 }
 
-#[tracing::instrument(skip(overlay_presenter, presentation))]
 pub fn stop_presentation(
     overlay_presenter: Option<&Arc<dyn OverlaySurface>>,
     presentation: &mut ActivePresentation,

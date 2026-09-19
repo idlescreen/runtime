@@ -12,5 +12,5 @@ workspace = true
 
 [dependencies]
 libc.workspace = true
-tracing.workspace = true
+idle-log.workspace = true
 zbus = { workspace = true, features = ["blocking-api"] }

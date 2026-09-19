@@ -3,7 +3,7 @@ use std::time::Duration;
 use crate::terminal_cell::TerminalCell;
 
 #[repr(C)]
-#[derive(Clone, Copy, Debug, Default, PartialEq, bytemuck::Pod, bytemuck::Zeroable)]
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct GpuSpotlight {
     pub origin_x_ratio: f32,
     pub color_r: f32,

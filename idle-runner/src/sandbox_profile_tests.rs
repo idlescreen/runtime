@@ -71,7 +71,7 @@ fn appcontainer_profile_unsupported_on_linux() {
 
 #[test]
 fn filesystem_read_declarations_allow_file() {
-    let dir = tempfile::tempdir().expect("tempdir");
+    let dir = crate::test_util::tempdir().expect("tempdir");
     let asset = dir.path().join("asset.txt");
     fs::write(&asset, b"x").expect("write asset");
     let m = manifest_with(

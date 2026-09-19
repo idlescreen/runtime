@@ -63,7 +63,7 @@ fn is_trusted_plugin_path_rejects_when_not_in_trusted_dirs() {
 
 #[test]
 fn is_trusted_plugin_path_accepts_file_inside_trusted_dir() {
-    let dir = tempfile::tempdir().expect("tempdir");
+    let dir = crate::test_util::tempdir().expect("tempdir");
     let plugin = dir.path().join("libscreensaver_beams.so");
     std::fs::write(&plugin, b"fake").expect("write plugin");
     #[cfg(unix)]
@@ -79,8 +79,8 @@ fn is_trusted_plugin_path_accepts_file_inside_trusted_dir() {
 
 #[test]
 fn is_trusted_plugin_path_rejects_sibling_outside_trust_root() {
-    let trusted_root = tempfile::tempdir().expect("trusted");
-    let other = tempfile::tempdir().expect("other");
+    let trusted_root = crate::test_util::tempdir().expect("trusted");
+    let other = crate::test_util::tempdir().expect("other");
     let plugin = other.path().join("libscreensaver_beams.so");
     std::fs::write(&plugin, b"fake").expect("write");
     let trusted = vec![trusted_root.path().to_path_buf()];
@@ -91,7 +91,7 @@ fn is_trusted_plugin_path_rejects_sibling_outside_trust_root() {
 #[test]
 fn is_trusted_plugin_path_rejects_world_writable() {
     use std::os::unix::fs::PermissionsExt;
-    let dir = tempfile::tempdir().expect("tempdir");
+    let dir = crate::test_util::tempdir().expect("tempdir");
     let plugin = dir.path().join("libscreensaver_beams.so");
     std::fs::write(&plugin, b"fake").expect("write");
     let mut perms = std::fs::metadata(&plugin).expect("meta").permissions();

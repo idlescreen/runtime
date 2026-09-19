@@ -39,7 +39,7 @@ impl SessionState {
         version: u32,
         queue: &QueueHandle<Self>,
     ) {
-        tracing::debug!(%interface, name, "wl_registry global");
+        idle_log::debug!(%interface, name, "wl_registry global");
 
         match interface {
             "wl_compositor" => {
@@ -86,7 +86,7 @@ impl SessionState {
         self.output_mode_size.remove(&name);
         self.output_refresh_hz.remove(&name);
         self.output_registry.remove(name);
-        tracing::info!(
+        idle_log::info!(
             output_id = name,
             "wayland-present: output removed (hot-unplug)"
         );
@@ -94,7 +94,6 @@ impl SessionState {
 }
 
 impl Dispatch<wl_output::WlOutput, u32> for SessionState {
-    #[tracing::instrument(skip_all, fields(output_id))]
     fn event(
         state: &mut Self,
         _: &wl_output::WlOutput,

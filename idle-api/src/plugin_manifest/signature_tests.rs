@@ -6,7 +6,30 @@
 
 use super::*;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+
+/// tempfile replacement: unique dir under the system temp dir, removed on Drop.
+struct TmpDir(PathBuf);
+impl TmpDir {
+    fn new() -> Self {
+        static SEQ: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+        let path = std::env::temp_dir().join(format!(
+            "idle-sig-{}-{}",
+            std::process::id(),
+            SEQ.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+        ));
+        std::fs::create_dir_all(&path).unwrap();
+        Self(path)
+    }
+    fn path(&self) -> &Path {
+        &self.0
+    }
+}
+impl Drop for TmpDir {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_dir_all(&self.0);
+    }
+}
 
 fn make_manifest(dir: &std::path::Path) -> PathBuf {
     let p = dir.join("libscreensaver_test.idleplugin.toml");
@@ -20,7 +43,7 @@ fn make_manifest(dir: &std::path::Path) -> PathBuf {
 
 #[test]
 fn signature_path_is_companion_with_sig_suffix() {
-    let dir = tempfile::tempdir().unwrap();
+    let dir = TmpDir::new();
     let m = dir.path().join("libscreensaver_beams.idleplugin.toml");
     let s = signature_path(&m);
     assert!(s.ends_with("libscreensaver_beams.idleplugin.toml.sig"));
@@ -30,7 +53,7 @@ fn signature_path_is_companion_with_sig_suffix() {
 fn missing_signature_is_ok_when_not_required() {
     let _g = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     unsafe { std::env::remove_var("IDLE_REQUIRE_MANIFEST_SIGNATURE") };
-    let dir = tempfile::tempdir().unwrap();
+    let dir = TmpDir::new();
     let m = make_manifest(dir.path());
     // No .sig file exists. With the env unset, verification is opt-out — Ok.
     assert!(verify_signature(&m).is_ok());
@@ -40,7 +63,7 @@ fn missing_signature_is_ok_when_not_required() {
 fn missing_signature_refuses_when_required() {
     let _g = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     unsafe { std::env::set_var("IDLE_REQUIRE_MANIFEST_SIGNATURE", "1") };
-    let dir = tempfile::tempdir().unwrap();
+    let dir = TmpDir::new();
     let m = make_manifest(dir.path());
     let err = verify_signature(&m).unwrap_err();
     unsafe { std::env::remove_var("IDLE_REQUIRE_MANIFEST_SIGNATURE") };
@@ -58,7 +81,7 @@ fn default_off_with_forged_signature_passes_permissively() {
     // refactor doesn't accidentally flip the default.
     let _g = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     unsafe { std::env::remove_var("IDLE_REQUIRE_MANIFEST_SIGNATURE") };
-    let dir = tempfile::tempdir().unwrap();
+    let dir = TmpDir::new();
     let m = make_manifest(dir.path());
     let s = signature_path(&m);
     fs::write(
@@ -78,7 +101,7 @@ fn default_off_with_forged_signature_passes_permissively() {
 fn signature_present_without_requirement_warns_but_passes() {
     let _g = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     unsafe { std::env::remove_var("IDLE_REQUIRE_MANIFEST_SIGNATURE") };
-    let dir = tempfile::tempdir().unwrap();
+    let dir = TmpDir::new();
     let m = make_manifest(dir.path());
     let s = signature_path(&m);
     // Create a fake sig file. With no requirement, we just log + pass.
@@ -91,7 +114,7 @@ fn signature_present_without_requirement_warns_but_passes() {
 fn required_signature_with_missing_keyring_refuses() {
     let _g = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     unsafe { std::env::set_var("IDLE_REQUIRE_MANIFEST_SIGNATURE", "1") };
-    let dir = tempfile::tempdir().unwrap();
+    let dir = TmpDir::new();
     let m = make_manifest(dir.path());
     let s = signature_path(&m);
     fs::write(&s, b"FAKE-SIG").unwrap();

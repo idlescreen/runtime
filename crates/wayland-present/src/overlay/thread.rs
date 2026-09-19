@@ -50,17 +50,16 @@ pub fn spawn_event_thread(
             supports_scaling,
             wake_rx,
         ) {
-            tracing::error!(
+            idle_log::error!(
                 fault = message,
                 "wayland-present: event thread exiting — is_alive=false (daemon should recover without process exit)"
             );
         }
         is_alive.store(false, Ordering::SeqCst);
-        tracing::warn!("wayland-present: event thread stopped (is_alive=false)");
+        idle_log::warn!("wayland-present: event thread stopped (is_alive=false)");
     })
 }
 
-#[tracing::instrument(skip_all)]
 #[allow(clippy::needless_pass_by_value)]
 fn run_event_loop(
     ready_tx: Sender<Result<(), &'static str>>,
@@ -152,7 +151,6 @@ fn run_event_loop(
     Ok(())
 }
 
-#[tracing::instrument(skip_all)]
 fn dispatch_pending_events(
     connection: &Connection,
     event_queue: &mut wayland_client::EventQueue<SessionState>,
@@ -179,13 +177,13 @@ fn dispatch_pending_events(
                     Err(e) if is_wayland_would_block(&e) => {
                         // Another path already drained the socket, or nothing left
                         // to read. Not fatal — dispatch whatever is pending.
-                        tracing::trace!(
+                        idle_log::trace!(
                             error = %e,
                             "wayland-present: read WouldBlock/EAGAIN; continuing"
                         );
                     }
                     Err(e) => {
-                        tracing::error!(
+                        idle_log::error!(
                             error = %e,
                             revents = poll_fds[0].revents,
                             "wayland-present: failed to read Wayland events (compositor may have closed the connection; often a protocol error on the previous commit)"
@@ -194,7 +192,7 @@ fn dispatch_pending_events(
                     }
                 }
                 if let Err(e) = event_queue.dispatch_pending(state) {
-                    tracing::error!(error = %e, "wayland-present: failed to dispatch Wayland events");
+                    idle_log::error!(error = %e, "wayland-present: failed to dispatch Wayland events");
                     return Err("failed to dispatch Wayland events");
                 }
             }
@@ -207,12 +205,12 @@ fn dispatch_pending_events(
         } else if poll_result < 0 {
             let err = std::io::Error::last_os_error();
             if err.kind() != std::io::ErrorKind::Interrupted {
-                tracing::error!(error = %err, "wayland-present: poll failed");
+                idle_log::error!(error = %err, "wayland-present: poll failed");
                 return Err("poll failed");
             }
         }
     } else if let Err(e) = event_queue.dispatch_pending(state) {
-        tracing::error!(error = %e, "wayland-present: failed to dispatch Wayland events");
+        idle_log::error!(error = %e, "wayland-present: failed to dispatch Wayland events");
         return Err("failed to dispatch Wayland events");
     }
 

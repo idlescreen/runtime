@@ -3,7 +3,7 @@
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use futures_lite::StreamExt;
+use crate::futures_util::next;
 
 #[zbus::proxy(
     interface = "org.freedesktop.login1.Session",
@@ -19,7 +19,7 @@ pub async fn watch_session_lock(session_locked: Arc<AtomicBool>, shutdown: Arc<A
     let connection = match zbus::Connection::system().await {
         Ok(connection) => connection,
         Err(error) => {
-            tracing::error!("logind lock monitor unavailable: {error}");
+            idle_log::error!("logind lock monitor unavailable: {error}");
             return;
         }
     };
@@ -27,23 +27,23 @@ pub async fn watch_session_lock(session_locked: Arc<AtomicBool>, shutdown: Arc<A
     let proxy = match LogindSessionProxy::new(&connection).await {
         Ok(proxy) => proxy,
         Err(error) => {
-            tracing::error!("logind session proxy unavailable: {error}");
+            idle_log::error!("logind session proxy unavailable: {error}");
             return;
         }
     };
 
     match proxy.locked_hint().await {
         Ok(locked) => session_locked.store(locked, Ordering::Relaxed),
-        Err(error) => tracing::error!("failed to read LockedHint: {error}"),
+        Err(error) => idle_log::error!("failed to read LockedHint: {error}"),
     }
 
     let mut stream = proxy.receive_locked_hint_changed().await;
 
     while !shutdown.load(Ordering::Relaxed) {
-        match stream.next().await {
+        match next(&mut stream).await {
             Some(change) => match change.get().await {
                 Ok(locked) => session_locked.store(locked, Ordering::Relaxed),
-                Err(error) => tracing::error!("LockedHint update failed: {error}"),
+                Err(error) => idle_log::error!("LockedHint update failed: {error}"),
             },
             None => break,
         }

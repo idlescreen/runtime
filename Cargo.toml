@@ -1,6 +1,8 @@
 [workspace]
 resolver = "2"
 members = [
+    "crates/idle-err",
+    "crates/idle-log",
     "crates/wayland-idle",
     "crates/wayland-present",
     "crates/idle-dbus",
@@ -24,27 +26,14 @@ libc = "0.2"
 zbus = { version = "5.12", default-features = false, features = ["tokio"] }
 idle-api = { path = "idle-api" }
 idle-dbus = { path = "crates/idle-dbus" }
+idle-err = { path = "crates/idle-err" }
+idle-log = { path = "crates/idle-log" }
 idle-runner = { path = "idle-runner" }
 idle-upscaler = { path = "crates/idle-upscaler" }
 idle-ipc = { path = "crates/idle-ipc" }
 wayland-idle = { path = "crates/wayland-idle" }
 wayland-present = { path = "crates/wayland-present" }
 
-# Added in 2026 audit remediation
-anyhow = "1"
-thiserror = "2"
-tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "json"] }
-tracing-journald = "0.3"
-futures-lite = "2"
-once_cell = "1"
-landlock = "0.4.5"
-
-# Sprint 02: .idleplugin.toml manifest parsing (DECISION-MANIFEST-01)
-toml = "1.1"
-clap = { version = "4.5", features = ["derive"] }
-clap_complete = "4.5"
-serde = { version = "1", features = ["derive"] }
 
 [workspace.lints.rust]
 unused_must_use = "warn"

@@ -81,16 +81,16 @@ impl CellRenderer {
     pub fn new_with_gpu() -> Result<Self, String> {
         let mut renderer = Self::new()?;
         if std::env::var_os("IDLE_DISABLE_CELL_GPU").is_some() {
-            tracing::info!("IDLE_DISABLE_CELL_GPU set — CPU cell rasterizer");
+            idle_log::info!("IDLE_DISABLE_CELL_GPU set — CPU cell rasterizer");
             return Ok(renderer);
         }
         renderer.gpu_renderer = match gpu_init::GpuCellRenderer::new() {
             Ok(gpu) => {
-                tracing::info!("wgpu cell renderer initialized successfully");
+                idle_log::info!("wgpu cell renderer initialized successfully");
                 Some(gpu)
             }
             Err(error) => {
-                tracing::warn!(
+                idle_log::warn!(
                     "wgpu cell renderer initialization failed, falling back to CPU: {error}"
                 );
                 None

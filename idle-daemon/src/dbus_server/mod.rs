@@ -15,8 +15,8 @@ use std::sync::Arc;
 use std::sync::atomic::Ordering;
 use std::time::Duration;
 
-use anyhow::Context;
 use idle_dbus::{OBJECT_PATH, SERVICE_NAME};
+use idle_err::Context;
 use zbus::fdo::RequestNameFlags;
 
 use crate::controller::DaemonController;
@@ -24,7 +24,7 @@ use crate::{lock_monitor, sleep_monitor};
 
 use service::TranceService;
 
-pub fn run(controller: Arc<DaemonController>) -> anyhow::Result<()> {
+pub fn run(controller: Arc<DaemonController>) -> idle_err::Result<()> {
     let runtime = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .worker_threads(4)
@@ -37,7 +37,7 @@ pub fn run(controller: Arc<DaemonController>) -> anyhow::Result<()> {
     res
 }
 
-async fn serve(controller: Arc<DaemonController>) -> anyhow::Result<()> {
+async fn serve(controller: Arc<DaemonController>) -> idle_err::Result<()> {
     let (status_emit_tx, status_emit_rx) = tokio::sync::mpsc::channel(64);
     {
         let mut slot = controller
@@ -77,7 +77,7 @@ async fn serve(controller: Arc<DaemonController>) -> anyhow::Result<()> {
 
     controller.set_dbus_connection(connection.clone());
 
-    tracing::info!("exporting D-Bus service {SERVICE_NAME}");
+    idle_log::info!("exporting D-Bus service {SERVICE_NAME}");
 
     tokio::spawn(lock_monitor::watch_session_lock(
         controller.session_locked.clone(),
@@ -109,8 +109,8 @@ async fn serve(controller: Arc<DaemonController>) -> anyhow::Result<()> {
 
     while !controller.shutdown.load(Ordering::Relaxed) {
         if connection.is_closed() {
-            tracing::error!("D-Bus connection closed unexpectedly");
-            anyhow::bail!("D-Bus connection closed unexpectedly");
+            idle_log::error!("D-Bus connection closed unexpectedly");
+            idle_err::bail!("D-Bus connection closed unexpectedly");
         }
         tokio::time::sleep(Duration::from_millis(50)).await;
     }

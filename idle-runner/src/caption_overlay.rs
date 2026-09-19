@@ -45,11 +45,11 @@ fn font() -> Option<&'static Font> {
             if let Ok(bytes) = std::fs::read(path)
                 && let Ok(font) = Font::from_bytes(bytes, fontdue::FontSettings::default())
             {
-                tracing::info!("loaded caption font from {}", path);
+                idle_log::info!("loaded caption font from {}", path);
                 return Some(font);
             }
         }
-        tracing::warn!(
+        idle_log::warn!(
             "no caption font found (tried {} candidates); caption overlay disabled",
             FONT_CANDIDATES.len()
         );

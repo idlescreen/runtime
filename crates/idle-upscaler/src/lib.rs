@@ -61,7 +61,6 @@ pub fn render_scale() -> f32 {
 }
 
 /// Effective simulation grid scale: env `IDLE_RENDER_SCALE`, then config.
-#[tracing::instrument(skip_all, fields(configured))]
 pub fn resolve_render_scale(configured: Option<f32>) -> f32 {
     if let Some(scale) =
         idle_api::env_var_first(&["IDLE_RENDER_SCALE"]).and_then(|v| v.parse::<f32>().ok())
@@ -101,7 +100,7 @@ pub fn target_fps(detected_refresh_hz: u32) -> f32 {
 pub use idle_api::GpuSpotlight;
 
 #[repr(C)]
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, bytemuck::Pod, bytemuck::Zeroable)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct GpuCell {
     pub ch: u32,
     pub fg: [u8; 4],

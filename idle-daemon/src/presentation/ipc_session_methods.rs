@@ -21,7 +21,7 @@ impl IpcPluginSession {
                                         self.grid = vec![TerminalCell::default(); need];
                                     }
                                 } else {
-                                    tracing::error!(
+                                    idle_log::error!(
                                         "grid resize overflow: {grid_cols}x{grid_rows}"
                                     );
                                     return (false, false);
@@ -34,19 +34,19 @@ impl IpcPluginSession {
                                 }
                             }
                             Err(e) => {
-                                tracing::error!("shm cells view rejected: {e}");
+                                idle_log::error!("shm cells view rejected: {e}");
                             }
                         }
                     }
                     return (scanlines, dirty);
                 }
                 Ok(resp) => {
-                    tracing::error!("unexpected response to TickAndDraw: {:?}", resp);
+                    idle_log::error!("unexpected response to TickAndDraw: {:?}", resp);
                     self.socket = None;
                 }
                 Err(e) => {
                     if is_timeout(&e) {
-                        tracing::error!(
+                        idle_log::error!(
                             saver = %self.saver_name,
                             "IPC read timed out — saver hung inside TickAndDraw; killing child"
                         );
@@ -54,7 +54,7 @@ impl IpcPluginSession {
                         self.socket = None;
                         return (false, false);
                     }
-                    tracing::error!("failed to read response to TickAndDraw: {}", e);
+                    idle_log::error!("failed to read response to TickAndDraw: {}", e);
                     self.socket = None;
                 }
             }

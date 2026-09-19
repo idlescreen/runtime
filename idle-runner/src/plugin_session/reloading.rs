@@ -4,15 +4,13 @@ use super::manifest_gate;
 use super::{PluginGuard, PluginSession};
 use crate::launcher::PluginError;
 
-use libloading::Library;
-use notify::Watcher;
+use crate::dylib::Library;
 use std::sync::atomic::Ordering;
 use std::time::Duration;
 
 impl PluginSession {
-    #[tracing::instrument(skip(self))]
     pub fn reload(&mut self) -> Result<(), PluginError> {
-        tracing::info!("Reloading plugin from {:?}", self.plugin_path);
+        idle_log::info!("Reloading plugin from {:?}", self.plugin_path);
 
         if !self.plugin_path.exists() {
             return Err(PluginError::Io(std::io::Error::new(
@@ -71,7 +69,7 @@ impl PluginSession {
 
         self.plugin = Some(new_guard);
         self.manifest = manifest;
-        tracing::info!("Plugin successfully reloaded and state restored.");
+        idle_log::info!("Plugin successfully reloaded and state restored.");
         Ok(())
     }
 
@@ -88,29 +86,27 @@ impl PluginSession {
             })?
             .to_os_string();
 
-        let mut watcher =
-            notify::recommended_watcher(move |res: Result<notify::Event, notify::Error>| {
-                if let Ok(event) = res {
-                    let matches = event
-                        .paths
-                        .iter()
-                        .any(|p| p.file_name() == Some(&target_filename));
-                    if matches && (event.kind.is_modify() || event.kind.is_create()) {
-                        tracing::info!("Watcher detected modification for {:?}", target_filename);
-                        needs_reload.store(true, Ordering::Relaxed);
-                    }
-                }
-            })
+        // DirWatcher reports create/modify/move events by file name; a None
+        // name means a self-event — treat it as a change too (fail-reload is
+        // safer than silently missing a plugin swap).
+        let callback = move |name: Option<&std::ffi::OsStr>| {
+            let matches = name.is_none_or(|n| n == target_filename);
+            if matches {
+                idle_log::info!("Watcher detected modification for {:?}", target_filename);
+                needs_reload.store(true, Ordering::Relaxed);
+            }
+        };
+
+        let parent = self
+            .plugin_path
+            .parent()
+            .map(std::path::Path::to_path_buf)
+            .unwrap_or_else(|| std::path::PathBuf::from("."));
+        let watcher = crate::filewatch::DirWatcher::watch(&parent, callback)
             .map_err(|e| PluginError::Io(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
 
-        if let Some(parent) = self.plugin_path.parent() {
-            watcher
-                .watch(parent, notify::RecursiveMode::NonRecursive)
-                .map_err(|e| PluginError::Io(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
-        }
-
         self.watcher = Some(watcher);
-        tracing::info!(
+        idle_log::info!(
             "Started file watcher on {:?}",
             self.plugin_path.parent().unwrap_or(&self.plugin_path)
         );

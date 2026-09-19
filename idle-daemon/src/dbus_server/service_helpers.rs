@@ -24,14 +24,13 @@ pub fn apply_config_command(
     label: &str,
 ) -> zbus::fdo::Result<()> {
     if let Err(error) = controller.apply_command(command) {
-        tracing::error!(target: "idle_daemon::dbus", "{label} failed: {error:?}");
+        idle_log::error!(target: "idle_daemon::dbus", "{label} failed: {error:?}");
         return Err(zbus::fdo::Error::Failed(error.to_string()));
     }
     sync_config_status(controller);
     Ok(())
 }
 
-#[tracing::instrument(skip(controller), level = "trace")]
 pub fn live_status(controller: &Arc<DaemonController>) -> DaemonStatus {
     let mut status = controller
         .status
@@ -46,7 +45,6 @@ pub fn live_status(controller: &Arc<DaemonController>) -> DaemonStatus {
     status
 }
 
-#[tracing::instrument(skip(controller))]
 pub fn sync_config_status(controller: &Arc<DaemonController>) {
     let config = controller
         .config

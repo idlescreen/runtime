@@ -90,7 +90,7 @@ impl OverlayPresenter {
                 // teardown doesn't outlive the constructor.
                 shutdown.store(true, Ordering::Relaxed);
                 let _ = event_thread.join();
-                tracing::warn!("wayland-present: event thread init failed: {other:?}");
+                idle_log::warn!("wayland-present: event thread init failed: {other:?}");
                 None
             }
         }
@@ -190,7 +190,7 @@ impl Drop for OverlayPresenter {
                 let _ = done_tx.send(());
             });
             if done_rx.recv_timeout(Duration::from_secs(2)).is_err() {
-                tracing::warn!("wayland-present: event thread did not exit within 2s of shutdown");
+                idle_log::warn!("wayland-present: event thread did not exit within 2s of shutdown");
             }
         }
     }

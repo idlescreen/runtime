@@ -37,7 +37,7 @@ pub fn run_ipc_runner(
         return Err(format!("render_scale out of range: {scale}"));
     }
 
-    tracing::info!(
+    idle_log::info!(
         "IPC Runner starting for saver '{}', cols: {}, rows: {}, scale: {:?}",
         saver_name,
         cols,
@@ -57,7 +57,7 @@ pub fn run_ipc_runner(
             .map_err(|e| format!("failed to load plugin {}: {}", saver_name, e))?;
 
     if let Err(e) = session.start_watcher() {
-        tracing::warn!("Failed to start screensaver file watcher: {:?}", e);
+        idle_log::warn!("Failed to start screensaver file watcher: {:?}", e);
     }
 
     IpcResponse::Ready
@@ -66,13 +66,13 @@ pub fn run_ipc_runner(
 
     loop {
         if let Ok(true) = session.poll_reload() {
-            tracing::info!("Screensaver reloaded successfully.");
+            idle_log::info!("Screensaver reloaded successfully.");
         }
 
         let command = match IpcCommand::read_from(&mut socket) {
             Ok(cmd) => cmd,
             Err(ref e) if e.kind() == std::io::ErrorKind::UnexpectedEof => {
-                tracing::info!("IPC control socket closed, runner exiting.");
+                idle_log::info!("IPC control socket closed, runner exiting.");
                 break;
             }
             Err(e) => {
@@ -85,7 +85,7 @@ pub fn run_ipc_runner(
                 let c = c as usize;
                 let r = r as usize;
                 if let Err(e) = validate_grid_dims(c, r) {
-                    tracing::warn!("rejecting Init dims: {e}");
+                    idle_log::warn!("rejecting Init dims: {e}");
                     return Err(e.to_string());
                 }
                 session.init(c, r);
@@ -136,7 +136,7 @@ pub fn run_ipc_runner(
                     .map_err(|e| format!("failed to send Ack: {}", e))?;
             }
             IpcCommand::Stop => {
-                tracing::info!("received Stop command, exiting.");
+                idle_log::info!("received Stop command, exiting.");
                 break;
             }
         }

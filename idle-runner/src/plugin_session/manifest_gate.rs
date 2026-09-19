@@ -18,7 +18,7 @@ pub(crate) fn load_manifest_for(path: &Path) -> Result<Option<Arc<Manifest>>, Pl
         Ok(m) => m,
         Err(plugin_manifest::ManifestError::Missing(missing)) => {
             if host::unsigned_plugins_allowed() {
-                tracing::warn!(
+                idle_log::warn!(
                     plugin = %path.display(),
                     manifest = %missing.display(),
                     result = "unsigned_accepted",
@@ -50,14 +50,14 @@ pub(crate) fn check_capabilities(manifest: &Manifest) -> Result<(), PluginError>
         return Ok(());
     }
     if !decision.permitted.is_empty() {
-        tracing::warn!(
+        idle_log::warn!(
             plugin_id = %manifest.plugin_id,
             capabilities = %decision.permitted.join(", "),
             "plugin capabilities admitted via env opt-in"
         );
     }
     if !decision.refused.is_empty() {
-        tracing::error!(
+        idle_log::error!(
             plugin_id = %manifest.plugin_id,
             refused = %decision.refused.join(", "),
             "refusing plugin: declares capabilities the host cannot enforce"

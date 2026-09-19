@@ -18,11 +18,11 @@ fn peer_uid_matches_ours(peer_uid: Option<u32>) -> bool {
     match peer_uid {
         Some(uid) if uid == our_uid => true,
         Some(uid) => {
-            tracing::warn!("D-Bus auth: peer uid {uid} != our uid {our_uid}; denying");
+            idle_log::warn!("D-Bus auth: peer uid {uid} != our uid {our_uid}; denying");
             false
         }
         None => {
-            tracing::warn!("D-Bus auth: peer UID unavailable; denying");
+            idle_log::warn!("D-Bus auth: peer UID unavailable; denying");
             false
         }
     }
@@ -51,7 +51,7 @@ fn is_trusted_control_peer(pid: u32, peer_uid: Option<u32>, peer_name: &str) -> 
     // Escape hatch is debug-only so release builds cannot be opened with
     // `IDLE_DBUS_TRUST_ALL=1` by a local attacker.
     if dbus_trust_all_enabled() {
-        tracing::warn!("D-Bus auth: IDLE_DBUS_TRUST_ALL=1 (debug build only)");
+        idle_log::warn!("D-Bus auth: IDLE_DBUS_TRUST_ALL=1 (debug build only)");
         return true;
     }
 
@@ -67,7 +67,7 @@ fn is_trusted_control_peer(pid: u32, peer_uid: Option<u32>, peer_name: &str) -> 
             match check_peer_exe(pid) {
                 PeerExeCheck::Trusted => true,
                 other => {
-                    tracing::warn!(
+                    idle_log::warn!(
                         "D-Bus auth: peer {peer_name} (pid {pid}) failed re-check after Trusted ({other:?})"
                     );
                     false
@@ -78,7 +78,7 @@ fn is_trusted_control_peer(pid: u32, peer_uid: Option<u32>, peer_name: &str) -> 
         PeerExeCheck::Unreadable => {
             // Strict mode: refuse comm fallback (closes prctl spoof residual).
             if strict_control_enabled() {
-                tracing::warn!(
+                idle_log::warn!(
                     "D-Bus auth: peer {peer_name} (pid {pid}) denied — exe unreadable and IDLE_STRICT_CONTROL is set (no comm fallback)"
                 );
                 return false;
@@ -90,19 +90,19 @@ fn is_trusted_control_peer(pid: u32, peer_uid: Option<u32>, peer_name: &str) -> 
                 Some(comm) if comm_matches_trusted(&comm) => {
                     // Same-UID + comm is a known residual (prctl spoof). Surface at
                     // WARN so journal reviews can detect non-exe trust accepts.
-                    tracing::warn!(
+                    idle_log::warn!(
                         "D-Bus auth: peer {peer_name} (pid {pid}, comm {comm}) accepted via same-UID + trusted comm (exe unreadable; spoof residual — see docs/BOUNDARIES.md or IDLE_STRICT_CONTROL=1)"
                     );
                     true
                 }
                 Some(comm) => {
-                    tracing::warn!(
+                    idle_log::warn!(
                         "D-Bus auth: peer pid {pid} comm {comm:?} not trusted; denying (exe unreadable)"
                     );
                     false
                 }
                 None => {
-                    tracing::warn!("D-Bus auth: peer pid {pid} exe and comm unreadable; denying");
+                    idle_log::warn!("D-Bus auth: peer pid {pid} exe and comm unreadable; denying");
                     false
                 }
             }
@@ -136,10 +136,10 @@ pub async fn require_control_peer(
     let peer_uid = creds.unix_user_id();
 
     if is_trusted_control_peer(pid, peer_uid, sender.as_str()) {
-        tracing::info!("D-Bus control peer accepted (pid {pid})");
+        idle_log::info!("D-Bus control peer accepted (pid {pid})");
         Ok(())
     } else {
-        tracing::info!("D-Bus control peer rejected (pid {pid})");
+        idle_log::info!("D-Bus control peer rejected (pid {pid})");
         Err(zbus::fdo::Error::AccessDenied(
             "control methods require idle CLI, TUI, or panel applet".into(),
         ))

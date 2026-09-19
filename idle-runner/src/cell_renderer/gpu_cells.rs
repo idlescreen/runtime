@@ -87,7 +87,7 @@ pub fn copy_staging_to_out(
         drop(data);
         staging_buffer.unmap();
     } else {
-        tracing::error!("Failed to map staging buffer for wgpu cell renderer");
+        idle_log::error!("Failed to map staging buffer for wgpu cell renderer");
     }
 }
 

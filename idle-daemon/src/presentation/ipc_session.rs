@@ -129,18 +129,18 @@ impl IpcPluginSession {
         if let Some(ref mut socket) = self.socket {
             let cmd = IpcCommand::SetSimulationRate { hz: fps };
             if let Err(e) = cmd.write_to(&mut *socket) {
-                tracing::error!("failed to send SetSimulationRate: {}", e);
+                idle_log::error!("failed to send SetSimulationRate: {}", e);
                 self.socket = None;
                 return;
             }
             match IpcResponse::read_from(&mut *socket) {
                 Ok(IpcResponse::Ack) => {}
                 Ok(resp) => {
-                    tracing::error!("unexpected response to SetSimulationRate: {:?}", resp);
+                    idle_log::error!("unexpected response to SetSimulationRate: {:?}", resp);
                     self.socket = None;
                 }
                 Err(e) => {
-                    tracing::error!("failed to read SetSimulationRate Ack: {}", e);
+                    idle_log::error!("failed to read SetSimulationRate Ack: {}", e);
                     self.socket = None;
                 }
             }
@@ -154,14 +154,14 @@ impl IpcPluginSession {
             };
             if let Err(e) = cmd.write_to(&mut *socket) {
                 if is_timeout(&e) {
-                    tracing::error!(
+                    idle_log::error!(
                         saver = %self.saver_name,
                         "IPC write timed out — saver hung inside TickAndDraw; killing child"
                     );
                     self.kill_child();
                     return;
                 }
-                tracing::error!("failed to send TickAndDraw: {}", e);
+                idle_log::error!("failed to send TickAndDraw: {}", e);
                 self.socket = None;
             }
         }
@@ -178,7 +178,7 @@ impl IpcPluginSession {
     /// inside its own `update()` cannot be reasoned with politely.
     pub fn kill_child(&mut self) {
         if let Some(mut child) = self.child.take() {
-            tracing::warn!(
+            idle_log::warn!(
                 saver = %self.saver_name,
                 "subprocess isolation: killing hung saver child (pid {})",
                 child.id()

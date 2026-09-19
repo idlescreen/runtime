@@ -141,59 +141,93 @@ mod tests {
 #[cfg(test)]
 mod proptests {
     use super::*;
-    use proptest::prelude::*;
 
-    proptest! {
-        #![proptest_config(ProptestConfig::with_cases(256))]
+    /// xorshift64* deterministic stand-in for proptest's generators.
+    struct Rng(u64);
+    impl Rng {
+        fn next(&mut self) -> u64 {
+            let mut x = self.0;
+            x ^= x >> 12;
+            x ^= x << 25;
+            x ^= x >> 27;
+            self.0 = x;
+            x.wrapping_mul(0x2545_F491_4F6C_DD1D)
+        }
+        /// Uniform f32 in [lo, hi).
+        fn f32(&mut self, lo: f32, hi: f32) -> f32 {
+            let u = (self.next() >> 40) as f32 / (1u64 << 24) as f32;
+            lo + u * (hi - lo)
+        }
+        fn u64(&mut self, lo: u64, hi: u64) -> u64 {
+            lo + self.next() % (hi - lo + 1)
+        }
+    }
 
-        /// Clamped `lerp` lands on the near endpoint when factor is outside [0, 1],
-        /// and otherwise lies between the endpoints (with float slack).
-        #[test]
-        fn lerp_respects_clamp(a in -1e3f32..1e3, b in -1e3f32..1e3, f in -10f32..10f32) {
-            prop_assume!(a.is_finite() && b.is_finite() && f.is_finite());
+    /// Clamped `lerp` lands on the near endpoint when factor is outside [0, 1],
+    /// and otherwise lies between the endpoints (with float slack).
+    #[test]
+    fn lerp_respects_clamp() {
+        let mut rng = Rng(0xC010_2001);
+        for _ in 0..256 {
+            let a = rng.f32(-1e3, 1e3);
+            let b = rng.f32(-1e3, 1e3);
+            let f = rng.f32(-10.0, 10.0);
             let v = lerp(a, b, f);
             let lo = a.min(b);
             let hi = a.max(b);
             let slack = 1e-2 * (1.0 + lo.abs().max(hi.abs()));
-            prop_assert!(v + slack >= lo && v <= hi + slack, "lerp({a},{b},{f})={v}");
+            assert!(v + slack >= lo && v <= hi + slack, "lerp({a},{b},{f})={v}");
         }
+    }
 
-        /// Zero total always yields 0.0 percentage.
-        #[test]
-        fn percentage_zero_total_is_zero(used: u64) {
-            prop_assert_eq!(percentage(used, 0), 0.0);
+    /// Zero total always yields 0.0 percentage.
+    #[test]
+    fn percentage_zero_total_is_zero() {
+        let mut rng = Rng(0xC010_2002);
+        for _ in 0..256 {
+            assert_eq!(percentage(rng.next(), 0), 0.0);
         }
+    }
 
-        /// Percentage is in [0, 100] when used <= total and total > 0.
-        #[test]
-        fn percentage_in_unit_range(total in 1u64..=1_000_000, used in 0u64..=1_000_000) {
-            prop_assume!(used <= total);
+    /// Percentage is in [0, 100] when used <= total and total > 0.
+    #[test]
+    fn percentage_in_unit_range() {
+        let mut rng = Rng(0xC010_2003);
+        for _ in 0..256 {
+            let total = rng.u64(1, 1_000_000);
+            let used = rng.u64(0, total);
             let p = percentage(used, total);
-            prop_assert!((0.0..=100.0).contains(&p), "p={p}");
+            assert!((0.0..=100.0).contains(&p), "p={p}");
         }
+    }
 
-        /// HSL→RGB→HSL preserves lightness well for vivid mid-tones (8-bit RGB
-        /// quantization makes hue/sat brittle at extremes).
-        #[test]
-        fn hsl_rgb_lightness_stable(
-            h in 0.0f32..360.0,
-            s in 0.4f32..=1.0,
-            l in 0.2f32..=0.8,
-        ) {
+    /// HSL→RGB→HSL preserves lightness well for vivid mid-tones (8-bit RGB
+    /// quantization makes hue/sat brittle at extremes).
+    #[test]
+    fn hsl_rgb_lightness_stable() {
+        let mut rng = Rng(0xC010_2004);
+        for _ in 0..256 {
+            let h = rng.f32(0.0, 360.0);
+            let s = rng.f32(0.4, 1.0);
+            let l = rng.f32(0.2, 0.8);
             let (r, g, b) = hsl_to_rgb(h, s, l);
             let (_h2, _s2, l2) = rgb_to_hsl(r, g, b);
-            prop_assert!(
+            assert!(
                 (l - l2).abs() <= 0.02,
                 "lightness HSL({h},{s},{l}) -> RGB({r},{g},{b}) -> L={l2}"
             );
         }
+    }
 
-        /// Pure greys keep equal RGB channels for any lightness.
-        #[test]
-        fn greyscale_equal_channels(l in 0.0f32..=1.0) {
+    /// Pure greys keep equal RGB channels for any lightness.
+    #[test]
+    fn greyscale_equal_channels() {
+        let mut rng = Rng(0xC010_2005);
+        for _ in 0..256 {
+            let l = rng.f32(0.0, 1.0);
             let (r, g, b) = hsl_to_rgb(0.0, 0.0, l);
-            prop_assert_eq!(r, g);
-            prop_assert_eq!(g, b);
+            assert_eq!(r, g);
+            assert_eq!(g, b);
         }
     }
 }

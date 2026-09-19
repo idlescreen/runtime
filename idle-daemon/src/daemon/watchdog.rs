@@ -11,7 +11,7 @@
 //! Process-level restart is a follow-up (would require the daemon to spawn a
 //! supervisor around itself); tracked as a residual. This primitive gives the
 //! host the watchdog *signal* — operator scripts / journald can act on the
-//! `tracing::error!` line.
+//! `idle_log::error!` line.
 
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -90,7 +90,7 @@ pub fn spawn_monitor(
         let mut escalated = false;
         loop {
             if watchdog.stalled(timeout_ms) {
-                tracing::error!(
+                idle_log::error!(
                     age_ms = watchdog.age_ms(),
                     timeout_ms,
                     "render loop stalled — escalating (raising shutdown flag)"

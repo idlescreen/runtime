@@ -35,13 +35,13 @@ pub fn start_daemon_service() -> io::Result<()> {
             wait_until_running(Duration::from_secs(3))?;
             return Ok(());
         }
-        tracing::warn!(
+        idle_log::warn!(
             "systemctl enable --now {unit} failed (exit {:?})",
             status.code()
         );
     }
 
-    tracing::warn!("systemctl enable --now failed; trying direct spawn");
+    idle_log::warn!("systemctl enable --now failed; trying direct spawn");
     for bin in DAEMON_BINS {
         if Command::new(bin).arg("daemon").spawn().is_ok() {
             wait_until_running(Duration::from_secs(3))?;
@@ -79,7 +79,7 @@ pub fn stop_daemon_service() -> io::Result<()> {
             continue;
         };
         if !pid_targets_idle_daemon(pid) {
-            tracing::warn!("refusing to SIGTERM pid {pid} — not idle-daemon");
+            idle_log::warn!("refusing to SIGTERM pid {pid} — not idle-daemon");
             continue;
         }
         // SAFETY: kill with SIGTERM on a process we verified is idle-daemon.

@@ -12,7 +12,7 @@ impl SessionState {
         }
 
         let (Some(compositor), Some(layer_shell)) = (&self.compositor, &self.layer_shell) else {
-            tracing::warn!("wayland-present: missing compositor or layer shell");
+            idle_log::warn!("wayland-present: missing compositor or layer shell");
             return;
         };
 
@@ -121,7 +121,7 @@ impl SessionState {
 
         self.register_configured_output(output_id, render_w, render_h);
         if fullscreen {
-            tracing::info!(
+            idle_log::info!(
                 output_id,
                 configured_w = width,
                 configured_h = height,
@@ -177,7 +177,7 @@ impl SessionState {
 
         let queue = self.queue.clone();
         if !Self::commit_frame_buffer(&queue, overlay, width, height) {
-            tracing::error!(
+            idle_log::error!(
                 output_id,
                 "wayland-present: frame buffer missing after ensure; skipping frame"
             );

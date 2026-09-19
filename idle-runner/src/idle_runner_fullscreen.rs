@@ -40,7 +40,7 @@ pub(super) fn setup_terminal() -> Result<TerminalContext, Box<dyn std::error::Er
     let raw_mode = match terminal_guard::RawTerminalGuard::enable() {
         Some(g) => g,
         None => {
-            tracing::error!("screensaver: could not enter raw mode; aborting.");
+            idle_log::error!("screensaver: could not enter raw mode; aborting.");
             return Err("could not enter raw mode".into());
         }
     };

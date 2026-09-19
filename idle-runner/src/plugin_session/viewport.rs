@@ -7,7 +7,6 @@
 use super::PluginSession;
 
 impl PluginSession {
-    #[tracing::instrument(skip_all, fields(cols, rows, width, height))]
     pub fn render(
         &mut self,
         cols: usize,

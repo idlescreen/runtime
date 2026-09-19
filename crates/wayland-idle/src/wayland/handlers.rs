@@ -27,7 +27,7 @@ impl Dispatch<wl_registry::WlRegistry, ()> for SessionState {
         else {
             return;
         };
-        tracing::debug!(%interface, name, "wl_registry global");
+        idle_log::debug!(%interface, name, "wl_registry global");
 
         match interface.as_str() {
             "ext_idle_notifier_v1" => {
@@ -66,7 +66,6 @@ impl Dispatch<ext_idle_notifier_v1::ExtIdleNotifierV1, ()> for SessionState {
 }
 
 impl Dispatch<ext_idle_notification_v1::ExtIdleNotificationV1, ()> for SessionState {
-    #[tracing::instrument(skip_all)]
     fn event(
         state: &mut Self,
         _: &ext_idle_notification_v1::ExtIdleNotificationV1,

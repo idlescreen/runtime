@@ -33,7 +33,7 @@ static GLOBAL_THEME_CACHE: OnceLock<Mutex<CacheEntry>> = OnceLock::new();
 pub fn load_global_theme() -> (Option<(u8, u8, u8)>, Option<bool>) {
     let cache_mutex = GLOBAL_THEME_CACHE.get_or_init(|| Mutex::new((None, Instant::now())));
     let mut cache = cache_mutex.lock().unwrap_or_else(|e| {
-        tracing::error!("theme cache mutex poisoned: {e}");
+        idle_log::error!("theme cache mutex poisoned: {e}");
         std::process::abort()
     });
     if let Some(ref val) = cache.0

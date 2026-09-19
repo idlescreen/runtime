@@ -8,6 +8,7 @@
 
 pub mod config;
 pub mod config_parse;
+pub mod futures_util;
 
 pub mod cli_main;
 #[cfg(test)]

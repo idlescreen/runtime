@@ -37,7 +37,7 @@ pub(crate) fn is_trusted_plugin_path_cached(
         if let Ok(meta) = std::fs::metadata(&canonical) {
             // Reject world-writable plugins.
             if meta.permissions().mode() & 0o002 != 0 {
-                tracing::warn!(
+                idle_log::warn!(
                     target: "plugin",
                     path = %canonical.display(),
                     "refusing world-writable plugin library"
@@ -47,7 +47,7 @@ pub(crate) fn is_trusted_plugin_path_cached(
             // System packages live under /usr; require root or overflow (65534) ownership
             // since root is mapped to overflow UID inside user namespaces.
             if canonical.starts_with("/usr") && meta.uid() != 0 && meta.uid() != 65534 {
-                tracing::warn!(
+                idle_log::warn!(
                     target: "plugin",
                     path = %canonical.display(),
                     uid = meta.uid(),

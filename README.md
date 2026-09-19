@@ -1,3 +1,5 @@
+[![secured by studio2201](https://img.shields.io/badge/secured%20by-studio2201-2f6f5e?logo=shield)](https://studio2201.com)
+
 # runtime
 
 [![snip](https://img.shields.io/github/actions/workflow/status/idlescreen/runtime/snip.yml?label=snip&logo=shield)](https://github.com/idlescreen/runtime/actions/workflows/snip.yml)

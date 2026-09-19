@@ -47,7 +47,9 @@ pub struct GpuCellRenderer {
 }
 
 mod block_on;
-use block_on::*;
+use block_on::block_on_future;
+#[cfg(test)]
+use block_on::spin_block_on;
 impl GpuCellRenderer {
     pub fn new() -> Result<Self, String> {
         let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor {

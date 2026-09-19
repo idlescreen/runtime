@@ -14,7 +14,7 @@ use std::path::Path;
 
 /// Landlock v1 access rights (linux/landlock.h).
 mod ll;
-use ll::*;
+use ll::{FdGuard, ll_add_rule, ll_create_ruleset, ll_path_fd, ll_restrict_self};
 pub fn sandbox_skip_allowed() -> bool {
     if !idle_api::env_truthy(&["IDLE_DISABLE_SANDBOX"]) {
         return false;

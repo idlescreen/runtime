@@ -78,7 +78,7 @@ pub(crate) mod test_util {
             let dir = base.join(format!("idle-runner-test-{}-{n}", std::process::id()));
             match std::fs::create_dir(&dir) {
                 Ok(()) => return Ok(TmpDir(dir)),
-                Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => continue,
+                Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {}
                 Err(e) => return Err(e),
             }
         }

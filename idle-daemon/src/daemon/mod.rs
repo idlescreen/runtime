@@ -80,7 +80,7 @@ fn install_signal_handlers(controller: &Arc<DaemonController>) -> idle_err::Resu
     unsafe {
         libc::signal(libc::SIGPIPE, libc::SIG_IGN);
     }
-    let raw = Arc::into_raw(Arc::clone(&controller.shutdown)) as *mut AtomicBool;
+    let raw = Arc::into_raw(Arc::clone(&controller.shutdown)).cast_mut();
     SHUTDOWN_FLAG.store(raw, Ordering::Relaxed);
     unsafe {
         if libc::signal(libc::SIGINT, on_term_sig as *const () as libc::sighandler_t)
@@ -167,7 +167,10 @@ mod signal_tests {
     fn handler_sets_pointed_flag() {
         let _g = SIG_LOCK.lock().unwrap();
         let flag = AtomicBool::new(false);
-        SHUTDOWN_FLAG.store(&flag as *const AtomicBool as *mut _, Ordering::SeqCst);
+        SHUTDOWN_FLAG.store(
+            std::ptr::from_ref::<AtomicBool>(&flag).cast_mut(),
+            Ordering::SeqCst,
+        );
         on_term_sig(libc::SIGINT);
         assert!(flag.load(Ordering::SeqCst));
         SHUTDOWN_FLAG.store(std::ptr::null_mut(), Ordering::SeqCst);
@@ -184,7 +187,10 @@ mod signal_tests {
     fn real_signal_delivery_sets_flag() {
         let _g = SIG_LOCK.lock().unwrap();
         let flag = AtomicBool::new(false);
-        SHUTDOWN_FLAG.store(&flag as *const AtomicBool as *mut _, Ordering::SeqCst);
+        SHUTDOWN_FLAG.store(
+            std::ptr::from_ref::<AtomicBool>(&flag).cast_mut(),
+            Ordering::SeqCst,
+        );
 
         // Install on_term_sig for SIGUSR1 (unused elsewhere), deliver it to
         // this thread, verify the flag trips — end-to-end sigaction path.

@@ -5,10 +5,15 @@ use super::gpu_init::{GpuCell, GpuCellRenderer, Uniforms};
 /// Byte view of a `#[repr(C)]` value/slice for `queue.write_buffer`
 /// (bytemuck replacement — the structs are plain-Copy PODs).
 fn as_u8_slice<T>(v: &[T]) -> &[u8] {
-    unsafe { std::slice::from_raw_parts(v.as_ptr() as *const u8, std::mem::size_of_val(v)) }
+    unsafe { std::slice::from_raw_parts(v.as_ptr().cast::<u8>(), std::mem::size_of_val(v)) }
 }
 fn as_u8_bytes<T>(v: &T) -> &[u8] {
-    unsafe { std::slice::from_raw_parts(v as *const T as *const u8, std::mem::size_of::<T>()) }
+    unsafe {
+        std::slice::from_raw_parts(
+            std::ptr::from_ref::<T>(v).cast::<u8>(),
+            std::mem::size_of::<T>(),
+        )
+    }
 }
 use idle_api::TerminalCell;
 use std::collections::HashMap;

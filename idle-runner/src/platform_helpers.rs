@@ -17,6 +17,7 @@ pub fn get_monitor_refresh_rate() -> u32 {
 pub fn get_terminal_size() -> (usize, usize) {
     // crossterm::terminal::size() equivalent: TIOCGWINSZ on stdout.
     #[repr(C)]
+    #[allow(clippy::struct_field_names)]
     struct WinSize {
         ws_row: libc::c_ushort,
         ws_col: libc::c_ushort,

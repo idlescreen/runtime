@@ -110,8 +110,9 @@ fn run_loop(fd: libc::c_int, stop: Arc<AtomicBool>, callback: impl Fn(Option<&Os
 fn parse_events(buf: &[u8], callback: &dyn Fn(Option<&OsStr>)) {
     let mut off = 0usize;
     while off + 16 <= buf.len() {
-        let mask = u32::from_ne_bytes(buf[off + 4..off + 8].try_into().unwrap());
-        let len = u32::from_ne_bytes(buf[off + 12..off + 16].try_into().unwrap()) as usize;
+        let mask = u32::from_ne_bytes([buf[off + 4], buf[off + 5], buf[off + 6], buf[off + 7]]);
+        let len = u32::from_ne_bytes([buf[off + 12], buf[off + 13], buf[off + 14], buf[off + 15]])
+            as usize;
         let name_start = off + 16;
         let name_end = name_start + len;
         if name_end > buf.len() {
@@ -245,7 +246,7 @@ mod tests {
                     got.push(n);
                     break;
                 }
-                Ok(_) | Err(mpsc::RecvTimeoutError::Timeout) => continue,
+                Ok(_) | Err(mpsc::RecvTimeoutError::Timeout) => {}
                 Err(mpsc::RecvTimeoutError::Disconnected) => break,
             }
         }

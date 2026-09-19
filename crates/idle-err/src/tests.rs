@@ -34,8 +34,7 @@ fn downcast_finds_source_in_chain() {
 
 #[test]
 fn context_trait_on_std_result() {
-    let r: std::result::Result<(), std::io::Error> =
-        Err(std::io::Error::new(std::io::ErrorKind::Other, "low"));
+    let r: std::result::Result<(), std::io::Error> = Err(std::io::Error::other("low"));
     let e = r.context("high").unwrap_err();
     assert_eq!(format!("{e:#}"), "high: low");
 }

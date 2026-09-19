@@ -5,19 +5,21 @@
 
 /// Checked `&[u8]` → `&[u32]` view (bytemuck `try_cast_slice` replacement):
 /// requires 4-byte alignment and a multiple-of-4 length.
+#[allow(clippy::cast_ptr_alignment)]
 fn try_cast_u8_to_u32(src: &[u8]) -> Result<&[u32], ()> {
-    if src.len() % 4 != 0 || (src.as_ptr() as usize) % 4 != 0 {
+    if !src.len().is_multiple_of(4) || !src.as_ptr().addr().is_multiple_of(4) {
         return Err(());
     }
-    Ok(unsafe { std::slice::from_raw_parts(src.as_ptr() as *const u32, src.len() / 4) })
+    Ok(unsafe { std::slice::from_raw_parts(src.as_ptr().cast::<u32>(), src.len() / 4) })
 }
 
 /// Mutable counterpart of [`try_cast_u8_to_u32`].
+#[allow(clippy::cast_ptr_alignment)]
 fn try_cast_u8_to_u32_mut(dst: &mut [u8]) -> Result<&mut [u32], ()> {
-    if dst.len() % 4 != 0 || (dst.as_ptr() as usize) % 4 != 0 {
+    if !dst.len().is_multiple_of(4) || !dst.as_ptr().addr().is_multiple_of(4) {
         return Err(());
     }
-    Ok(unsafe { std::slice::from_raw_parts_mut(dst.as_mut_ptr() as *mut u32, dst.len() / 4) })
+    Ok(unsafe { std::slice::from_raw_parts_mut(dst.as_mut_ptr().cast::<u32>(), dst.len() / 4) })
 }
 
 /// Cached nearest-neighbor column map for stretch upscale.

@@ -7,7 +7,7 @@ jobs:
   necrometer:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - uses: necrometer-dev/necrometer-action@v1
         with:
           token: ${{ secrets.NECRO_TOKEN || secrets.GITHUB_TOKEN }}

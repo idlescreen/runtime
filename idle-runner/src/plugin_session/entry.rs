@@ -73,12 +73,14 @@ pub(crate) unsafe fn resolve_entry(
         return Ok((instance, drop_c_abi_instance));
     }
 
-    let create_fn =
-        unsafe { lib.get::<unsafe extern "C" fn() -> *mut ScreensaverInstance>(b"create_screensaver") }
-            .map_err(|_| PluginError::SymbolMissing("create_screensaver"))?;
-    let destroy_fn =
-        unsafe { lib.get::<unsafe extern "C" fn(*mut ScreensaverInstance)>(b"destroy_screensaver") }
-            .map_err(|_| PluginError::SymbolMissing("destroy_screensaver"))?;
+    let create_fn = unsafe {
+        lib.get::<unsafe extern "C" fn() -> *mut ScreensaverInstance>(b"create_screensaver")
+    }
+    .map_err(|_| PluginError::SymbolMissing("create_screensaver"))?;
+    let destroy_fn = unsafe {
+        lib.get::<unsafe extern "C" fn(*mut ScreensaverInstance)>(b"destroy_screensaver")
+    }
+    .map_err(|_| PluginError::SymbolMissing("destroy_screensaver"))?;
 
     let raw_ptr = unsafe { (*create_fn)() };
     if raw_ptr.is_null() {

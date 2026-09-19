@@ -1,3 +1,9 @@
+idle-daemon (3.5.18-1) unstable; urgency=medium
+
+  * Split oversized sources to satisfy the 256-line CI file cap.
+
+ -- IdleScreen Maintainers <maintainers@idlescreen.dev>  Fri, 18 Sep 2026 00:00:00 +0000
+
 idle-daemon (3.5.17-1) unstable; urgency=medium
 
   * Replace convenience crates with in-tree implementations (idle-err,

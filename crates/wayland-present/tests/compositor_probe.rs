@@ -34,8 +34,8 @@ fn real_compositor_exposes_overlay_globals() {
         return;
     }
 
-    let conn = Connection::connect_to_env()
-        .expect("WAYLAND_DISPLAY is set but connect_to_env failed");
+    let conn =
+        Connection::connect_to_env().expect("WAYLAND_DISPLAY is set but connect_to_env failed");
     let mut event_queue = conn.new_event_queue();
     let qh = event_queue.handle();
     conn.display().get_registry(&qh, ());

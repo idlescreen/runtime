@@ -1,7 +1,5 @@
 # runtime
 
-[![secured by studio2201](https://img.shields.io/badge/secured%20by-studio2201-2f6f5e?logo=shield)](https://studio2201.com) [![snip](https://img.shields.io/github/actions/workflow/status/idlescreen/runtime/snip.yml?label=snip&logo=shield)](https://github.com/idlescreen/runtime/actions/workflows/snip.yml) [![vigil](https://img.shields.io/github/actions/workflow/status/idlescreen/runtime/vigil.yml?label=vigil&logo=shield)](https://github.com/idlescreen/runtime/actions/workflows/vigil.yml) [![aegis](https://img.shields.io/github/actions/workflow/status/idlescreen/runtime/aegis.yml?label=aegis&logo=shield)](https://github.com/idlescreen/runtime/actions/workflows/aegis.yml) [![proven](https://img.shields.io/github/actions/workflow/status/idlescreen/runtime/proven.yml?label=proven&logo=shield)](https://github.com/idlescreen/runtime/actions/workflows/proven.yml) [![boneyard](https://img.shields.io/github/actions/workflow/status/idlescreen/runtime/boneyard.yml?label=boneyard&logo=shield)](https://github.com/idlescreen/runtime/actions/workflows/boneyard.yml)
-
 The engine — idle daemon, sandboxed plugin host, D-Bus API, and the saver
 ABI every plugin builds against. Part of
 [IdleScreen](https://idlescreen.github.io) — modular Wayland screensavers

@@ -16,5 +16,5 @@ idle-api = { workspace = true }
 fontdue = "0.9"
 idle-upscaler = { workspace = true }
 idle-log = { workspace = true }
-wgpu = "28.0.0"
+wgpu = "30.0.1"
 tokio = { workspace = true }

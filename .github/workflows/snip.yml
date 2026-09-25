@@ -15,6 +15,6 @@ jobs:
         with: { fetch-depth: 0 }
       - uses: studio2201/studio2201@v1
         with: { tools: 'snip', fail-on: 'block' }
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         if: always()
         with: { name: snip-report, path: snip_report.md, if-no-files-found: ignore }

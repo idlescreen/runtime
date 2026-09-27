@@ -167,9 +167,38 @@ fn update_fps_counter(state: &mut FrameLoopState, frame_index: u64) {
     }
 
     if elapsed < state.frame_duration {
-        // saturating_sub: frame overruns must not panic the daemon
-        // (L1 lifecycle bug — under load, `frame_duration - elapsed`
-        // would panic on negative).
-        thread::sleep(state.frame_duration.saturating_sub(elapsed));
+        // Tier-2 perf change: poll the `stop` flag during the sleep so
+        // shutdown interrupts within ~2 ms instead of waiting out the
+        // full frame duration. The previous `thread::sleep(remaining)`
+        // could park the loop for up to 16 ms after the user pressed
+        // stop — a 60 Hz cycle is enough to make shutdown feel sticky.
+        //
+        // Sliced sleep is the minimum-viable version of the
+        // plan-§Tier-2 "frame-loop condvar wait"; a proper
+        // `parking_lot::Condvar::wait_for` would save the periodic
+        // wakeups but needs a wake source threaded through the
+        // presenter. Filed as Tier-2 step 2.5 for that plumbing.
+        sleep_interruptible(state.frame_duration.saturating_sub(elapsed), state.stop);
+    }
+}
+
+/// Sleep up to `remaining`, polling `stop` every `SLICE` so a Ctrl-C
+/// or presenter-detach interrupts within a slice boundary.
+///
+/// Returns as soon as either `stop` flips or `remaining` elapses.
+/// `remaining = 0` is an instant return (used when a frame ran over).
+fn sleep_interruptible(remaining: Duration, stop: &AtomicBool) {
+    const SLICE: Duration = Duration::from_millis(2);
+    let deadline = Instant::now() + remaining;
+    loop {
+        if stop.load(Ordering::Relaxed) {
+            return;
+        }
+        let now = Instant::now();
+        if now >= deadline {
+            return;
+        }
+        let slice = (deadline - now).min(SLICE);
+        thread::sleep(slice);
     }
 }

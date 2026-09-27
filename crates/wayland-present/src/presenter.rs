@@ -172,11 +172,20 @@ impl OverlayPresenter {
 
 impl Drop for OverlayPresenter {
     fn drop(&mut self) {
-        self.send_cmd(PresenterCommand::Hide);
+        // Set shutdown and wake FIRST. `command_tx` is a `sync_channel(1)`, so
+        // a blocking `send` here would hang Drop itself when the channel is
+        // full — and a wedged event thread (compositor not draining the socket)
+        // would pin shutdown forever, which is exactly what the bounded join
+        // below exists to prevent. A `try_send` that loses the race to a full
+        // channel is fine: `shutdown` is what the loop actually polls.
         self.shutdown.store(true, Ordering::Relaxed);
         // Bare wake so the event loop sees `shutdown` promptly even if the
         // command channel is already drained.
         self.wake();
+
+        let _ = self
+            .command_tx
+            .try_send(PresenterCommand::Hide);
 
         // Bounded join: the poll loop turns over in ≤100ms, so teardown
         // completes well under this bound on a healthy compositor. A

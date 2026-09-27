@@ -7,7 +7,12 @@
 //! in [`handlers`]; connection lifecycle is owned by [`thread`].
 //!
 //! The thread blocks in `dispatch` until the monitor is dropped or the compositor
-//! disconnects; errors are logged and surfaced as "not idle" to the caller.
+//! disconnects. A failure to start — no Wayland connection, no
+//! `ext-idle-notify-v1` global, no seat — is reported over the startup handshake
+//! so `IdleMonitor::new` returns `None`; it is never silently degraded to a
+//! monitor that reports "not idle" forever. A failure *after* a successful
+//! start clears `is_alive` and the caller observes it through
+//! `IdleMonitor::is_alive`.
 //!
 //! # Safety
 //!

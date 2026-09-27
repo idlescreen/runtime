@@ -20,7 +20,13 @@ pub struct SessionState {
 }
 
 impl SessionState {
-    pub fn refresh_idle_notification(&mut self) {
+    /// Re-register the idle notification at the current timeout.
+    ///
+    /// Returns `Err` when the compositor never exposed `ext-idle-notify-v1` or
+    /// a seat. The startup caller treats that as fatal and reports the session
+    /// unavailable; a later timeout change logs and keeps the existing
+    /// notification.
+    pub fn refresh_idle_notification(&mut self) -> Result<(), String> {
         if let Some(notification) = self.notification.take() {
             notification.destroy();
         }
@@ -29,7 +35,7 @@ impl SessionState {
 
         let (Some(notifier), Some(seat)) = (&self.notifier, &self.seat) else {
             idle_log::warn!("wayland-idle: compositor missing seat or idle notifier global");
-            return;
+            return Err("compositor does not implement ext-idle-notify-v1".to_string());
         };
 
         let timeout_ms = self.timeout_mins.saturating_mul(60).saturating_mul(1000);
@@ -40,6 +46,7 @@ impl SessionState {
             "wayland-idle: registered idle notification (timeout {}s)",
             self.timeout_mins.saturating_mul(60)
         );
+        Ok(())
     }
 
     pub fn mark_idle(&self) {

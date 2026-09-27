@@ -60,15 +60,31 @@ pub fn render_scale() -> f32 {
     resolve_render_scale(None)
 }
 
+/// Clamp to `[lo, hi]`, rejecting non-finite input.
+///
+/// `f32::clamp` propagates NaN: both comparisons are false, so `NaN.clamp(a, b)`
+/// returns NaN rather than a bound. `"nan".parse::<f32>()` is `Ok(NaN)`, and
+/// `NaN as u32` is 0 — so an `IDLE_RENDER_SCALE=nan` in the systemd user
+/// environment reached `f32` as NaN, survived `.clamp`, and produced a
+/// zero-sized source geometry. The D-Bus path already rejects NaN at
+/// `controller/commands.rs:115`; the env path did not.
+fn clamp_finite(value: f32, lo: f32, hi: f32, fallback: f32) -> f32 {
+    if value.is_finite() {
+        value.clamp(lo, hi)
+    } else {
+        fallback
+    }
+}
+
 /// Effective simulation grid scale: env `IDLE_RENDER_SCALE`, then config.
 pub fn resolve_render_scale(configured: Option<f32>) -> f32 {
     if let Some(scale) =
         idle_api::env_var_first(&["IDLE_RENDER_SCALE"]).and_then(|v| v.parse::<f32>().ok())
     {
-        return scale.clamp(0.25, 1.0);
+        return clamp_finite(scale, 0.25, 1.0, 0.5);
     }
     if let Some(scale) = configured {
-        return scale.clamp(0.25, 1.0);
+        return clamp_finite(scale, 0.25, 1.0, 0.5);
     }
     0.5
 }
@@ -84,7 +100,7 @@ pub fn max_fps() -> u32 {
 pub fn simulation_tick_hz() -> f32 {
     idle_api::env_var_first(&["IDLE_TICK_HZ"])
         .and_then(|value| value.parse::<f32>().ok())
-        .map_or(60.0, |hz| hz.clamp(15.0, 240.0))
+        .map_or(60.0, |hz| clamp_finite(hz, 15.0, 240.0, 60.0))
 }
 
 pub fn target_fps(detected_refresh_hz: u32) -> f32 {
@@ -178,3 +194,44 @@ impl FrameUpscaler {
 #[cfg(test)]
 #[path = "lib_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+mod nan_guard_tests {
+    use super::*;
+
+    /// Env is process-global; these tests set and remove it.
+    static ENV_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+    #[test]
+    fn resolve_render_scale_rejects_nan_from_env() {
+        let _u = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        unsafe { std::env::set_var("IDLE_RENDER_SCALE", "nan") };
+        let s = resolve_render_scale(None);
+        unsafe { std::env::remove_var("IDLE_RENDER_SCALE") };
+        assert!(
+            s.is_finite() && (0.25..=1.0).contains(&s),
+            "IDLE_RENDER_SCALE=nan must not produce {s}"
+        );
+        assert_eq!(s, 0.5, "non-finite env falls back to the default");
+    }
+
+    #[test]
+    fn resolve_render_scale_rejects_nan_from_config() {
+        let s = resolve_render_scale(Some(f32::NAN));
+        assert!(s.is_finite(), "configured NaN must not survive the clamp");
+        assert_eq!(s, 0.5);
+    }
+
+    #[test]
+    fn simulation_tick_hz_rejects_nan() {
+        let s = clamp_finite(f32::NAN, 15.0, 240.0, 60.0);
+        assert_eq!(s, 60.0);
+    }
+
+    #[test]
+    fn clamp_finite_keeps_ordinary_values() {
+        assert_eq!(clamp_finite(0.5, 0.25, 1.0, 0.5), 0.5);
+        assert_eq!(clamp_finite(0.1, 0.25, 1.0, 0.5), 0.25);
+        assert_eq!(clamp_finite(9.0, 0.25, 1.0, 0.5), 1.0);
+    }
+}

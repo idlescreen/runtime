@@ -74,8 +74,10 @@ pub fn init(default: &str) {
 /// Call when `JOURNAL_STREAM` is set (running under systemd), like the
 /// previous `tracing_journald::layer()` wiring.
 pub fn enable_journald(ident: &str) {
-    if let Ok(mut g) = IDENT.write() {
-        *g = ident.to_string();
+    // Recover from poisoning rather than dropping the ident entirely.
+    match IDENT.write() {
+        Ok(mut g) => *g = ident.to_string(),
+        Err(e) => *e.into_inner() = ident.to_string(),
     }
     JOURNALD.store(true, Ordering::Relaxed);
 }
@@ -105,12 +107,32 @@ pub fn emit(level: Level, target: &str, msg: std::fmt::Arguments<'_>) {
 
 /// sd-journal over `/run/systemd/journal/socket`: newline-separated
 /// `KEY=value` fields in a single datagram. Best-effort; failures ignored.
+///
+/// The socket is created once and reused. It used to be rebuilt per record —
+/// a `socket()` syscall plus a `format!` for every log line, which at
+/// `RUST_LOG=debug` on a busy path is a syscall storm on a daemon whose whole
+/// job is to stay cheap. An unbound datagram socket can `send_to` repeatedly.
+fn journald_socket() -> Option<&'static std::os::unix::net::UnixDatagram> {
+    static SOCK: std::sync::OnceLock<Option<std::os::unix::net::UnixDatagram>> =
+        std::sync::OnceLock::new();
+    SOCK.get_or_init(|| {
+        use std::os::unix::net::UnixDatagram;
+        UnixDatagram::unbound().ok()
+    })
+    .as_ref()
+}
+
 fn journald_send(priority: u8, msg: &str) {
-    use std::os::unix::net::UnixDatagram;
-    let Ok(sock) = UnixDatagram::unbound() else {
+    let Some(sock) = journald_socket() else {
         return;
     };
-    let ident = IDENT.read().map(|s| s.clone()).unwrap_or_default();
+    // A poisoned lock means some other thread panicked while setting IDENT.
+    // Recover the value rather than silently logging with an empty
+    // SYSLOG_IDENTIFIER, which makes records unattributable in the journal.
+    let ident = IDENT
+        .read()
+        .map(|s| s.clone())
+        .unwrap_or_else(|e| e.into_inner().clone());
     let payload = format!(
         "PRIORITY={priority}\nMESSAGE={}\nSYSLOG_IDENTIFIER={ident}\n",
         msg.replace('\n', " ")

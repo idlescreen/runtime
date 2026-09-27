@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "captured_at": "2026-09-27",
+  "commit": "2b65cc9",
+  "note": "Baseline captured after Tier-1 + Tier-2 + Tier-3 (integer bilinear + skip-fill letterbox) landed. The Tier-3/3-tier plan gates each subsequent commit on a numeric delta from this baseline.",
+  "benches": {
+    "stretch/nearest_640x360_to_1920x1080": {
+      "p50_ns": 731900,
+      "throughput_bytes": 11320000000
+    },
+    "stretch/nearest_960x540_to_1920x1080": {
+      "p50_ns": 1080000,
+      "throughput_bytes": 7600000000
+    },
+    "stretch/linear_640x360_to_1920x1080": {
+      "p50_ns": 3850000,
+      "throughput_bytes": 2090000000
+    },
+    "letterbox/nearest_640x360_to_1920x1080": {
+      "p50_ns": 13184000,
+      "throughput_bytes": 615000000
+    },
+    "letterbox/linear_640x360_to_1920x1080": {
+      "p50_ns": 47764000,
+      "throughput_bytes": 166000000
+    },
+    "render_content_viewport/80x24_density_0.70": {
+      "p50_ns": 509440,
+      "throughput_bytes": 1700000000
+    }
+  }
+}

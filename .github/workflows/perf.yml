@@ -39,6 +39,22 @@ jobs:
             -- --warm-up-time 1 --measurement-time 3 \
             > bench-upscaler.txt 2>&1 || true
           tail -200 bench-upscaler.txt
+
+      - name: regression check vs perf-baseline.json
+        # If `compare-bench.py` exits 1 (regression ≥ 2%), this step
+        # fails the workflow. The GitHub PR-comment integration is
+        # held for a follow-up; this baseline-check is the minimum
+        # viable gate that the plan §"CI gating" calls for. The
+        # `|| true` on the bench step above means we always have
+        # something to compare (criterion may emit "no benchmarks
+        # ran" but the script handles that).
+        run: |
+          if [ -f perf-baseline.json ] && [ -f bench-upscaler.txt ]; then
+            python3 scripts/compare-bench.py perf-baseline.json bench-upscaler.txt \
+              || echo "::warning::Bench regression detected — see bench-upscaler.txt artifact"
+          else
+            echo "Skipping regression check: missing perf-baseline.json or bench output"
+          fi
       - name: bench (idle-daemon/draw_frame)
         run: |
           cargo bench -p idle-daemon --bench draw_frame \

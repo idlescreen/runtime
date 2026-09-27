@@ -34,8 +34,13 @@ jobs:
         curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
         cargo binstall -y cargo-deny
         echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
-    - name: cargo-deny advisories + licenses
-      run: cargo deny check advisories licenses
+    - name: cargo-deny (advisories, licenses, bans, sources)
+      # Bare `cargo deny check` — the previous form was
+      # `check advisories licenses`, which silently skipped the `sources` and
+      # `bans` sections. `sources` is where deny.toml sets
+      # unknown-registry = "deny" / unknown-git = "deny", i.e. the typosquat
+      # control, and it was the one thing CI was not running.
+      run: cargo deny check
 
   msrv:
     runs-on: ubuntu-latest

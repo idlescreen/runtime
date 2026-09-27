@@ -1,0 +1,25 @@
+# `.cargo/config.toml` (workspace-scoped) — picks up automatically by cargo
+# for every `cargo build` / `cargo test` / `cargo bench` invocation in this
+# workspace. Workspace-scoped config takes precedence over user-level
+# (~/.cargo/config.toml) — see cargo manifest-config documentation.
+#
+# Per-arch tuning. `target-cpu = "x86-64-v3"` enables AVX2, BMI2, FMA, and
+# other Haswell+ instructions universally — every Intel/AMD x86_64 chip since
+# ~2015 supports v3, every Apple x86_64 Mac since 2017 (Kaby Lake). Other
+# arches fall through to cargo's `generic` target-cpu so cross-distro builds
+# remain portable. Override locally with:
+#
+#   CARGO_BUILD_RUSTFLAGS="-C target-cpu=native" cargo build --release
+#
+# (then watch portability — a native build is locked to the host CPU).
+#
+# Why this lives in `.cargo/config.toml`, not `[profile.release]` in
+# Cargo.toml: this workspace's root is a virtual manifest and cargo
+# rejects conditional `[target.cfg(...)]` tables there. `.cargo/config.toml`
+# keys by full target triple, which is the correct cargo-incantation for
+# per-arch tuning. Target the x86_64-unknown-linux-gnu triple specifically
+# so Apple Silicon builds keep using a sensible default rather than picking
+# up a Linux desktop microarch.
+
+[target.x86_64-unknown-linux-gnu]
+rustflags = ["-C", "target-cpu=x86-64-v3"]

@@ -124,26 +124,64 @@ fn run_event_loop(
 
     let _ = ready_tx.send(Ok(()));
 
-    let fd = connection.as_fd().as_raw_fd();
-    // Index 0: Wayland socket. Index 1: self-wake eventfd — `submit_frame`
-    // and friends write it so commands commit immediately instead of
-    // waiting on the poll timeout or the next compositor event.
-    let mut poll_fds = [
-        libc::pollfd {
-            fd,
-            events: libc::POLLIN,
-            revents: 0,
-        },
-        libc::pollfd {
-            fd: wake_rx.as_raw_fd(),
-            events: libc::POLLIN,
-            revents: 0,
-        },
-    ];
+    let wayland_fd = connection.as_fd().as_raw_fd();
+    let wake_fd = wake_rx.as_raw_fd();
+
+    // Tier-2 step 3 (perf plan §"Wayland epoll"): replace the per-iteration
+    // `libc::poll(2, 100ms)` with an epoll fd. The Wayland socket and the
+    // self-wake eventfd (`wake_rx`, written by `submit_frame` et al.) are
+    // registered once. epoll scales to any number of fds without
+    // per-poll allocation and gives us a single syscall to wake on either
+    // fd. The 100 ms epoll_wait timeout is a safety net for the rare
+    // case where neither fd fires (e.g. compositor restart mid-poll).
+    let epoll_fd = make_epoll()?;
+    // SAFETY: epoll_ctl_add wraps the unsafe ctl call and validates the
+    // return code.
+    epoll_ctl_add(epoll_fd, wayland_fd, libc::EPOLLIN, 1)?;
+    epoll_ctl_add(epoll_fd, wake_fd, libc::EPOLLIN, 2)?;
+
+    // SAFETY: small stack array for epoll_wait. 4 slots is plenty — we
+    // only have 2 fds registered but a single roundtrip can produce
+    // multiple events for the same fd.
+    let mut events = [libc::epoll_event { events: 0, u64: 0 }; 4];
 
     while !shutdown.load(Ordering::Relaxed) {
         let _ = connection.flush();
-        dispatch_pending_events(&connection, &mut event_queue, &mut state, &mut poll_fds)?;
+        // SAFETY: `events` is a valid 4-element array, lifetime tied to
+        // this stack frame; `epoll_wait` writes at most `events.len()`
+        // entries.
+        let n = unsafe {
+            libc::epoll_wait(
+                epoll_fd,
+                events.as_mut_ptr(),
+                events.len() as libc::c_int,
+                100,
+            )
+        };
+        if n < 0 {
+            let err = std::io::Error::last_os_error();
+            if err.kind() != std::io::ErrorKind::Interrupted {
+                idle_log::error!(error = %err, "wayland-present: epoll_wait failed");
+                return Err("epoll_wait failed");
+            }
+            continue;
+        }
+        for &ev in &events[..n as usize] {
+            match ev.u64 {
+                1 => {
+                    // Wayland socket readable. The dispatch helper
+                    // handles prepare_read / read / dispatch_pending.
+                    dispatch_pending_events(&connection, &mut event_queue, &mut state)?;
+                }
+                2 => {
+                    // Self-wake eventfd: drain so the counter doesn't
+                    // overflow (eventfd is a u64 and we read until
+                    // EAGAIN). Then drop into `apply_commands` below.
+                    drain_eventfd(wake_fd);
+                }
+                _ => {}
+            }
+        }
         apply_commands(&mut state, &command_rx);
     }
 
@@ -151,63 +189,103 @@ fn run_event_loop(
     Ok(())
 }
 
+/// Create a new epoll fd. CLOEXEC so a child fork doesn't inherit it.
+fn make_epoll() -> Result<libc::c_int, &'static str> {
+    // SAFETY: epoll_create1 with EPOLL_CLOEXEC returns a fresh fd.
+    let raw = unsafe { libc::epoll_create1(libc::EPOLL_CLOEXEC) };
+    if raw < 0 {
+        idle_log::error!(
+            error = %std::io::Error::last_os_error(),
+            "wayland-present: epoll_create1 failed"
+        );
+        return Err("epoll_create1 failed");
+    }
+    Ok(raw)
+}
+
+/// Add `fd` to the epoll set with the given event mask and a stable
+/// tag (the `u64` slot in `epoll_event`). The tag lets us route the
+/// wakeup to the right handler in the event loop.
+fn epoll_ctl_add(
+    epoll_fd: libc::c_int,
+    fd: libc::c_int,
+    mask: libc::c_int,
+    tag: u64,
+) -> Result<(), &'static str> {
+    let mut event = libc::epoll_event {
+        events: mask as u32,
+        u64: tag,
+    };
+    // SAFETY: `event` is a valid `epoll_event` struct; `fd` is a valid
+    // descriptor (we own it or it is the Wayland socket lifetime).
+    let rc = unsafe { libc::epoll_ctl(epoll_fd, libc::EPOLL_CTL_ADD, fd, &mut event) };
+    if rc < 0 {
+        idle_log::error!(
+            error = %std::io::Error::last_os_error(),
+            fd,
+            "wayland-present: epoll_ctl ADD failed"
+        );
+        return Err("epoll_ctl ADD failed");
+    }
+    Ok(())
+}
+
+/// Drain an eventfd by reading 8 bytes (the counter) until EAGAIN.
+fn drain_eventfd(fd: libc::c_int) {
+    let mut buf = [0u8; 8];
+    loop {
+        // SAFETY: `fd` is a valid eventfd; `buf` is a valid 8-byte
+        // stack buffer. EAGAIN (EWOULDBLOCK) means the counter is 0 —
+        // we exit the loop.
+        let n = unsafe { libc::read(fd, buf.as_mut_ptr().cast(), buf.len()) };
+        if n < 0 {
+            let err = std::io::Error::last_os_error();
+            if err.kind() == std::io::ErrorKind::WouldBlock {
+                return;
+            }
+            // Any other error is fatal-ish; log and exit the loop to
+            // avoid spinning on the same error forever.
+            idle_log::warn!(
+                error = %err,
+                fd,
+                "wayland-present: eventfd read failed"
+            );
+            return;
+        }
+        if n == 0 {
+            return;
+        }
+    }
+}
+
 fn dispatch_pending_events(
     connection: &Connection,
     event_queue: &mut wayland_client::EventQueue<SessionState>,
     state: &mut SessionState,
-    poll_fds: &mut [libc::pollfd; 2],
 ) -> Result<(), &'static str> {
     if let Some(guard) = event_queue.prepare_read() {
         let _ = connection.flush();
-
-        // SAFETY: `poll_fds` points to two valid `pollfd`s (wayland + wake).
-        let poll_result = unsafe { libc::poll(poll_fds.as_mut_ptr(), 2, 100) };
-        if poll_result > 0 {
-            if poll_fds[1].revents & libc::POLLIN != 0 {
-                // Drain the self-wake counter; a pending wake is enough.
-                let mut buf = [0u8; 8];
-                while unsafe {
-                    libc::read(poll_fds[1].fd, buf.as_mut_ptr().cast::<libc::c_void>(), 8)
-                } == 8
-                {}
+        match guard.read() {
+            Ok(_) => {}
+            Err(e) if is_wayland_would_block(&e) => {
+                // Another path already drained the socket, or nothing left
+                // to read. Not fatal — dispatch whatever is pending.
+                idle_log::trace!(
+                    error = %e,
+                    "wayland-present: read WouldBlock/EAGAIN; continuing"
+                );
             }
-            if poll_fds[0].revents & libc::POLLIN != 0 {
-                match guard.read() {
-                    Ok(_) => {}
-                    Err(e) if is_wayland_would_block(&e) => {
-                        // Another path already drained the socket, or nothing left
-                        // to read. Not fatal — dispatch whatever is pending.
-                        idle_log::trace!(
-                            error = %e,
-                            "wayland-present: read WouldBlock/EAGAIN; continuing"
-                        );
-                    }
-                    Err(e) => {
-                        idle_log::error!(
-                            error = %e,
-                            revents = poll_fds[0].revents,
-                            "wayland-present: failed to read Wayland events (compositor may have closed the connection; often a protocol error on the previous commit)"
-                        );
-                        return Err("failed to read Wayland events");
-                    }
-                }
-                if let Err(e) = event_queue.dispatch_pending(state) {
-                    idle_log::error!(error = %e, "wayland-present: failed to dispatch Wayland events");
-                    return Err("failed to dispatch Wayland events");
-                }
+            Err(e) => {
+                idle_log::error!(
+                    error = %e,
+                    "wayland-present: failed to read Wayland events (compositor may have closed the connection; often a protocol error on the previous commit)"
+                );
+                return Err("failed to read Wayland events");
             }
-
-            if poll_fds[0].revents & (libc::POLLHUP | libc::POLLERR | libc::POLLNVAL) != 0
-                || poll_fds[1].revents & (libc::POLLERR | libc::POLLNVAL) != 0
-            {
-                return Err("Wayland connection closed");
-            }
-        } else if poll_result < 0 {
-            let err = std::io::Error::last_os_error();
-            if err.kind() != std::io::ErrorKind::Interrupted {
-                idle_log::error!(error = %err, "wayland-present: poll failed");
-                return Err("poll failed");
-            }
+        }
+        if let Err(e) = event_queue.dispatch_pending(state) {
+            idle_log::error!(error = %e, "wayland-present: failed to dispatch Wayland events");
+            return Err("failed to dispatch Wayland events");
         }
     } else if let Err(e) = event_queue.dispatch_pending(state) {
         idle_log::error!(error = %e, "wayland-present: failed to dispatch Wayland events");

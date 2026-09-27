@@ -140,19 +140,8 @@ impl PluginSession {
             // an `idle_api_version` symbol (added in this rotation); plugins
             // that don't are refused as `MissingVersion` so a malicious or
             // stale plugin cannot slip past the version check.
-            let ver_sym = lib.get::<unsafe extern "C" fn() -> u32>(b"idle_api_version");
-            let ver_fn = match ver_sym {
-                Ok(f) => *f,
-                Err(_) => {
-                    return Err(PluginError::MissingVersion);
-                }
-            };
-            let found = ver_fn();
-            let expected = idle_api::API_VERSION;
-            if found != expected {
-                return Err(PluginError::ApiVersionMismatch { found, expected });
-            }
-            idle_log::info!(found, expected, "plugin API version ok");
+            // Shared with the hot-reload path — see `entry::check_api_version`.
+            super::entry::check_api_version(&lib)?;
 
             let (raw_ptr, destroy) = resolve_entry(&lib)?;
 

@@ -28,6 +28,43 @@ pub(crate) fn check_entry(manifest: &Manifest, resolved: &Path) -> Result<(), Pl
     Ok(())
 }
 
+/// ABI negotiation: REQUIRED on every path that hands plugin code to the host.
+///
+/// Every idle-saver-* crate ships an `idle_api_version` symbol; a plugin
+/// without it is refused as `MissingVersion` so a stale or hostile plugin
+/// cannot slip past. A plugin rebuilt against a different `idle-api` exports a
+/// different value and is refused as `ApiVersionMismatch` rather than being
+/// driven as a foreign struct layout.
+///
+/// This lives here rather than inline in `load_path_with_options` because the
+/// hot-reload path must run it too: `reload` used to go
+/// `Library::new` → `check_entry` → `resolve_entry`, so a `.so` swapped on
+/// disk against a different `idle-api` bypassed the gate entirely.
+///
+/// # Safety
+///
+/// `lib` must be a live, fully-initialised `Library` for a plugin whose
+/// constructors have already run inside the sandbox, and the returned
+/// `idle_api_version` symbol must be a valid `extern "C" fn() -> u32` as
+/// declared by the plugin. That is the same contract the caller already
+/// upholds before `resolve_entry` calls into the plugin.
+pub(crate) unsafe fn check_api_version(lib: &Library) -> Result<(), PluginError> {
+    let ver_sym = unsafe { lib.get::<unsafe extern "C" fn() -> u32>(b"idle_api_version") };
+    let ver_fn = match ver_sym {
+        Ok(f) => *f,
+        Err(_) => {
+            return Err(PluginError::MissingVersion);
+        }
+    };
+    let found = unsafe { ver_fn() };
+    let expected = idle_api::API_VERSION;
+    if found != expected {
+        return Err(PluginError::ApiVersionMismatch { found, expected });
+    }
+    idle_log::info!(found, expected, "plugin API version ok");
+    Ok(())
+}
+
 /// Host-side destroy for C-ABI plugins: drops the boxed `CAbiSaver`, whose
 /// `Drop` calls `ops.destroy(ctx)` to free plugin state.
 unsafe extern "C" fn drop_c_abi_instance(ptr: *mut ScreensaverInstance) {

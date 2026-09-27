@@ -76,7 +76,8 @@ fn kill_child_clears_handle() {
 }
 
 #[test]
-fn expected_stop_is_set_after_kill() {    let mut s = IpcPluginSession::load_with_options(
+fn expected_stop_is_set_after_kill() {
+    let mut s = IpcPluginSession::load_with_options(
         "beams",
         &LaunchMode::Daemon,
         None,

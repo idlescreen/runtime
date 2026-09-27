@@ -183,9 +183,7 @@ impl Drop for OverlayPresenter {
         // command channel is already drained.
         self.wake();
 
-        let _ = self
-            .command_tx
-            .try_send(PresenterCommand::Hide);
+        let _ = self.command_tx.try_send(PresenterCommand::Hide);
 
         // Bounded join: the poll loop turns over in ≤100ms, so teardown
         // completes well under this bound on a healthy compositor. A

@@ -60,6 +60,12 @@ idle-upscaler = { path = "crates/idle-upscaler" }
 idle-ipc = { path = "crates/idle-ipc" }
 wayland-idle = { path = "crates/wayland-idle" }
 wayland-present = { path = "crates/wayland-present" }
+# Bench harness. `default-features = false` drops the `rayon` parallel
+# runner (we use the default single-thread runner — bench numbers stay
+# deterministic across CI runner hosts). `plotters` + `cargo_bench_support`
+# are pulled in via the `html_reports` feature so `cargo bench -- --bench`
+# can produce a report artifact if a maintainer wants one.
+criterion = { version = "0.5", default-features = false, features = ["html_reports"] }
 
 
 [workspace.lints.rust]

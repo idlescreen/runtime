@@ -35,6 +35,13 @@ tokio = { workspace = true }
 idle-err = { workspace = true }
 idle-log = { workspace = true }
 
+[dev-dependencies]
+criterion = { workspace = true }
+
+[[bench]]
+name = "draw_frame"
+harness = false
+
 [package.metadata.deb]
 name = "idle-daemon"
 changelog = "debian/changelog"

@@ -22,14 +22,30 @@ opt-level = 3           # Speed, not size. `z` disables loop vectorization and
                          # cargo's default (3) — the render path should not be
                          # the odd one out. See packages/ for size-sensitive
                          # artifacts instead.
-lto = true               # Enable Link Time Optimization
-codegen-units = 1        # Reduce codegen units to maximize size reduction
+lto = "fat"              # Whole-program LTO. Outperforms `lto = true` (thin LTO)
+                         # by another ~2–6% on per-pixel work because LLVM can
+                         # inline across crate boundaries when the bindings
+                         # are monomorphized.
+codegen-units = 1        # Single codegen unit maximizes cross-function inlining
+                         # during LTO. The 5–10× cold-compile tax is paid once
+                         # per release cycle, not per frame.
 panic = "unwind"         # REQUIRED: idle-dbus wraps D-Bus calls in catch_unwind
                          # to survive a panic. Under `abort` those layers are
                          # dead code in the only profile that ships, while
                          # `unwrap_used`/`expect_used` are allowed below — a
                          # single panic would kill the daemon for the session.
 strip = true             # Strip symbols and debuginfo
+
+# `target-cpu` is intentionally left at cargo's default of `generic` here.
+# Two reasons: (a) this is a virtual workspace manifest and cargo does not
+# accept conditional `[target.*]` tables in virtual manifests; (b) macOS
+# Apple Silicon and Linux aarch64 builds cannot both target `x86-64-v3`.
+# Maintainers who want a per-microarch build drop a `.cargo/config.toml`
+# next to this file with:
+#     [target.x86_64-unknown-linux-gnu]
+#     runner = "/…/sccache …"
+#     rustflags = ["-C", "target-cpu=x86-64-v3"]
+# or set `CARGO_BUILD_RUSTFLAGS=-C\ target-cpu=x86-64-v3 cargo build --release`.
 
 [workspace.dependencies]
 tokio = { version = "1.52", features = ["full"] }

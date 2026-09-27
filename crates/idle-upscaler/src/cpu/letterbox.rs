@@ -26,13 +26,55 @@ pub fn upscale_letterbox_into(
         return;
     }
 
-    dst[..needed].fill(0);
-
+    // Tier-3 perf change: instead of zero-filling the entire destination
+    // (a ~6 MB memset at 2560×1440 that the inner loop then immediately
+    // overwrites for the display area), only fill the four black-bar
+    // regions around the display rect. When the aspect ratio matches
+    // (no bars at all) the fill is skipped entirely.
     let scale = (dst_w as f32 / src_w as f32).min(dst_h as f32 / src_h as f32);
     let display_w = (src_w as f32 * scale).floor() as u32;
     let display_h = (src_h as f32 * scale).floor() as u32;
     let offset_x = (dst_w - display_w) / 2;
     let offset_y = (dst_h - display_h) / 2;
+
+    // Fill only the bars (the regions outside `offset_x .. offset_x + display_w`
+    // and `offset_y .. offset_y + display_h`). When `offset_x == 0` and
+    // `offset_y == 0` (display fills the whole dst) both top and bottom bars
+    // are empty and the memset cost is zero.
+    let row_bytes = (dst_w * 4) as usize;
+    if offset_y > 0 {
+        // Top bar
+        let top_rows = offset_y as usize;
+        dst[..top_rows * row_bytes].fill(0);
+    }
+    if offset_x > 0 {
+        // Left + right bars per display row
+        let left_bytes = (offset_x * 4) as usize;
+        let right_bytes = ((dst_w - offset_x - display_w) * 4) as usize;
+        for dst_y in offset_y..(offset_y + display_h) {
+            let row_start = dst_y as usize * row_bytes;
+            dst[row_start..row_start + left_bytes].fill(0);
+            if right_bytes > 0 {
+                let right_start = row_start + row_bytes - right_bytes;
+                dst[right_start..row_start + row_bytes].fill(0);
+            }
+        }
+    } else if display_w < dst_w {
+        // No left offset but the display is narrower than dst — fill the
+        // right bar only (the inner loop writes `display_w` BGRA pixels
+        // per row).
+        let right_bytes = ((dst_w - display_w) * 4) as usize;
+        for dst_y in offset_y..(offset_y + display_h) {
+            let row_start = dst_y as usize * row_bytes;
+            let right_start = row_start + row_bytes - right_bytes;
+            dst[right_start..row_start + row_bytes].fill(0);
+        }
+    }
+    if (offset_y + display_h) < dst_h {
+        // Bottom bar
+        let bottom_start = ((offset_y + display_h) as usize) * row_bytes;
+        dst[bottom_start..needed].fill(0);
+    }
 
     for dst_y in 0..display_h {
         for dst_x in 0..display_w {

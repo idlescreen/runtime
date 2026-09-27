@@ -8,6 +8,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      - uses: necrometer-dev/necrometer-action@v1
+      - uses: necrometer-dev/necrometer-action@268da640d399fc910fb346e2cba3de047269cfd4 # v1
         with:
           token: ${{ secrets.NECRO_TOKEN || secrets.GITHUB_TOKEN }}

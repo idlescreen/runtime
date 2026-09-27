@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with: { fetch-depth: 0 }
-      - uses: studio2201/studio2201@v1
+      - uses: studio2201/studio2201@46cd7bf1af5b4d076739977fff026b1bc3263ecd # v1
         with: { tools: 'proven', fail-on: 'block' }
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()

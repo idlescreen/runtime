@@ -7,6 +7,8 @@
 //! mirror, primary-only, span) are handled in the frame loop submodule.
 
 mod frame_loop;
+#[cfg(test)]
+mod frame_loop_tests;
 mod frame_pacing;
 mod hw_scaling;
 mod ipc_init;

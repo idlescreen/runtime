@@ -196,6 +196,7 @@ impl FrameUpscaler {
 mod tests;
 
 #[cfg(test)]
+#[allow(clippy::float_cmp)]
 mod nan_guard_tests {
     use super::*;
 

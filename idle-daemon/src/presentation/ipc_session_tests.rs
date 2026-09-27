@@ -76,8 +76,7 @@ fn kill_child_clears_handle() {
 }
 
 #[test]
-fn expected_stop_is_set_after_kill() {
-    let mut s = IpcPluginSession::load_with_options(
+fn expected_stop_is_set_after_kill() {    let mut s = IpcPluginSession::load_with_options(
         "beams",
         &LaunchMode::Daemon,
         None,
@@ -88,7 +87,7 @@ fn expected_stop_is_set_after_kill() {
     s.kill_child();
     assert!(
         s.expected_stop.load(std::sync::atomic::Ordering::Acquire),
-        "kill_child must mark expected_stop to suppress failsafe spurious liveness events"
+        "kill_child must mark expected_stop so an intentional teardown is not logged as an unexpected child death"
     );
 }
 
@@ -141,4 +140,82 @@ fn kill_child_reaps_real_process() {
     }
 
     s.kill_child();
+}
+
+/// Regression for the respawn storm: a saver that misses the IPC deadline was
+/// respawned *every frame*, re-running Landlock, cgroup attach, renderer init
+/// and a fresh SHM mapping about once a second for the whole idle session.
+#[test]
+fn consecutive_timeouts_are_budgeted_and_progress_resets_them() {
+    let _g = crate::TEST_ENV_LOCK
+        .lock()
+        .unwrap_or_else(|e| e.into_inner());
+    unsafe { std::env::remove_var("IDLE_MAX_RUNNER_TIMEOUTS") };
+
+    let mut s = IpcPluginSession::load_with_options(
+        "beams",
+        &LaunchMode::Daemon,
+        None,
+        std::collections::BTreeMap::new(),
+        false,
+    )
+    .expect("load");
+
+    let budget = IpcPluginSession::max_consecutive_timeouts();
+    assert_eq!(budget, 3, "default budget is 3 consecutive timeouts");
+
+    assert!(s.should_recover(80, 24), "a fresh session may respawn");
+    for i in 1..budget {
+        s.note_timeout();
+        assert_eq!(s.consecutive_timeouts, i);
+        assert!(
+            s.should_recover(80, 24),
+            "must still respawn at timeout {i} (budget {budget})"
+        );
+    }
+    s.note_timeout();
+    assert!(
+        !s.should_recover(80, 24),
+        "budget exhausted — must refuse to respawn and let the fault path run"
+    );
+
+    s.note_progress();
+    assert_eq!(s.consecutive_timeouts, 0, "a good frame clears the run");
+    assert!(s.should_recover(80, 24));
+}
+
+#[test]
+fn exhausted_geometry_is_never_retried_again() {
+    let mut s = IpcPluginSession::load_with_options(
+        "beams",
+        &LaunchMode::Daemon,
+        None,
+        std::collections::BTreeMap::new(),
+        false,
+    )
+    .expect("load");
+
+    s.mark_exhausted(80, 24);
+    assert!(
+        !s.should_recover(80, 24),
+        "a geometry that already burned its budget must not be retried"
+    );
+    assert!(
+        s.should_recover(120, 40),
+        "a different geometry is still allowed a fresh budget"
+    );
+}
+
+#[test]
+fn max_runner_timeouts_env_override() {
+    let _g = crate::TEST_ENV_LOCK
+        .lock()
+        .unwrap_or_else(|e| e.into_inner());
+    unsafe { std::env::set_var("IDLE_MAX_RUNNER_TIMEOUTS", "7") };
+    assert_eq!(IpcPluginSession::max_consecutive_timeouts(), 7);
+    // A zero budget would disable recovery entirely; reject it.
+    unsafe { std::env::set_var("IDLE_MAX_RUNNER_TIMEOUTS", "0") };
+    assert_eq!(IpcPluginSession::max_consecutive_timeouts(), 3);
+    unsafe { std::env::remove_var("IDLE_MAX_RUNNER_TIMEOUTS") };
+    assert_eq!(IpcPluginSession::max_consecutive_timeouts(), 3);
 }

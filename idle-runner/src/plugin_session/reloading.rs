@@ -49,6 +49,12 @@ impl PluginSession {
                 super::entry::check_entry(m, &self.plugin_path)?;
             }
 
+            // ABI gate on reload too. The file on disk may have been rebuilt
+            // against a different `idle-api` since the initial load; without
+            // this the host would drive a `ScreensaverInstance` of a foreign
+            // layout.
+            super::entry::check_api_version(&lib)?;
+
             let (raw_ptr, destroy) = super::entry::resolve_entry(&lib)?;
 
             PluginGuard {

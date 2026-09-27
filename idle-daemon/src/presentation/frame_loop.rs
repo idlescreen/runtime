@@ -123,6 +123,23 @@ fn prepare_frame(state: &mut FrameLoopState) -> Result<(), String> {
     state.frame_start = frame_start;
     for s in state.sessions.iter_mut() {
         if !s.session.is_plugin_alive() {
+            // A saver that keeps missing the IPC deadline must not be respawned
+            // every frame: each respawn re-runs Landlock, cgroup attach,
+            // renderer init and a fresh SHM mapping, and the loop fires
+            // hardest on the slowest frames. Give up after the budget and let
+            // the daemon's fault/cooldown path own the retry.
+            if !s.session.should_recover(s.cols, s.rows) {
+                let timeouts = s.session.consecutive_timeouts;
+                s.session.mark_exhausted(s.cols, s.rows);
+                return Err(format!(
+                    "saver {} timed out {timeouts}× (budget {}) at {}x{}; \
+                     refusing to respawn — stopping presentation",
+                    s.session.saver_name,
+                    IpcPluginSession::max_consecutive_timeouts(),
+                    s.cols,
+                    s.rows
+                ));
+            }
             s.session.recover(s.cols, s.rows)?;
             s.session.set_simulation_rate(state.tick_hz);
         }

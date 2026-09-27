@@ -12,6 +12,7 @@ impl IpcPluginSession {
         if let Some(ref mut socket) = self.socket {
             match IpcResponse::read_from(&mut *socket) {
                 Ok(IpcResponse::FrameReady { scanlines, dirty }) => {
+                    self.note_progress();
                     if let Some(ref shm) = self.shm {
                         // SAFETY: SHM mapped for session lifetime; dims set at init.
                         match unsafe { shm.cells_mut() } {
@@ -50,6 +51,7 @@ impl IpcPluginSession {
                             saver = %self.saver_name,
                             "IPC read timed out — saver hung inside TickAndDraw; killing child"
                         );
+                        self.note_timeout();
                         self.kill_child();
                         self.socket = None;
                         return (false, false);

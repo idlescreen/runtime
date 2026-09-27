@@ -30,8 +30,21 @@ pub struct IpcPluginSession {
     pub(crate) shm: Option<SharedMemory>,
     pub(crate) socket_path: Option<PathBuf>,
     pub(crate) expected_stop: Arc<AtomicBool>,
-    /// When true, an unexpected child exit may arm the failsafe locker once.
-    pub(crate) failsafe_armed: Arc<AtomicBool>,
+    /// Consecutive IPC read/write timeouts on the live child.
+    ///
+    /// A saver that cannot answer within `read_timeout()` is killed. Without a
+    /// budget here the frame loop respawned it *every frame* — re-running
+    /// Landlock, cgroup attach, renderer init and a fresh SHM mapping roughly
+    /// once a second, for the whole idle session, on battery. The loop fired
+    /// hardest on the slowest frames, so it self-reinforced. Reset by any
+    /// successful frame.
+    pub(crate) consecutive_timeouts: u32,
+    /// Geometry the live child was started at, so a timeout can be attributed.
+    pub(crate) current_geometry: Option<(usize, usize)>,
+    /// Geometry at which this session already exhausted its timeout budget.
+    /// A later presentation at the same size must not burn the whole budget
+    /// again.
+    pub(crate) exhausted_geometry: Option<(usize, usize)>,
 }
 
 impl IpcPluginSession {
@@ -66,7 +79,9 @@ impl IpcPluginSession {
             shm: None,
             socket_path: None,
             expected_stop: Arc::new(AtomicBool::new(false)),
-            failsafe_armed: Arc::new(AtomicBool::new(true)),
+            consecutive_timeouts: 0,
+            current_geometry: None,
+            exhausted_geometry: None,
         })
     }
 
@@ -158,6 +173,7 @@ impl IpcPluginSession {
                         saver = %self.saver_name,
                         "IPC write timed out — saver hung inside TickAndDraw; killing child"
                     );
+                    self.note_timeout();
                     self.kill_child();
                     return;
                 }

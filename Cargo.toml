@@ -66,6 +66,11 @@ wayland-present = { path = "crates/wayland-present" }
 # are pulled in via the `html_reports` feature so `cargo bench -- --bench`
 # can produce a report artifact if a maintainer wants one.
 criterion = { version = "0.5", default-features = false, features = ["html_reports"] }
+# Allocator. The per-binary opt-in (see `idle-daemon`'s `[features]`)
+# marks this dep `optional` on the consuming side — workspace
+# dependencies cannot be marked optional themselves. The default
+# allocator stays the system one so musl/BSD builds are unaffected.
+mimalloc = { version = "0.1", default-features = false }
 
 
 [workspace.lints.rust]

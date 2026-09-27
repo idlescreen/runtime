@@ -1,0 +1,61 @@
+name: Bench harness
+
+on:
+  push:
+    branches: [ "master", "main" ]
+  pull_request:
+    branches: [ "master", "main" ]
+
+permissions:
+  contents: read
+
+jobs:
+  bench:
+    name: criterion benches
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: rustup
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+          if [ -f rust-toolchain.toml ]; then rustup show; else rustup default stable; fi
+      # draw_frame bench calls CellRenderer::new() which loads the system
+      # monospace font. ubuntu-latest doesn't ship one by default —
+      # install fonts-liberation so the bench has something to load.
+      - name: System deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libdbus-1-dev libwayland-dev libxkbcommon-dev libssl-dev pkg-config libudev-dev fonts-liberation
+      - name: bench (idle-upscaler/stretch)
+        # --warm-up-time + --measurement-time are tuned for CI: smaller
+        # windows than `cargo bench` defaults so the workflow stays
+        # under the 30-minute timeout. The numbers are still
+        # comparable across runs (criterion's statistical model is
+        # time-budget-aware, not sample-count-aware).
+        run: |
+          cargo bench -p idle-upscaler --bench stretch \
+            -- --warm-up-time 1 --measurement-time 3 \
+            > bench-upscaler.txt 2>&1 || true
+          tail -200 bench-upscaler.txt
+      - name: bench (idle-daemon/draw_frame)
+        run: |
+          cargo bench -p idle-daemon --bench draw_frame \
+            -- --warm-up-time 1 --measurement-time 3 \
+            > bench-draw_frame.txt 2>&1 || true
+          tail -200 bench-draw_frame.txt
+      - name: Upload bench artifacts
+        if: always()
+        uses: actions/upload-artifact@50769540e7f4bd5e79e7999289bfc103d06fd04c
+        with:
+          name: perf-bench-results
+          path: |
+            bench-upscaler.txt
+            bench-draw_frame.txt
+          retention-days: 30
+
+      # PR-comment integration on ≥ 2% regression — held for a
+      # follow-up commit. Tracking issue: this workflow is the
+      # landing pad; the comparator step + comment API call needs a
+      # stable baseline file (see plan §"CI gating").

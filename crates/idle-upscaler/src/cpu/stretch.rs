@@ -182,11 +182,17 @@ fn stretch_byte_rows(
     src_h: u32,
     dst_w: u32,
     dst_h: u32,
-    needed: usize,
+    // Retained in the signature so the call site stays uniform across the
+    // aligned (`stretch_u32_rows`) and unaligned byte paths; was previously
+    // used by `dst[..needed].fill(0)` before that memset was dropped.
+    _needed: usize,
     cache: &StretchCache,
 ) {
-    // Fallback unaligned byte-copy path
-    dst[..needed].fill(0);
+    // Fallback unaligned byte-copy path. The loop below writes every byte of
+    // `dst[..needed]` — `upscale_stretch_into` is the only caller and
+    // guarantees `dst.len() >= needed` plus matching dimensions — so the
+    // previous `dst[..needed].fill(0)` was a wasted ~6 MB memset at 2560×1440
+    // that the upscaler then immediately overwrote.
     for dy in 0..dst_h {
         let sy = (dy as u64 * src_h as u64 / dst_h as u64) as u32;
         let src_row = sy as usize * src_w as usize * 4;

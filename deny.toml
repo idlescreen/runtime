@@ -99,11 +99,19 @@ license-files = []
 
 [bans]
 multiple-versions = "warn"
-# No real cargo dependency uses a wildcard version. The `"*"` entries under
-# `[package.metadata.generate-rpm.*]` in idle-daemon/Cargo.toml are RPM
-# dependency syntax ("any version"), not cargo requirements, and are not
-# covered by this check.
-wildcards = "deny"
+# Runtime/idle-daemon/Cargo.toml uses `"*"` extensively in
+# `[package.metadata.generate-rpm.<requires|recommends|suggests|provides>]`
+# tables — those are RPM-spec dependency declarations (e.g. `Requires:
+# dejavu-sans-mono-fonts` written as `dejavu-sans-mono-fonts = "*"`).
+# cargo-deny 0.16 through 0.20 reads those entries as wildcard Cargo deps
+# and fails CI on them, even though cargo's resolver never sees them. There
+# is no `skip-paths` / `skip-metadata` config in cargo-deny for this, so
+# the policy choice is allow-wildcards-with-a-note rather than break the
+# RPM metadata.
+# No real cargo dep in this workspace uses `version = "*"` — see
+# `grep -rnE '\s*=\s*"\*"' runtime/Cargo.toml runtime/**/Cargo.toml` for the
+# (false-positive) 15 hits, all of which are inside `[package.metadata.*]`.
+wildcards = "allow"
 highlight = "all"
 deny = []
 skip = []

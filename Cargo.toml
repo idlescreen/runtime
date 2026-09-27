@@ -14,10 +14,21 @@ members = [
 ]
 
 [profile.release]
-opt-level = "z"          # Optimize for size
+opt-level = 3           # Speed, not size. `z` disables loop vectorization and
+                         # most inlining, and this binary spends its life in
+                         # per-pixel CPU upscale loops (idle-upscaler) and
+                         # frame compositing, on battery, for hours. The six
+                         # other repos declare no release profile and get
+                         # cargo's default (3) — the render path should not be
+                         # the odd one out. See packages/ for size-sensitive
+                         # artifacts instead.
 lto = true               # Enable Link Time Optimization
 codegen-units = 1        # Reduce codegen units to maximize size reduction
-panic = "abort"          # Remove panic unwinding code
+panic = "unwind"         # REQUIRED: idle-dbus wraps D-Bus calls in catch_unwind
+                         # to survive a panic. Under `abort` those layers are
+                         # dead code in the only profile that ships, while
+                         # `unwrap_used`/`expect_used` are allowed below — a
+                         # single panic would kill the daemon for the session.
 strip = true             # Strip symbols and debuginfo
 
 [workspace.dependencies]

@@ -96,6 +96,11 @@ jobs:
   test:
     runs-on: ubuntu-latest
     needs: build
+    # A deadlocked test must fail the build, not burn a runner for the
+    # 6-hour default. See the `apply_commands_drains_channel_until_empty`
+    # incident: a `sync_channel(1)` with two `send()` calls hung this job
+    # indefinitely because libtest joins every test thread before exit.
+    timeout-minutes: 15
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
     - name: System deps

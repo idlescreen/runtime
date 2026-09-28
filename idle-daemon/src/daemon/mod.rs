@@ -6,12 +6,14 @@
 //! tick loop lives in sibling modules.
 
 pub mod battery;
+pub(crate) mod consume_events;
 pub(crate) mod idle_decision;
 #[cfg(test)]
 mod liveness_validation_tests;
 #[cfg(test)]
 mod m2_concurrency_stress_tests;
 pub(crate) mod pidfile;
+pub(crate) mod power_thread;
 pub(crate) mod power_watcher;
 pub(crate) mod presentation;
 pub(crate) mod preview_queue;

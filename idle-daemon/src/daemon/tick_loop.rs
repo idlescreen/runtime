@@ -18,7 +18,8 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use crate::controller::DaemonController;
-use crate::daemon::power_watcher::{HEARTBEAT, PowerWatcher, PowerWatcherThread, WaitOutcome};
+use crate::daemon::power_thread::PowerWatcherThread;
+use crate::daemon::power_watcher::{HEARTBEAT, PowerWatcher, WaitOutcome};
 use crate::daemon::watchdog;
 use crate::ooda::OodaLoopController;
 

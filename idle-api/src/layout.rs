@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// perf: T3 · metric: bounded single-pass work; no syscalls, no locks, no allocation on the steady path · check: review
+// perf: T3 · metric: bounded single-pass work; zero allocations on the steady path, asserted by layout_tests.rs · check: test
 
 //! Multi-monitor layout helpers for Wayland span presentation.
 
@@ -107,3 +107,7 @@ pub fn place_centered_logo(
         height: logo_h,
     })
 }
+
+#[cfg(test)]
+#[path = "layout_tests.rs"]
+mod tests;

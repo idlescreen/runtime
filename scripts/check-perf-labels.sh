@@ -72,6 +72,27 @@ while IFS= read -r f; do
     [ -n "${BENCH[$name]:-}" ] || BENCH[$name]="$f"
 done < <(find . -type f -path '*/benches/*.rs' -not -path '*/target/*' -not -path '*/runtime/*')
 
+# True when the page, or any `#[path = "..."]` test page it includes,
+# contains a `#[test]`.
+#
+# The grep used to look only at the page itself, which meant every page
+# following this repo's own convention -- a `#[cfg(test)] #[path = "x_tests.rs"] mod tests;`
+# companion page -- was told it had no test while its test sat one file
+# away. The rule was rejecting the layout it was written to require.
+page_has_test() {
+    local file="$1" dir inc
+    grep -q '#\[test\]' "$file" && return 0
+    dir=$(dirname -- "$file")
+    while read -r inc; do
+        [ -n "$inc" ] || continue
+        if [ -f "$dir/$inc" ] && grep -q '#\[test\]' "$dir/$inc"; then
+            return 0
+        fi
+    done < <(grep -oE '#\[path[[:space:]]*=[[:space:]]*"[^"]+"' "$file" \
+             | sed -E 's/.*"([^"]+)".*/\1/')
+    return 1
+}
+
 # Every page that counts. `lib.rs` and `main.rs` are crate roots that
 # only re-export or hold `fn main`; they are pages too and are held to
 # the same rule, because a crate root is exactly where a reader looks
@@ -196,8 +217,8 @@ while IFS= read -r file; do
                 fail "$where: T3 must state a metric: -- what does this page cost?"
                 continue
             fi
-            if [ "$check" = "test" ] && ! grep -q '#\[test\]' "$file"; then
-                fail "$where: check: test claims a property test, but the page has no #[test]"
+            if [ "$check" = "test" ] && ! page_has_test "$file"; then
+                fail "$where: check: test claims a property test, but neither the page nor its #[path] test page contains a #[test]"
                 continue
             fi
             ;;

@@ -10,6 +10,9 @@ license = "Apache-2.0"
 [dependencies]
 idle-log = { workspace = true }
 
+[dev-dependencies]
+perf-test-support = { path = "../crates/perf-test-support" }
+
 [target.'cfg(target_os = "linux")'.dependencies]
 wayland-present = { path = "../crates/wayland-present" }
 

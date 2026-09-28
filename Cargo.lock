@@ -647,12 +647,13 @@ name = "idle-api"
 version = "3.5.0"
 dependencies = [
  "idle-log",
+ "perf-test-support",
  "wayland-present",
 ]
 
 [[package]]
 name = "idle-daemon"
-version = "3.5.22"
+version = "3.5.26"
 dependencies = [
  "criterion",
  "idle-api",
@@ -1044,6 +1045,10 @@ name = "paste"
 version = "1.0.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "57c0d7b74b563b49d38dae00a0c37d4d6de9b432382b2892f0574ddcae73fd0a"
+
+[[package]]
+name = "perf-test-support"
+version = "0.1.0"
 
 [[package]]
 name = "pin-project-lite"

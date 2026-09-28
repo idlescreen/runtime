@@ -1,6 +1,7 @@
 [workspace]
 resolver = "2"
 members = [
+    "crates/perf-test-support",
     "crates/idle-err",
     "crates/idle-log",
     "crates/wayland-idle",

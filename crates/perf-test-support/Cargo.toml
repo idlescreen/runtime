@@ -1,0 +1,12 @@
+[package]
+authors = ["idlescreen developers"]
+name = "perf-test-support"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "Test-only helpers that make `metric:` claims into assertions. Never a runtime dependency."
+
+# No dependencies, and no `[lib]` consumers outside test builds: this crate
+# is a dev-dependency everywhere it is used, so the global allocator it
+# installs never reaches a shipped binary.
+[dependencies]

@@ -1,4 +1,4 @@
-// perf: T3 · metric: bounded single-pass work; no syscalls, no locks, no allocation on the steady path · check: test
+// perf: T3 · metric: per-cell colour arithmetic; zero allocations on the steady path, asserted below · check: test
 /// Convert HSL to RGB. `h` is in degrees [0, 360); `s`, `l` in [0.0, 1.0];
 /// returns `(r, g, b)` with each channel in `[0, 255]`.
 ///
@@ -230,5 +230,33 @@ mod proptests {
             assert_eq!(r, g);
             assert_eq!(g, b);
         }
+    }
+
+    /// The label on this page promises no allocation on the steady
+    /// path. Per-cell colour conversion runs for every grid cell of
+    /// every frame, so an allocation dropped in here is a per-frame
+    /// cost. Asserted rather than asserted-in-prose.
+    #[test]
+    fn colour_conversion_does_not_allocate() {
+        use perf_test_support::{assert_no_alloc, count_allocs};
+        for (h, s, l) in [
+            (0.0f32, 0.0f32, 0.0f32),
+            (210.0, 0.5, 0.5),
+            (359.9, 1.0, 1.0),
+        ] {
+            let _ = assert_no_alloc("hsl_to_rgb", || hsl_to_rgb(h, s, l));
+        }
+        for (r, g, b) in [(0u8, 0u8, 0u8), (248, 248, 242), (255, 128, 0)] {
+            let _ = assert_no_alloc("rgb_to_hsl", || rgb_to_hsl(r, g, b));
+        }
+        let _ = assert_no_alloc("percentage", || percentage(3, 7));
+        let _ = assert_no_alloc("lerp", || lerp(0.0, 10.0, 0.25));
+        // Control: the counter must be able to see an allocation, or the
+        // assertions above prove nothing.
+        let (_, n) = count_allocs(|| {
+            let owned: Vec<u8> = vec![0; 8];
+            std::hint::black_box(owned.len())
+        });
+        assert!(n >= 1, "the counting allocator reported {n}");
     }
 }

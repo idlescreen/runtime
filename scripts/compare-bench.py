@@ -160,6 +160,7 @@ def compare(baseline_path: Path, criterion_dir: Path) -> int:
     regressions = []
     compared = 0
     ungated = 0
+    inconclusive = []
     print(f"Baseline commit {baseline.get('commit', '?')}, "
           f"captured {baseline.get('captured_at', '?')}")
     print(f"Current run: {len(current)} bench(es) under {criterion_dir}")
@@ -178,13 +179,24 @@ def compare(baseline_path: Path, criterion_dir: Path) -> int:
         delta_pct = (curr_p50 - base_p50) / base_p50 * 100
         threshold = threshold_for(name)
         mad = curr.get("median_abs_dev_ns")
-        noise = f", noise ±{(mad / curr_p50 * 100):.1f}%" if mad else ""
+        noise_pct = (mad / curr_p50 * 100) if mad else None
+        noise = f", noise ±{noise_pct:.1f}%" if noise_pct is not None else ""
         gated = is_gated(name)
         compared += 1
         if not gated:
             # Reported for information; deliberately cannot fail the build.
             ungated += 1
             marker = "not gated (T2/T3)"
+        elif noise_pct is not None and noise_pct > threshold:
+            # The measurement is too noisy to support any verdict. A
+            # ±54% median absolute deviation measured against a 5%
+            # threshold is a coin flip, and calling it "ok" is a claim
+            # this run cannot support — §6 asks for the noise, not just
+            # the delta. Inconclusive is not a pass and not a failure:
+            # it says the bench needs a quieter machine before it can
+            # gate anything.
+            inconclusive.append((name, noise_pct, threshold))
+            marker = f"INCONCLUSIVE (noise ±{noise_pct:.1f}% > {threshold}%)"
         elif delta_pct > threshold:
             marker = f"REGRESSION (> {threshold}%)"
             regressions.append((name, base_p50, curr_p50, delta_pct, threshold))
@@ -209,9 +221,17 @@ def compare(baseline_path: Path, criterion_dir: Path) -> int:
                   f"({pct:+.1f}%, threshold {threshold}%)")
         return 1
 
-    gated_n = compared - ungated
-    print(f"OK: {gated_n} gated T1 bench(es) compared, no regression past threshold"
-          + (f"; {ungated} T2 bench(es) reported but not gated" if ungated else ""))
+    gated_n = compared - ungated - len(inconclusive)
+    parts = [f"{gated_n} gated T1 bench(es) compared, no regression past threshold"]
+    if inconclusive:
+        parts.append(
+            f"{len(inconclusive)} T1 bench(es) INCONCLUSIVE (run-to-run noise "
+            f"exceeds the threshold, so they cannot gate anything on this "
+            f"hardware): " + ", ".join(n for n, _, _ in inconclusive)
+        )
+    if ungated:
+        parts.append(f"{ungated} T2 bench(es) reported but not gated")
+    print("OK: " + "; ".join(parts))
     return 0
 
 

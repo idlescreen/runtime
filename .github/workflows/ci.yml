@@ -18,10 +18,21 @@ jobs:
       run: |
         curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
         echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
-    - name: file length cap (256 lines)
+    - name: file length cap (16-256 lines per page)
+      # Org-wide rule from .github/RULES.md: every .rs page is
+      # 16-256 lines inclusive, named after the single function
+      # it implements. Lower bound catches whole-function files
+      # that should be inlined; upper bound is the entropy
+      # ceiling — anything bigger is doing two or more things.
       run: |
-        over=$(find . -name '*.rs' -not -path './target/*' | xargs wc -l | awk '$1 > 256 && $2 != "total" {print}')
-        [ -z "$over" ] || { echo "Files over 256 lines:"; echo "$over"; exit 1; }
+        over=$(find . -name '*.rs' -not -path './target/*' \
+            | xargs wc -l \
+            | awk '$1 > 256 || $1 < 16' )
+        if [ -n "$over" ]; then
+          echo "Files outside 16-256 line range:"
+          echo "$over"
+          exit 1
+        fi
     - name: fmt check
       run: cargo fmt --all -- --check
 

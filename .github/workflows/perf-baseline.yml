@@ -1,0 +1,117 @@
+name: Refresh perf baseline
+
+# The perf gate compares a `cargo bench` run on a GitHub-hosted runner
+# against `perf-baseline.json`. Those two numbers are only comparable if
+# they came off the same kind of machine, and this workflow exists to
+# guarantee that.
+#
+# The first real gate run made the reason concrete. The baseline had been
+# captured by hand on a dev box, and CI compared it against an
+# ubuntu-latest runner. On pages whose only change since capture was an
+# added comment, the same benches read -42% and +47% in the same run --
+# a hardware offset, not a code change. 19 of 73 T1 benches "regressed"
+# and the build went red for a reason no commit could have caused.
+#
+# So the baseline is captured here, on the same `ubuntu-latest` label the
+# gate runs on, with the same toolchain and the same system packages. The
+# gate then compares runner against runner. Within-run noise on that
+# runner is small -- median 0.2%, p90 3.9% over a 77-bench run -- so the
+# 5% threshold is meaningful there in a way it never was against a
+# different machine.
+#
+# This opens a PR rather than pushing to master: a baseline bump should
+# be reviewable, and the PR's own perf.yml run is the check that the new
+# baseline is actually stable.
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Weekly, Monday 04:17 UTC. Off the hour on purpose: scheduled runs
+    # cluster on :00 and the runner pool is measurably noisier then.
+    - cron: "17 4 * * 1"
+
+permissions:
+  contents: write         # push the baseline branch
+  pull-requests: write    # open the PR
+
+concurrency:
+  group: perf-baseline
+  cancel-in-progress: false
+
+jobs:
+  capture:
+    name: capture baseline on ubuntu-latest
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: rustup
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+          if [ -f rust-toolchain.toml ]; then rustup show; else rustup default stable; fi
+      # Byte-for-byte the same package list as perf.yml. If the two
+      # workflows install different libraries, the font lookup in
+      # `CellRenderer::new` can resolve to a different file and the
+      # draw_frame numbers stop being comparable -- which is the exact
+      # class of bug this workflow is meant to eliminate.
+      - name: System deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libdbus-1-dev libwayland-dev libxkbcommon-dev libssl-dev pkg-config libudev-dev fonts-liberation
+
+      - name: Run T1 benches and rewrite the baseline
+        run: |
+          scripts/refresh-baseline.sh
+
+      - name: Publish the refreshed baseline as a PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- perf-baseline.json; then
+            echo "Baseline unchanged since the last capture — nothing to publish."
+            exit 0
+          fi
+
+          BRANCH="perf-baseline-$(date -u +%Y%m%d-%H%M%S)"
+          git config user.name  "jeryd"
+          git config user.email "jeryd@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add perf-baseline.json
+          git commit -F - <<'MSG'
+          runtime: refresh perf baseline on ubuntu-latest
+
+          Captured by .github/workflows/perf-baseline.yml on the same
+          `ubuntu-latest` label the perf gate runs on, with the same
+          toolchain and system packages.
+
+          This baseline replaced one captured by hand on a dev machine.
+          Comparing the two produced -42%/+47% swings on pages whose only
+          change was a comment, which is a hardware offset, not a
+          regression. Runner-against-runner noise is median 0.2% / p90
+          3.9%, so the 5% gate threshold is meaningful here.
+          MSG
+          git push --set-upstream origin "$BRANCH"
+
+          gh pr create \
+            --base master \
+            --head "$BRANCH" \
+            --title "runtime: refresh perf baseline on ubuntu-latest" \
+            --body "Automated baseline recapture from \`.github/workflows/perf-baseline.yml\`.
+
+          Captured on \`ubuntu-latest\`, the same label \`perf.yml\` gates on,
+          reading criterion's \`new/estimates.json\`.
+
+          The previous baseline was captured on a developer machine, so the
+          gate was comparing two different CPUs. This run's own
+          \`perf.yml\` check on this PR is the confirmation that the new
+          numbers are stable."
+
+      - name: Upload the raw criterion output
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: perf-baseline-capture
+          path: target/criterion
+          retention-days: 7

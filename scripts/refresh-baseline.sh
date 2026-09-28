@@ -74,6 +74,9 @@ for target in $(target_args "$GROUP"); do
     # version of this script carried that flag and hid the failure
     # behind `|| true`, which is how an empty baseline could be
     # committed as if it were a real one.
+    # `$args` is deliberately unquoted: it holds several words
+    # ("-p idle-upscaler --bench stretch") that cargo needs split.
+    # shellcheck disable=SC2086
     if ! cargo bench $args -- --warm-up-time 1 --measurement-time 3 >"$OUT" 2>&1; then
         echo "WARNING: cargo bench reported a failure for $target; reading JSON anyway" >&2
         tail -20 "$OUT" >&2

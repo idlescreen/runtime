@@ -71,6 +71,25 @@ T1_GROUPS = (
     "apply_fade_in",
 )
 
+# A percentage delta only carries information when the number it is
+# computed from is larger than the noise floor of the clock that measured
+# it. `apply_fade_in/past_500ms_noop` baselines at 0.5ns -- a fraction of
+# a single tick -- and the first real CI run reported it as
+# `0.00 -> 0.00 us (+26.7%)` and failed the build on it. That is not a
+# slowdown; it is a different rounding of zero, and it can only ever
+# produce false failures.
+#
+# The floor is deliberately low, not 1us. Plenty of T1 benches are
+# genuinely fast -- savers' `chaos_update` is 72ns and the bilinear SIMD
+# paths are 38ns -- and those are exactly the pages most worth watching.
+# A 1us floor would have silently un-gated all of them. 10ns separates
+# the degenerate no-ops (0.5ns, 0.7ns, 2.1ns, 6.2ns) from the merely
+# quick without exempting a single real measurement.
+#
+# Applied to the *current* median only: a bench that was 0.5ns and is
+# now 5us really did start doing work, and that must stay gated.
+MIN_GATED_MEDIAN_NS = 10.0
+
 # Per-group thresholds, matched left-to-right on the bench name prefix.
 # All T1 groups under the tier table in .github/RULES.md §4.
 BENCH_THRESHOLDS = (
@@ -161,6 +180,7 @@ def compare(baseline_path: Path, criterion_dir: Path) -> int:
     compared = 0
     ungated = 0
     inconclusive = []
+    below_floor = []
     print(f"Baseline commit {baseline.get('commit', '?')}, "
           f"captured {baseline.get('captured_at', '?')}")
     print(f"Current run: {len(current)} bench(es) under {criterion_dir}")
@@ -187,6 +207,12 @@ def compare(baseline_path: Path, criterion_dir: Path) -> int:
             # Reported for information; deliberately cannot fail the build.
             ungated += 1
             marker = "not gated (T2/T3)"
+        elif curr_p50 < MIN_GATED_MEDIAN_NS:
+            # The measurement itself is too small for a percentage to mean
+            # anything. Still printed, with its real numbers, so a human can
+            # see it -- just never allowed to fail the build on its own.
+            below_floor.append(name)
+            marker = f"not gated (median {curr_p50:.1f}ns below {MIN_GATED_MEDIAN_NS:.0f}ns floor)"
         elif noise_pct is not None and noise_pct > threshold:
             # The measurement is too noisy to support any verdict. A
             # ±54% median absolute deviation measured against a 5%
@@ -221,13 +247,19 @@ def compare(baseline_path: Path, criterion_dir: Path) -> int:
                   f"({pct:+.1f}%, threshold {threshold}%)")
         return 1
 
-    gated_n = compared - ungated - len(inconclusive)
+    gated_n = compared - ungated - len(inconclusive) - len(below_floor)
     parts = [f"{gated_n} gated T1 bench(es) compared, no regression past threshold"]
     if inconclusive:
         parts.append(
             f"{len(inconclusive)} T1 bench(es) INCONCLUSIVE (run-to-run noise "
             f"exceeds the threshold, so they cannot gate anything on this "
             f"hardware): " + ", ".join(n for n, _, _ in inconclusive)
+        )
+    if below_floor:
+        parts.append(
+            f"{len(below_floor)} T1 bench(es) below the "
+            f"{MIN_GATED_MEDIAN_NS:.0f}ns floor (a percentage on them is "
+            f"rounding noise): " + ", ".join(below_floor)
         )
     if ungated:
         parts.append(f"{ungated} T2 bench(es) reported but not gated")

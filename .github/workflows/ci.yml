@@ -51,6 +51,10 @@ jobs:
         curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain 1.96.0
         echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
         rustc --version
+    - name: Cache cargo registry + build artifacts
+      uses: Swatinem/rust-cache@v2
+      with:
+        cache-on-failure: true
     - name: MSRV build
       # Cheap MSRV gate: ensure the workspace builds on the floor toolchain.
       # Don't run tests (some tests need newer compilers); the goal is to
@@ -71,6 +75,10 @@ jobs:
         curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
         echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
         rustup component add clippy
+    - name: Cache cargo registry + build artifacts
+      uses: Swatinem/rust-cache@v2
+      with:
+        cache-on-failure: true
     - name: clippy
       run: cargo clippy --workspace --all-targets -- -D warnings
 
@@ -87,6 +95,10 @@ jobs:
       run: |
         curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
         echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+    - name: Cache cargo registry + build artifacts
+      uses: Swatinem/rust-cache@v2
+      with:
+        cache-on-failure: true
     - name: cargo test
       run: cargo test --workspace --no-fail-fast
 
@@ -118,6 +130,13 @@ jobs:
         curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain none
         echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
         (cd downstream && rustup show)
+    - name: Cache cargo registry + build artifacts (downstream layout)
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: |
+          downstream -> .
+          runtime -> .
+        cache-on-failure: true
     - name: Wire path-dep layout
       run: ln -s ../runtime downstream/runtime
     - name: cargo check downstream

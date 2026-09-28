@@ -3,15 +3,20 @@
 
 //! CPU stretch and letterbox upscalers.
 //!
-//! Per RULES.md, the stretch path is split into one-fn-per-page:
-//! - [`upscale_stretch_into`] is the public entry + aligned-cast helpers.
-//! - [`stretch_cache::StretchCache`] holds the per-(src_w,dst_w) column map.
-//! - [`stretch_u32_rows::stretch_u32_rows`] is the aligned u32 fast path.
-//! - [`stretch_byte_rows::stretch_byte_rows`] is the unaligned byte fallback.
+//! Per RULES.md, the stretch + bilinear paths are split into
+//! one-fn-per-page. The stretch pages are `upscale_stretch_into`,
+//! `stretch_cache`, `stretch_u32_rows`, `stretch_byte_rows` (+ a
+//! sibling `stretch_byte_rows_tests.rs`). The bilinear pages are
+//! `bilinear_row` (public entry + scalar fallback) +
+//! `bilinear_avx2` + `bilinear_neon` (per-arch SIMD
+//! implementations), each paired with a sibling
+//! `*_tests.rs` for QA + bench.
 
+mod bilinear_avx2;
+mod bilinear_neon;
+mod bilinear_row;
 mod letterbox;
 mod sample;
-mod simd;
 mod stretch_byte_rows;
 mod stretch_cache;
 mod stretch_u32_rows;

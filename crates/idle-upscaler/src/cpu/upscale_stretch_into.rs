@@ -88,8 +88,8 @@ pub fn upscale_stretch_into(
 
 #[cfg(test)]
 mod tests {
-    use super::upscale_stretch_into;
     use super::super::stretch_cache::StretchCache;
+    use super::upscale_stretch_into;
 
     #[test]
     fn upscale_stretch_handles_zero_dim() {
@@ -137,8 +137,8 @@ mod tests {
 
 #[cfg(test)]
 mod benches {
-    use super::upscale_stretch_into;
     use super::super::stretch_cache::StretchCache;
+    use super::upscale_stretch_into;
     use criterion::Criterion;
     use std::hint::black_box;
 

@@ -87,8 +87,8 @@ pub fn stretch_u32_rows(
 
 #[cfg(test)]
 mod tests {
-    use super::stretch_u32_rows;
     use super::super::stretch_cache::StretchCache;
+    use super::stretch_u32_rows;
 
     /// u32 view of a BGRA byte buffer; requires 4-byte alignment and
     /// a multiple-of-4 length.
@@ -145,8 +145,7 @@ mod tests {
                 let sx = cache.x_map[dx] as usize;
                 let so = src_row + sx * 4;
                 let do_ = dst_row + dx * 4;
-                expected_bytes[do_..do_ + 4]
-                    .copy_from_slice(&src_bytes[so..so + 4]);
+                expected_bytes[do_..do_ + 4].copy_from_slice(&src_bytes[so..so + 4]);
             }
         }
         assert_eq!(dst_bytes, expected_bytes);
@@ -193,8 +192,8 @@ mod tests {
 
 #[cfg(test)]
 mod benches {
-    use super::stretch_u32_rows;
     use super::super::stretch_cache::StretchCache;
+    use super::stretch_u32_rows;
     use criterion::Criterion;
     use std::hint::black_box;
 

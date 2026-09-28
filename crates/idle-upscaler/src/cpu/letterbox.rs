@@ -5,8 +5,8 @@
 
 use crate::FilterMode;
 
+use super::bilinear_row::bilinear_row;
 use super::sample::{sample_src, write_pixel};
-use super::simd::bilinear_row;
 
 #[allow(clippy::too_many_arguments)]
 pub fn upscale_letterbox_into(

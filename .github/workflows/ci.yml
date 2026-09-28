@@ -35,6 +35,12 @@ jobs:
         fi
     - name: fmt check
       run: cargo fmt --all -- --check
+    - name: perf labels are backed by real benches
+      # Every `// perf: T1` page must name a bench target that exists
+      # and actually references the page, plus a baseline to regress
+      # against. Pure bash/grep/awk — no Rust toolchain needed, but it
+      # rides along here because the fmt job already has the checkout.
+      run: bash scripts/check-perf-labels.sh
 
   deny:
     runs-on: ubuntu-latest

@@ -124,13 +124,23 @@ jobs:
           RELEASE_TAG: ${{ github.ref_name }}
           DISPATCH_REPO: ${{ github.repository }}
         run: |
+          # Advisory, never fatal. This dispatch is a latency optimisation,
+          # not a dependency: packages' import-release.yml runs a "Sweep
+          # latest releases" step on a 6-hourly cron that converges the pool
+          # to every product repo's latest release whether or not a dispatch
+          # ever arrived. A missing or rejected token therefore costs at most
+          # one sweep window. Failing here instead would report a release that
+          # published correctly as a failed run, which trains readers to
+          # ignore red Xs on this workflow. Warn loudly, stay green.
           if [ -z "$GH_TOKEN" ]; then
-            echo "::error::IDLESCREEN_PACKAGES_DISPATCH_TOKEN is not set — packages repo will not update"
-            exit 1
+            echo "::warning::IDLESCREEN_PACKAGES_DISPATCH_TOKEN is not set — pool will converge on the next 6-hourly sweep (import-release.yml), not now"
+            exit 0
           fi
           # gh -f builds JSON-escaped fields — no raw tag interpolation.
-          gh api repos/idlescreen/packages/dispatches \
+          if ! gh api repos/idlescreen/packages/dispatches \
             -X POST \
             -f event_type=new_release \
             -f "client_payload[repo]=${DISPATCH_REPO}" \
-            -f "client_payload[tag]=${RELEASE_TAG}"
+            -f "client_payload[tag]=${RELEASE_TAG}"; then
+            echo "::warning::packages dispatch rejected — the 6-hourly sweep in import-release.yml will import ${DISPATCH_REPO} ${RELEASE_TAG} instead"
+          fi

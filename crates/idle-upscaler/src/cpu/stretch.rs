@@ -188,21 +188,33 @@ fn stretch_byte_rows(
     _needed: usize,
     cache: &StretchCache,
 ) {
-    // Fallback unaligned byte-copy path. The loop below writes every byte of
-    // `dst[..needed]` — `upscale_stretch_into` is the only caller and
-    // guarantees `dst.len() >= needed` plus matching dimensions — so the
-    // previous `dst[..needed].fill(0)` was a wasted ~6 MB memset at 2560×1440
-    // that the upscaler then immediately overwrote.
-    for dy in 0..dst_h {
-        let sy = (dy as u64 * src_h as u64 / dst_h as u64) as u32;
-        let src_row = sy as usize * src_w as usize * 4;
-        let dst_row = dy as usize * dst_w as usize * 4;
-        for dx in 0..dst_w as usize {
-            let src_off = src_row + cache.x_map[dx] as usize * 4;
-            let dst_off = dst_row + dx * 4;
-            if src_off + 4 <= src.len() && dst_off + 4 <= dst.len() {
-                dst[dst_off..dst_off + 4].copy_from_slice(&src[src_off..src_off + 4]);
-            }
+    // Fallback unaligned byte-copy path. The destination pixels are
+    // 4 bytes apart and the source pixels are 4 bytes apart, so a true
+    // SIMD-batchable memcpy isn't possible (we can't grow the slice
+    // into a single contiguous span since the rows are independent).
+    // Each dst pixel still costs one 4-byte `copy_from_slice`, but we
+    // hoist the row-end bounds checks + row-base offsets to once per
+    // row instead of per pixel — the inner loop now only does the
+    // x_map lookup and one tiny store.
+    let dst_w_us = dst_w as usize;
+    let src_w_us = src_w as usize;
+    let dst_src_row_bytes = src_w_us * 4;
+    let dst_row_bytes = dst_w_us * 4;
+
+    for dy in 0..dst_h as usize {
+        let sy = (dy as u64 * src_h as u64 / dst_h as u64) as usize;
+        let src_row_base = sy * dst_src_row_bytes;
+        let dst_row_base = dy * dst_row_bytes;
+        if src_row_base + dst_src_row_bytes > src.len() {
+            break;
+        }
+        if dst_row_base + dst_row_bytes > dst.len() {
+            break;
+        }
+        for dx in 0..dst_w_us {
+            let src_off = src_row_base + cache.x_map[dx] as usize * 4;
+            let dst_off = dst_row_base + dx * 4;
+            dst[dst_off..dst_off + 4].copy_from_slice(&src[src_off..src_off + 4]);
         }
     }
 }

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 
+// perf: T2 · bench: hot_path · on-demand only; not gated
 //! Epoll fd setup + eventfd draining for the overlay event thread.
 //!
 //! The Wayland socket + the daemon's self-wake eventfd are the two
@@ -122,38 +123,3 @@ mod tests {
     }
 }
 
-#[cfg(test)]
-mod benches {
-    use super::*;
-    use criterion::Criterion;
-    use std::hint::black_box;
-
-    #[test]
-    fn bench_drain_eventfd() {
-        // We can't actually exercise eventfd without root in CI;
-        // measure the loop's no-read path (empty fd returns EAGAIN
-        // on the first iteration).
-        let mut c = Criterion::default().sample_size(10);
-        let mut fds = [0i32; 2];
-        // SAFETY: pipe2 with NONBLOCK + CLOEXEC gives us a self-pipe
-        // whose read side returns EAGAIN when empty.
-        let rc = unsafe {
-            libc::pipe2(
-                fds.as_mut_ptr() as *mut _,
-                libc::O_NONBLOCK | libc::O_CLOEXEC,
-            )
-        };
-        assert_eq!(rc, 0);
-        let read_fd = fds[0];
-        c.bench_function("drain_eventfd_empty", |b| {
-            b.iter(|| {
-                drain_eventfd(black_box(read_fd));
-            });
-        });
-        // SAFETY: descriptors we created in this test.
-        unsafe {
-            libc::close(read_fd);
-            libc::close(fds[1]);
-        }
-    }
-}

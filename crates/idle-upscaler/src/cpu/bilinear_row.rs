@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+// perf: T1 · bench: stretch · gate: perf-baseline.json
 // Copyright 2026 IdleScreen
 
 //! SIMD bilinear path for letterbox upscale.
@@ -181,36 +182,3 @@ mod tests {
     }
 }
 
-#[cfg(test)]
-mod benches {
-    use super::bilinear_row;
-    use criterion::Criterion;
-    use std::hint::black_box;
-
-    #[test]
-    fn bench_bilinear_row() {
-        let mut c = Criterion::default().sample_size(10);
-        let width = 1920u32;
-        let height = 1080u32;
-        let src: Vec<u8> = (0..(width as usize * height as usize * 4))
-            .map(|i| (i % 256) as u8)
-            .collect();
-        let mut block = [0u8; 16];
-        c.bench_function("bilinear_row_1920x1080", |b| {
-            b.iter(|| {
-                bilinear_row(
-                    black_box(&src),
-                    black_box(width),
-                    black_box(height),
-                    black_box(100),
-                    black_box(50),
-                    black_box(101),
-                    black_box(51),
-                    black_box(128),
-                    black_box(64),
-                    black_box(&mut block),
-                );
-            });
-        });
-    }
-}

@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+// perf: T1 · bench: stretch · gate: perf-baseline.json
 // Copyright 2026 IdleScreen
 
 //! Aligned u32 nearest-neighbor stretch.
@@ -190,38 +191,3 @@ mod tests {
     }
 }
 
-#[cfg(test)]
-mod benches {
-    use super::super::stretch_cache::StretchCache;
-    use super::stretch_u32_rows;
-    use criterion::Criterion;
-    use std::hint::black_box;
-
-    #[test]
-    fn bench_stretch_u32_rows() {
-        let mut c = Criterion::default().sample_size(10);
-        let src_w = 640u32;
-        let src_h = 360u32;
-        let dst_w = 1920u32;
-        let dst_h = 1080u32;
-        let src: Vec<u32> = (0..(src_w as usize * src_h as usize))
-            .map(|i| i as u32)
-            .collect();
-        let mut dst: Vec<u32> = vec![0; dst_w as usize * dst_h as usize];
-        let mut cache = StretchCache::new();
-        cache.ensure(src_w, dst_w);
-        c.bench_function("stretch_u32_rows_640x360_to_1920x1080", |b| {
-            b.iter(|| {
-                stretch_u32_rows(
-                    black_box(&src),
-                    black_box(&mut dst),
-                    black_box(src_w),
-                    black_box(src_h),
-                    black_box(dst_w),
-                    black_box(dst_h),
-                    black_box(&cache),
-                );
-            });
-        });
-    }
-}

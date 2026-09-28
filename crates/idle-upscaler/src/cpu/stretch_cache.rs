@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+// perf: T2 · bench: stretch · on-demand only; not gated
 // Copyright 2026 IdleScreen
 
 //! Cached nearest-neighbor column map for stretch upscale.
@@ -80,26 +81,3 @@ mod tests {
     }
 }
 
-#[cfg(test)]
-mod benches {
-    use super::StretchCache;
-    use criterion::Criterion;
-    use std::hint::black_box;
-
-    #[test]
-    fn bench_stretch_cache_ensure() {
-        let mut c = Criterion::default().sample_size(10);
-        let mut cache = StretchCache::new();
-        cache.ensure(640, 1920); // prime the allocation
-        c.bench_function("stretch_cache_ensure_hit", |b| {
-            b.iter(|| {
-                cache.ensure(black_box(640), black_box(1920));
-            });
-        });
-        c.bench_function("stretch_cache_ensure_miss", |b| {
-            b.iter(|| {
-                cache.ensure(black_box(1280), black_box(1920));
-            });
-        });
-    }
-}

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 
+// perf: T2 · bench: hot_path · on-demand only; not gated
 //! Bounded shutdown of the overlay presenter.
 //!
 //! `Drop for OverlayPresenter` is the one place where the daemon
@@ -95,20 +96,3 @@ mod tests {
     }
 }
 
-#[cfg(test)]
-mod benches {
-    use criterion::Criterion;
-    use std::time::Duration;
-
-    #[test]
-    fn bench_join_with_timeout() {
-        // The fast-path: thread exits, watcher joins, recv returns.
-        let mut c = Criterion::default().sample_size(10);
-        c.bench_function("join_with_timeout_fast", |b| {
-            b.iter(|| {
-                let handle = std::thread::spawn(|| {});
-                super::join_with_timeout(handle, Duration::from_secs(2));
-            });
-        });
-    }
-}

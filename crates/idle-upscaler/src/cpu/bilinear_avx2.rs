@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+// perf: T1 · bench: stretch · gate: perf-baseline.json
 // Copyright 2026 IdleScreen
 
 //! AVX2 (x86_64) bilinear row implementation.

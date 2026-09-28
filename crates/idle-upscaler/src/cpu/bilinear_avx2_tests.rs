@@ -90,35 +90,3 @@ mod tests {
     }
 }
 
-#[cfg(test)]
-mod benches {
-    use super::*;
-    use criterion::Criterion;
-    use std::hint::black_box;
-
-    #[test]
-    fn bench_bilinear_row_avx2() {
-        let mut c = Criterion::default().sample_size(10);
-        let width = 1920u32;
-        let height = 1080u32;
-        let src: Vec<u8> = (0..(width as usize * height as usize * 4))
-            .map(|i| (i % 256) as u8)
-            .collect();
-        let mut block = [0u8; 16];
-        c.bench_function("bilinear_row_avx2_1920x1080", |b| {
-            b.iter(|| unsafe {
-                bilinear_row_avx2(
-                    black_box(&src),
-                    black_box(width),
-                    black_box(100),
-                    black_box(50),
-                    black_box(101),
-                    black_box(51),
-                    black_box(128),
-                    black_box(64),
-                    black_box(&mut block),
-                );
-            });
-        });
-    }
-}

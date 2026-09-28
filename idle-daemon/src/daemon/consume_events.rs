@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 
+// perf: T2 · bench: draw_frame · on-demand only; not gated
 //! Parse an inotify read buffer into a count of whole records.
 
 /// Parse an inotify read buffer. Currently only consumes whole records —
@@ -77,28 +78,3 @@ mod tests {
     }
 }
 
-#[cfg(test)]
-mod benches {
-    use super::consume_events;
-    use criterion::Criterion;
-    use std::hint::black_box;
-
-    #[test]
-    fn bench_consume_events() {
-        // Pathological kernel queue overflow: 64 events per buffer.
-        let mut buf = Vec::new();
-        for i in 0..64 {
-            let name = format!("DEV{i}");
-            let mut rec = vec![0u8; 16 + name.len()];
-            rec[8..12].copy_from_slice(&(name.len() as u32).to_le_bytes());
-            rec[16..16 + name.len()].copy_from_slice(name.as_bytes());
-            buf.extend(rec);
-        }
-        let mut c = Criterion::default().sample_size(10);
-        c.bench_function("consume_events_64", |b| {
-            b.iter(|| {
-                let _ = consume_events(black_box(&buf));
-            });
-        });
-    }
-}

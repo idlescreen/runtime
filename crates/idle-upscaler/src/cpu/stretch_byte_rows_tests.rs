@@ -125,39 +125,3 @@ mod tests {
     }
 }
 
-#[cfg(test)]
-mod benches {
-    use super::*;
-    use criterion::Criterion;
-    use std::hint::black_box;
-
-    #[test]
-    fn bench_stretch_byte_rows() {
-        let mut c = Criterion::default().sample_size(10);
-        let src_w = 641u32; // odd width forces the unaligned byte path
-        let src_h = 361u32;
-        let dst_w = 1921u32;
-        let dst_h = 1081u32;
-        let src: Vec<u8> = (0..(src_w as usize * src_h as usize * 4))
-            .map(|i| (i % 256) as u8)
-            .collect();
-        let needed = (dst_w as usize) * (dst_h as usize) * 4;
-        let mut dst: Vec<u8> = vec![0; needed];
-        let mut cache = StretchCache::new();
-        cache.ensure(src_w, dst_w);
-        c.bench_function("stretch_byte_rows_641x361_to_1921x1081", |b| {
-            b.iter(|| {
-                stretch_byte_rows(
-                    black_box(&mut dst),
-                    black_box(&src),
-                    black_box(src_w),
-                    black_box(src_h),
-                    black_box(dst_w),
-                    black_box(dst_h),
-                    black_box(needed),
-                    black_box(&cache),
-                );
-            });
-        });
-    }
-}

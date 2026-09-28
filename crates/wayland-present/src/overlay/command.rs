@@ -93,30 +93,3 @@ mod tests {
     }
 }
 
-#[cfg(test)]
-mod benches {
-    use super::*;
-    use criterion::Criterion;
-    use std::hint::black_box;
-
-    #[test]
-    fn bench_presenter_command_construction() {
-        // Construction is the hot path: `daemon → channel.send(cmd)`.
-        // We measure enum construction cost (no real channel).
-        let pixels: Arc<Vec<u8>> = Arc::new(vec![0u8; 1920 * 1080 * 4]);
-        let pool: Arc<Mutex<std::collections::VecDeque<Arc<Vec<u8>>>>> =
-            Arc::new(Mutex::new(std::collections::VecDeque::new()));
-        let mut c = Criterion::default().sample_size(10);
-        c.bench_function("presenter_command_update_frame", |b| {
-            b.iter(|| {
-                let _ = PresenterCommand::UpdateFrame {
-                    output_id: black_box(1),
-                    width: black_box(1920),
-                    height: black_box(1080),
-                    pixels: black_box(pixels.clone()),
-                    return_pool: black_box(pool.clone()),
-                };
-            });
-        });
-    }
-}

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 
+// perf: T2 · bench: draw_frame · on-demand only; not gated
 //! Event-driven battery / AC watcher.
 //!
 //! The OODA main tick loop used to poll `/sys/class/power_supply` on every
@@ -216,30 +217,3 @@ mod tests {
     }
 }
 
-#[cfg(test)]
-mod benches {
-    use super::*;
-    use criterion::Criterion;
-    use std::hint::black_box;
-
-    #[test]
-    fn bench_wait_for_heartbeat() {
-        let inner = Arc::new(Inner {
-            cached_on_battery: AtomicBool::new(false),
-            notify_count: AtomicU64::new(0),
-            predicate_lock: Mutex::new(Predicate { notify_count: 0 }),
-            condvar: Condvar::new(),
-        });
-        let watcher = PowerWatcher { inner };
-        let stop = AtomicBool::new(false);
-        // A short cap so the bench finishes quickly but still
-        // exercises the condvar timeout path.
-        let mut c = Criterion::default().sample_size(10);
-        c.bench_function("wait_for_heartbeat_timeout_50ms", |b| {
-            b.iter(|| {
-                let _ = watcher
-                    .wait_for_heartbeat(black_box(&stop), black_box(Duration::from_millis(50)));
-            });
-        });
-    }
-}

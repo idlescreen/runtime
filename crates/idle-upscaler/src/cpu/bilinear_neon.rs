@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+// perf: T2 · bench: none · ubuntu-latest is x86_64; promotion to T1 needs an aarch64 runner
 // Copyright 2026 IdleScreen
 
 //! NEON (aarch64) bilinear row implementation.

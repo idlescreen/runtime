@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 
+// perf: T1 · bench: draw_frame · gate: perf-baseline.json
 //! Fade-in BGRA buffer by elapsed fractional duration.
 //!
 //! SSE2 fast path on x86_64 (processes 4 BGRA pixels per `_mm_loadu_si128`
@@ -182,22 +183,3 @@ mod tests {
     }
 }
 
-#[cfg(test)]
-mod benches {
-    use super::apply_fade_in;
-    use criterion::Criterion;
-    use std::hint::black_box;
-
-    #[test]
-    fn bench_apply_fade_in() {
-        let mut c = Criterion::default().sample_size(10);
-        // 1080p BGRA frame — the daemon's hot-path tile size.
-        let mut pixels: Vec<u8> = (0..1920 * 1080 * 4).map(|i| (i % 256) as u8).collect();
-        let elapsed = std::time::Duration::from_millis(123);
-        c.bench_function("apply_fade_in_1920x1080", |b| {
-            b.iter(|| {
-                apply_fade_in(black_box(&mut pixels), black_box(elapsed));
-            });
-        });
-    }
-}

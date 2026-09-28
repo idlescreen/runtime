@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 
+// perf: T2 · bench: hot_path · on-demand only; not gated
 //! Frame buffer pool for the overlay presenter.
 //!
 //! Triple-buffered across the daemon and the event thread. The
@@ -125,29 +126,3 @@ mod tests {
     }
 }
 
-#[cfg(test)]
-mod benches {
-    use super::*;
-    use criterion::Criterion;
-    use std::hint::black_box;
-
-    #[test]
-    fn bench_get_frame_buffer() {
-        let mut c = Criterion::default().sample_size(10);
-        let pool = empty_frame_pool();
-        // Pre-populate so the hot path is try_unwrap + return,
-        // not the empty-pool allocation.
-        let size = 1920 * 1080 * 4;
-        let buf: Arc<Vec<u8>> = Arc::new(vec![0u8; size]);
-        for _ in 0..4 {
-            return_frame_buffer(&pool, buf.clone());
-        }
-        drop(buf);
-        c.bench_function("get_frame_buffer_recycle", |b| {
-            b.iter(|| {
-                let v = get_frame_buffer(black_box(&pool), black_box(size));
-                return_frame_buffer(&pool, Arc::new(v));
-            });
-        });
-    }
-}

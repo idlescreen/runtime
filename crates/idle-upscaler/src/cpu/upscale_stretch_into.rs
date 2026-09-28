@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+// perf: T1 · bench: stretch · gate: perf-baseline.json
 // Copyright 2026 IdleScreen
 
 //! Nearest-neighbor stretch upscale (fills destination, may distort aspect).
@@ -135,31 +136,3 @@ mod tests {
     }
 }
 
-#[cfg(test)]
-mod benches {
-    use super::super::stretch_cache::StretchCache;
-    use super::upscale_stretch_into;
-    use criterion::Criterion;
-    use std::hint::black_box;
-
-    #[test]
-    fn bench_upscale_stretch_into() {
-        let mut c = Criterion::default().sample_size(10);
-        let mut cache = StretchCache::new();
-        let src: Vec<u8> = (0..640 * 360 * 4).map(|i| (i % 256) as u8).collect();
-        let mut dst: Vec<u8> = vec![0; 1920 * 1080 * 4];
-        c.bench_function("upscale_stretch_into_640x360_to_1920x1080", |b| {
-            b.iter(|| {
-                upscale_stretch_into(
-                    black_box(&mut dst),
-                    black_box(&src),
-                    640,
-                    360,
-                    1920,
-                    1080,
-                    black_box(&mut cache),
-                );
-            });
-        });
-    }
-}

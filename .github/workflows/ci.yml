@@ -42,6 +42,13 @@ jobs:
       # rides along here because the fmt job already has the checkout.
       run: bash scripts/check-perf-labels.sh
 
+      # A page labelled `check: bench` claims a criterion target
+      # measures it. This walks the module call graph from each
+      # bench's entry point and fails if no path reaches that page,
+      # so a bench label cannot quietly become a lie. Pages labelled
+      # `test` or `review` are counted and reported, never failed.
+      run: python3 scripts/check-bench-reachability.py --gate runtime
+
   deny:
     runs-on: ubuntu-latest
     steps:

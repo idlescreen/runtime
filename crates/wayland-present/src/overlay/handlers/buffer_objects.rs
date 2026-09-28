@@ -69,12 +69,30 @@ impl Dispatch<wl_surface::WlSurface, u32> for SessionState {
 
 impl Dispatch<wl_callback::WlCallback, ()> for SessionState {
     fn event(
-        _: &mut Self,
+        state: &mut Self,
         _: &wl_callback::WlCallback,
-        _: wl_callback::Event,
+        event: wl_callback::Event,
         _: &(),
         _: &Connection,
         _: &QueueHandle<Self>,
     ) {
+        // The compositor fires `done` after it has presented the frame
+        // (or after a configured timeout — Wayland spec). This is the
+        // true-vsync wakeup the daemon's frame loop waits on: the
+        // round-trip from `surface.frame(queue, ())` to this dispatch
+        // covers one frame period on the compositor.
+        //
+        // We bump the same `frame_signal` generation that
+        // `state::overlay::OverlayState::update_frame` bumps on
+        // commit. Either path advances the predicate; consumers
+        // (daemon frame loop) coalesce — only one iteration runs per
+        // frame regardless of how many notifies fired.
+        //
+        // We deliberately match `wl_callback::Event::Done { .. }` and
+        // ignore the others — the spec only defines `done` and that's
+        // all wayland-client delivers.
+        if let wl_callback::Event::Done { .. } = event {
+            state.frame_signal.notify();
+        }
     }
 }

@@ -2,20 +2,19 @@
 # Regenerate `perf-baseline.json` from a fresh `cargo bench` run.
 #
 # Usage:
-#   scripts/refresh-baseline.sh                # capture all benches
-#   scripts/refresh-baseline.sh stretch        # capture stretch only
-#   scripts/refresh-baseline.sh draw_frame     # capture draw_frame only
+#   scripts/refresh-baseline.sh                # capture every T1 target
+#   scripts/refresh-baseline.sh stretch        # capture one target
 #   scripts/refresh-baseline.sh --comment [stretch|draw_frame]
 #                                           # refresh + open a PR via gh CLI
 #
-# The script writes the new baseline to `perf-baseline.json.tmp` and
-# (after a sanity check on JSON validity + delta vs the current
-# baseline) renames it over `perf-baseline.json`. The git commit is
-# left to the maintainer so the change is attributed in git history
-# (except in --comment mode, where the PR branch is pushed directly).
+# Numbers are read from criterion's own JSON — `target/criterion/*/new/
+# estimates.json` — never from scraped stdout. Only files written after
+# this script started are collected, so a stale directory left behind by
+# a bench that was deleted or renamed cannot leak into the baseline.
 #
-# Reads the git HEAD sha automatically so the baseline.json records
-# which commit the numbers came from.
+# T1 targets are the ones perf.yml runs and the gate compares; see the
+# tier table in .github/RULES.md §4. T2 benches are deliberately not
+# baselined — they are on-demand, not gated.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -25,10 +24,7 @@ GROUP=""
 while [ $# -gt 0 ]; do
     case "$1" in
         --comment) OPEN_PR=1; shift ;;
-        --help|-h)
-            sed -n '2,12p' "$0"
-            exit 0
-            ;;
+        --help|-h) sed -n '2,19p' "$0"; exit 0 ;;
         stretch|draw_frame|"") GROUP="$1"; shift ;;
         *)
             echo "Usage: $0 [--comment] [stretch|draw_frame]" >&2
@@ -37,77 +33,100 @@ while [ $# -gt 0 ]; do
     esac
 done
 
-BENCH_ARGS=""
+# T1 `[[bench]]` targets: label `bench:` value -> cargo invocation.
+# T1 targets are the ones perf.yml runs and the gate compares; see the
+# tier table in .github/RULES.md §4. T2 benches are deliberately not
+# baselined — they are on-demand, not gated.
+target_args() {
+    case "$1" in
+        "") printf '%s\n' "stretch" "draw_frame" ;;
+        *)  printf '%s\n' "$1" ;;
+    esac
+}
+
 case "$GROUP" in
-    "")          BENCH_ARGS="-p idle-upscaler --bench stretch -- -q --warm-up-time 1 --measurement-time 3" ;;
-    stretch)     BENCH_ARGS="-p idle-upscaler --bench stretch -- -q --warm-up-time 1 --measurement-time 3" ;;
-    draw_frame)  BENCH_ARGS="-p idle-daemon --bench draw_frame -- -q --warm-up-time 1 --measurement-time 3" ;;
-    *)           echo "Usage: $0 [--comment] [stretch|draw_frame]" >&2; exit 2 ;;
+    stretch|draw_frame|"") ;;
+    *) echo "Usage: $0 [--comment] [stretch|draw_frame]" >&2; exit 2 ;;
 esac
 
+CRITERION_DIR="target/criterion"
+# Stamped before the run; anything criterion wrote after this instant
+# belongs to this run and nothing older does.
+MARKER=$(mktemp)
 OUT=$(mktemp)
-trap "rm -f $OUT" EXIT
+trap 'rm -f "$MARKER" "$OUT"' EXIT
 
-echo "Capturing bench output (this can take a few minutes)…"
-cargo bench $BENCH_ARGS > "$OUT" 2>&1 || true
-
-# Run compare-bench.py in dry-run mode (we don't have a baseline yet)
-# — instead, parse the output and emit fresh JSON.
 COMMIT=$(git rev-parse --short=7 HEAD)
 CAPTURED_AT=$(date -u +%Y-%m-%d)
 
-python3 - "$OUT" "$COMMIT" "$CAPTURED_AT" <<'PY'
-import json, re, sys
+for target in $(target_args "$GROUP"); do
+    case "$target" in
+        stretch)    args="-p idle-upscaler --bench stretch" ;;
+        draw_frame) args="-p idle-daemon --bench draw_frame" ;;
+        *) echo "unknown T1 bench target '$target'" >&2; exit 2 ;;
+    esac
+    echo "Running T1 bench target: $target"
+    # criterion exits non-zero when a benchmark records a change; the
+    # JSON is still written, so the failure is logged, not fatal.
+    #
+    # No `-q` here: criterion 0.5 dropped the flag, and passing it made
+    # every run die with "unexpected argument found". The previous
+    # version of this script carried that flag and hid the failure
+    # behind `|| true`, which is how an empty baseline could be
+    # committed as if it were a real one.
+    if ! cargo bench $args -- --warm-up-time 1 --measurement-time 3 >"$OUT" 2>&1; then
+        echo "WARNING: cargo bench reported a failure for $target; reading JSON anyway" >&2
+        tail -20 "$OUT" >&2
+    fi
+done
+
+python3 - "$CRITERION_DIR" "$MARKER" "$COMMIT" "$CAPTURED_AT" <<'PY'
+import json
+import os
+import sys
 from pathlib import Path
 
-text_path, commit, captured_at = sys.argv[1], sys.argv[2], sys.argv[3]
-text = Path(text_path).read_text()
+crit_dir, marker, commit, captured_at = sys.argv[1:5]
+mark = os.path.getmtime(marker)
 
 benches = {}
-current = None
-scale_unit = {"ns": 1, "µs": 1_000, "ms": 1_000_000, "s": 1_000_000_000}
-scale_thrpt = {"KiB": 1024, "MiB": 1024**2, "GiB": 1024**3, "TiB": 1024**4}
-
-for line in text.splitlines():
-    m = re.match(r"^([\w/]+)$", line.strip())
-    if m:
-        current = m.group(1)
-        benches.setdefault(current, {"p50_ns": None, "throughput_bytes": None})
+for path in sorted(Path(crit_dir).rglob("estimates.json")):
+    if path.parent.name != "new":
+        continue  # `base/` is the prior run, `change/` is the diff
+    try:
+        if os.path.getmtime(path) < mark - 1.0:
+            continue  # left over from an earlier run of some deleted bench
+        data = json.loads(path.read_text())
+        median = data["median"]["point_estimate"]
+        mad = data.get("median_abs_dev", {}).get("point_estimate")
+    except (OSError, ValueError, KeyError) as e:
+        print(f"WARNING: skipping {path}: {e}", file=sys.stderr)
         continue
-    if current is None:
-        continue
-    m_time = re.search(
-        r"time:\s+\[\s*([\d.]+)\s*(µs|ns|ms|s)\s+([\d.]+)\s*(?:µs|ns|ms|s)\s+([\d.]+)\s*(?:µs|ns|ms|s)\s*\]",
-        line,
-    )
-    if m_time:
-        value = float(m_time.group(1))
-        benches[current]["p50_ns"] = value * scale_unit[m_time.group(2)]
-    m_thrpt = re.search(r"thrpt:\s+\[\s*([\d.]+)\s*(KiB|MiB|GiB|TiB)/s", line)
-    if m_thrpt and benches[current]["throughput_bytes"] is None:
-        value = float(m_thrpt.group(1))
-        benches[current]["throughput_bytes"] = value * scale_thrpt[m_thrpt.group(2)]
+    name = str(path.parent.parent.relative_to(crit_dir))
+    benches[name] = {"median_ns": median, "median_abs_dev_ns": mad}
 
-# Drop benches with no p50 (parse failures)
-benches = {k: v for k, v in benches.items() if v["p50_ns"] is not None}
+if not benches:
+    print(f"ERROR: no fresh estimates.json under {crit_dir} after the run", file=sys.stderr)
+    print("       refusing to write an empty baseline; check that cargo bench ran",
+          file=sys.stderr)
+    sys.exit(2)
 
 out = {
-    "version": 1,
+    "version": 2,
     "captured_at": captured_at,
     "commit": commit,
-    "note": "Captured locally via scripts/refresh-baseline.sh",
+    "note": "Captured by scripts/refresh-baseline.sh from criterion estimates.json",
     "benches": benches,
 }
 Path("perf-baseline.json.tmp").write_text(json.dumps(out, indent=2, sort_keys=True) + "\n")
 print(f"Wrote {len(benches)} bench entries to perf-baseline.json.tmp")
 PY
 
-# Sanity check: if there's an existing baseline, show the delta.
+# Show the delta against the existing baseline before overwriting it.
 if [ -f perf-baseline.json ]; then
     echo
     echo "Delta vs current perf-baseline.json (informational, not enforced):"
-    python3 scripts/compare-bench.py perf-baseline.json "$OUT" \
-        || true  # regressions are reported but don't block the refresh
+    python3 scripts/compare-bench.py perf-baseline.json "$CRITERION_DIR" || true
 fi
 
 mv perf-baseline.json.tmp perf-baseline.json
@@ -120,14 +139,8 @@ if [ "$OPEN_PR" = "0" ]; then
 fi
 
 # --comment mode: branch + push + open a PR with gh CLI.
-if ! command -v gh >/dev/null 2>&1; then
-    echo "ERROR: --comment requires the gh CLI on PATH" >&2
-    exit 1
-fi
-if ! gh auth status >/dev/null 2>&1; then
-    echo "ERROR: --comment requires an authenticated gh session" >&2
-    exit 1
-fi
+command -v gh >/dev/null 2>&1 || { echo "ERROR: --comment requires the gh CLI" >&2; exit 1; }
+gh auth status >/dev/null 2>&1 || { echo "ERROR: --comment requires an authenticated gh session" >&2; exit 1; }
 
 BRANCH="perf-baseline-${CAPTURED_AT}"
 git checkout -b "$BRANCH" >/dev/null
@@ -149,6 +162,7 @@ PR_URL=$(gh pr create \
     --title "runtime: refresh perf baseline ($CAPTURED_AT)" \
     --body "Automated baseline update via \`scripts/refresh-baseline.sh --comment\`.
 
-Bench numbers captured against \`$COMMIT\`. See \`scripts/compare-bench.py perf-baseline.json <current-bench-output>\` for deltas vs the prior baseline.")
+Bench numbers captured against \`$COMMIT\`, read from criterion's
+\`new/estimates.json\`. Deltas vs the prior baseline are in the job log.")
 echo
 echo "Opened PR: $PR_URL"

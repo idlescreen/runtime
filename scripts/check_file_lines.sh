@@ -11,8 +11,12 @@ cd "$ROOT" || exit 1
 
 echo "Checking file sizes (limit=${LIMIT}, root=${ROOT})..."
 
-# Owned product/source only — exclude build artifacts, VCS, agent noise, container overlays.
-OVERSIZE=$(find . -type f \( -name "*.rs" -o -name "*.c" -o -name "*.h" -o -name "*.sh" \) \
+# Rust-only, per .github/RULES.md §1. A C header is a unit of
+# linkage rather than a unit of thought, and CI scripts are better
+# served by shellcheck than by a page-size rule borrowed from Rust.
+# Owned product/source only — exclude build artifacts, VCS, agent
+# noise, container overlays.
+OVERSIZE=$(find . -type f -name "*.rs" \
     -not -path "*/target/*" \
     -not -path "*/dist/*" \
     -not -path "*/.git/*" \

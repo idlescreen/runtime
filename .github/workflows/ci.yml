@@ -160,6 +160,10 @@ jobs:
           runtime -> .
         cache-on-failure: true
     - name: Wire path-dep layout
-      run: ln -s ../runtime downstream/runtime
+      # Idempotent on purpose: a fresh checkout can already carry a
+      # `runtime` entry (a stale symlink or a directory), and plain
+      # `ln -s` then resolves *through* it and dies with
+      # "failed to create symbolic link 'downstream/runtime/runtime'".
+      run: rm -rf downstream/runtime && ln -s ../runtime downstream/runtime
     - name: cargo check downstream
       run: cd downstream && cargo check --workspace --all-targets

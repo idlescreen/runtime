@@ -78,7 +78,11 @@ mod tests {
                 assert_eq!(&p[..], &[1u8, 2, 3, 4][..]);
                 assert!(Arc::ptr_eq(&rp, &pool_clone));
             }
-            _ => panic!("expected UpdateFrame"),
+            // Failing loudly on an unexpected variant is the point of this
+            // test. The workspace denies both clippy::panic and
+            // clippy::unreachable, so allow the one this arm needs.
+            #[allow(clippy::unreachable)]
+            _ => unreachable!("expected UpdateFrame"),
         }
     }
 

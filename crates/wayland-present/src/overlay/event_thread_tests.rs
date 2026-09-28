@@ -8,6 +8,11 @@
 
 use crate::overlay::command::PresenterCommand;
 
+// Pulled in with `#[path]` as `mod tests`, so clippy reads the module
+// name as a repeat of the file's. The name is the org-wide convention
+// for `#[cfg(test)] mod tests` (RULES.md §4); only the file name is
+// page-specific.
+#[allow(clippy::module_inception)]
 #[cfg(test)]
 mod tests {
     use super::*;

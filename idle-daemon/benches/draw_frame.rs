@@ -36,9 +36,12 @@
 //! ```
 
 use std::hint::black_box;
+use std::sync::atomic::AtomicBool;
+use std::time::Duration;
 
 use criterion::{BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
 use idle_api::TerminalCell;
+use idle_daemon::bench_exports::{WaitOutcome, apply_fade_in, consume_events, new_bench_handle};
 use idle_runner::cell_renderer::CellRenderer;
 
 /// Realistic terminal grid sizes — `(cols, rows)` — for the screen
@@ -137,5 +140,87 @@ fn bench_render(c: &mut Criterion) {
     group.finish();
 }
 
-criterion_group!(benches, bench_render);
+/// T1 · `apply_fade_in` — the per-frame fade composite. Runs over the
+/// whole BGRA buffer once per frame for the first 500ms of a transition,
+/// so this is a real hot-path cost, not a one-off.
+fn bench_apply_fade_in(c: &mut Criterion) {
+    // Full 1920×1080 BGRA frame — the size the overlay actually pushes.
+    let len = 1920 * 1080 * 4;
+    let src: Vec<u8> = (0..len).map(|i| (i % 251) as u8).collect();
+    let mut pixels = src.clone();
+
+    let mut g = c.benchmark_group("apply_fade_in");
+    g.throughput(Throughput::Bytes(len as u64));
+    for (label, ms) in [
+        ("mult_0_clears", 0u64),
+        ("mult_128", 250),
+        ("mult_255", 498),
+    ] {
+        g.bench_function(label, |b| {
+            b.iter(|| {
+                pixels.copy_from_slice(&src);
+                apply_fade_in(black_box(&mut pixels), Duration::from_millis(ms));
+                black_box(pixels.as_mut_ptr());
+            });
+        });
+    }
+    // Past the fade window the function early-returns; cheap, but it
+    // runs on every frame of a long screensaver, so it stays measured.
+    g.bench_function("past_500ms_noop", |b| {
+        b.iter(|| apply_fade_in(black_box(&mut pixels), Duration::from_secs(30)));
+    });
+    g.finish();
+}
+
+/// T2 · `consume_events` — inotify buffer parse. Allocation- and
+/// branch-sensitive: the runtime calls it on every power-supply event.
+fn bench_consume_events(c: &mut Criterion) {
+    // 64 whole inotify records, each with a short name — one read().
+    let mut buf = Vec::new();
+    for i in 0..64u32 {
+        let name = format!("ACAD-{:02}", i % 100);
+        buf.extend_from_slice(&i.to_ne_bytes());
+        buf.extend_from_slice(&0x0000_0102u32.to_ne_bytes()); // IN_MODIFY | IN_CREATE
+        buf.extend_from_slice(&0u32.to_ne_bytes());
+        buf.extend_from_slice(&name.len().to_ne_bytes());
+        buf.extend_from_slice(name.as_bytes());
+    }
+
+    let mut g = c.benchmark_group("consume_events");
+    g.throughput(Throughput::Bytes(buf.len() as u64));
+    g.bench_function("64_records", |b| {
+        b.iter(|| black_box(consume_events(black_box(&buf))));
+    });
+    g.finish();
+}
+
+/// T2 · `power_watcher` — the consumer side of the power watcher. This
+/// is the lock/condvar path: one `parking_lot` lock per call plus the
+/// timed wait. A 1ms cap keeps the bench quick; the real runtime uses a
+/// 1s heartbeat, and the cost being measured is the lock/condvar
+/// turnover, not the sleep.
+fn bench_power_watcher(c: &mut Criterion) {
+    let handle = new_bench_handle();
+    let stop = AtomicBool::new(false);
+
+    let mut g = c.benchmark_group("power_watcher");
+    g.bench_function("wait_for_heartbeat_1ms_timeout", |b| {
+        b.iter(|| {
+            let out = handle.wait_for_heartbeat(&stop, Duration::from_millis(1));
+            black_box(matches!(out, WaitOutcome::Heartbeat));
+        });
+    });
+    g.bench_function("cached_is_on_battery_atomic_load", |b| {
+        b.iter(|| black_box(handle.cached_is_on_battery()));
+    });
+    g.finish();
+}
+
+criterion_group!(
+    benches,
+    bench_render,
+    bench_apply_fade_in,
+    bench_consume_events,
+    bench_power_watcher,
+);
 criterion_main!(benches);

@@ -43,11 +43,11 @@ pub use presenter::OverlayPresenter;
 // `idle-upscaler/src/cpu/mod.rs::bench_exports`.
 #[doc(hidden)]
 pub mod bench_exports {
+    pub use crate::drop_presenter::bench_exports::*;
     pub use crate::frame_pool::{
-        empty_frame_pool, get_frame_buffer, return_frame_buffer, FramePool,
+        FramePool, empty_frame_pool, get_frame_buffer, return_frame_buffer,
     };
     pub use crate::overlay::bench_exports::*;
-    pub use crate::drop_presenter::bench_exports::*;
 }
 
 // Presenter commands are processed on a dedicated Wayland thread.

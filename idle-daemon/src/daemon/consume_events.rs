@@ -80,4 +80,3 @@ mod tests {
         assert_eq!(consume_events(&buf), 1);
     }
 }
-

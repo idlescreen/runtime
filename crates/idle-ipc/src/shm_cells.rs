@@ -10,7 +10,6 @@
 
 use super::{FfiTerminalCell, SHM_MAGIC, SharedMemory, SharedMemoryHeader};
 
-
 impl SharedMemory {
     /// Mutable header view.
     ///
@@ -80,7 +79,10 @@ mod tests {
     #[test]
     fn cells_mut_refuses_a_header_larger_than_the_mapping() {
         let name = format!("/idle-shm-cells-test-{}", std::process::id());
-        assert!(is_valid_shm_name(&name), "test name rejected by the validator");
+        assert!(
+            is_valid_shm_name(&name),
+            "test name rejected by the validator"
+        );
         let hdr = std::mem::size_of::<SharedMemoryHeader>();
         let shm = SharedMemory::create(&name, hdr * 2).expect("create failed");
 
@@ -95,6 +97,10 @@ mod tests {
         // SAFETY: same invariants; the call is expected to fail its own
         // bounds check rather than read out of range.
         let res = unsafe { shm.cells_mut() };
-        assert!(res.is_err(), "oversized header must be rejected, got {:?}", res.map(|s| s.len()));
+        assert!(
+            res.is_err(),
+            "oversized header must be rejected, got {:?}",
+            res.map(|s| s.len())
+        );
     }
 }

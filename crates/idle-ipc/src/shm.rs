@@ -174,7 +174,6 @@ impl SharedMemory {
     pub fn name(&self) -> &str {
         &self.name
     }
-
 }
 
 impl Drop for SharedMemory {

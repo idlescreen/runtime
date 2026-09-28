@@ -13,12 +13,15 @@
 //! so accidental motion during fade-in does not immediately hide the screensaver.
 
 pub(crate) mod buffer;
+pub(crate) mod command;
+pub(crate) mod epoll;
 pub(crate) mod error_utils;
+pub(crate) mod event_thread;
 pub(crate) mod handlers;
 mod state;
-mod thread;
 
-pub use thread::{PresenterCommand, spawn_event_thread};
+pub use command::PresenterCommand;
+pub use event_thread::spawn_event_thread;
 
 // Solid-color previews and screensaver frames share the same overlay map.
 // Configure events may arrive before the first frame submission.

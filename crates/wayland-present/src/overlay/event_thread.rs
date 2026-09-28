@@ -1,43 +1,25 @@
 // SPDX-License-Identifier: MIT
 
-use std::collections::{HashMap, VecDeque};
-use std::os::fd::AsFd;
-use std::os::unix::io::AsRawFd;
+//! Overlay event thread: spawn + event loop.
+//! Per-resource helpers live in sibling modules
+//! ([`super::command`], [`super::epoll`]).
+
+use std::collections::HashMap;
+use std::os::fd::{AsFd, AsRawFd};
 use std::sync::Arc;
-use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{Receiver, Sender};
 use std::thread;
 
 use wayland_client::Connection;
 
-use crate::appearance::OverlayAppearance;
 use crate::frame_signal::FrameSignal;
 use crate::output::OutputRegistry;
 
+use super::command::PresenterCommand;
+use super::epoll::{drain_eventfd, epoll_ctl_add, make_epoll};
 use super::error_utils::is_wayland_would_block;
 use super::state::SessionState;
-
-pub enum PresenterCommand {
-    ShowSolid(OverlayAppearance),
-    ShowScreensaver,
-    UpdateFrame {
-        output_id: u32,
-        width: u32,
-        height: u32,
-        /// Frozen BGRA buffer wrapped in `Arc<Vec<u8>>`. The event
-        /// thread commits it, then pushes the Arc back to
-        /// `return_pool` for the daemon's `get_frame_buffer` path.
-        /// Sized (Vec is Sized) so the recycler can `Arc::try_unwrap`
-        /// and reclaim the heap without a copy.
-        pixels: Arc<Vec<u8>>,
-        /// Triple-buffer return pool shared between daemon + event
-        /// thread. `Arc::clone` per frame replaces the prior
-        /// `mpsc::Sender<Vec<u8>>` round-trip.
-        return_pool: Arc<Mutex<VecDeque<Arc<Vec<u8>>>>>,
-    },
-    Hide,
-}
 
 #[allow(clippy::too_many_arguments)]
 pub fn spawn_event_thread(
@@ -144,26 +126,20 @@ fn run_event_loop(
     // Tier-2 step 3 (perf plan §"Wayland epoll"): replace the per-iteration
     // `libc::poll(2, 100ms)` with an epoll fd. The Wayland socket and the
     // self-wake eventfd (`wake_rx`, written by `submit_frame` et al.) are
-    // registered once. epoll scales to any number of fds without
-    // per-poll allocation and gives us a single syscall to wake on either
-    // fd. The 100 ms epoll_wait timeout is a safety net for the rare
-    // case where neither fd fires (e.g. compositor restart mid-poll).
+    // registered once. The 100 ms epoll_wait timeout is a safety net for
+    // the rare case where neither fd fires (e.g. compositor restart).
     let epoll_fd = make_epoll()?;
-    // SAFETY: epoll_ctl_add wraps the unsafe ctl call and validates the
-    // return code.
     epoll_ctl_add(epoll_fd, wayland_fd, libc::EPOLLIN, 1)?;
     epoll_ctl_add(epoll_fd, wake_fd, libc::EPOLLIN, 2)?;
 
-    // SAFETY: small stack array for epoll_wait. 4 slots is plenty — we
-    // only have 2 fds registered but a single roundtrip can produce
-    // multiple events for the same fd.
+    // 4 slots is plenty — only 2 fds registered but one roundtrip can
+    // produce multiple events for the same fd.
     let mut events = [libc::epoll_event { events: 0, u64: 0 }; 4];
 
     while !shutdown.load(Ordering::Relaxed) {
         let _ = connection.flush();
-        // SAFETY: `events` is a valid 4-element array, lifetime tied to
-        // this stack frame; `epoll_wait` writes at most `events.len()`
-        // entries.
+        // SAFETY: events array is a valid 4-element stack buffer; epoll_wait
+        // writes at most events.len() entries.
         let n = unsafe {
             libc::epoll_wait(
                 epoll_fd,
@@ -203,75 +179,7 @@ fn run_event_loop(
     Ok(())
 }
 
-/// Create a new epoll fd. CLOEXEC so a child fork doesn't inherit it.
-fn make_epoll() -> Result<libc::c_int, &'static str> {
-    // SAFETY: epoll_create1 with EPOLL_CLOEXEC returns a fresh fd.
-    let raw = unsafe { libc::epoll_create1(libc::EPOLL_CLOEXEC) };
-    if raw < 0 {
-        idle_log::error!(
-            error = %std::io::Error::last_os_error(),
-            "wayland-present: epoll_create1 failed"
-        );
-        return Err("epoll_create1 failed");
-    }
-    Ok(raw)
-}
-
-/// Add `fd` to the epoll set with the given event mask and a stable
-/// tag (the `u64` slot in `epoll_event`). The tag lets us route the
-/// wakeup to the right handler in the event loop.
-fn epoll_ctl_add(
-    epoll_fd: libc::c_int,
-    fd: libc::c_int,
-    mask: libc::c_int,
-    tag: u64,
-) -> Result<(), &'static str> {
-    let mut event = libc::epoll_event {
-        events: mask as u32,
-        u64: tag,
-    };
-    // SAFETY: `event` is a valid `epoll_event` struct; `fd` is a valid
-    // descriptor (we own it or it is the Wayland socket lifetime).
-    let rc = unsafe { libc::epoll_ctl(epoll_fd, libc::EPOLL_CTL_ADD, fd, &mut event) };
-    if rc < 0 {
-        idle_log::error!(
-            error = %std::io::Error::last_os_error(),
-            fd,
-            "wayland-present: epoll_ctl ADD failed"
-        );
-        return Err("epoll_ctl ADD failed");
-    }
-    Ok(())
-}
-
-/// Drain an eventfd by reading 8 bytes (the counter) until EAGAIN.
-fn drain_eventfd(fd: libc::c_int) {
-    let mut buf = [0u8; 8];
-    loop {
-        // SAFETY: `fd` is a valid eventfd; `buf` is a valid 8-byte
-        // stack buffer. EAGAIN (EWOULDBLOCK) means the counter is 0 —
-        // we exit the loop.
-        let n = unsafe { libc::read(fd, buf.as_mut_ptr().cast(), buf.len()) };
-        if n < 0 {
-            let err = std::io::Error::last_os_error();
-            if err.kind() == std::io::ErrorKind::WouldBlock {
-                return;
-            }
-            // Any other error is fatal-ish; log and exit the loop to
-            // avoid spinning on the same error forever.
-            idle_log::warn!(
-                error = %err,
-                fd,
-                "wayland-present: eventfd read failed"
-            );
-            return;
-        }
-        if n == 0 {
-            return;
-        }
-    }
-}
-
+/// Dispatch any Wayland events arrived since the last loop iteration.
 fn dispatch_pending_events(
     connection: &Connection,
     event_queue: &mut wayland_client::EventQueue<SessionState>,
@@ -309,6 +217,7 @@ fn dispatch_pending_events(
     Ok(())
 }
 
+/// Drain pending commands from the daemon-side channel and apply each.
 fn apply_commands(state: &mut SessionState, command_rx: &Receiver<PresenterCommand>) {
     while let Ok(command) = command_rx.try_recv() {
         match command {
@@ -338,3 +247,8 @@ fn apply_commands(state: &mut SessionState, command_rx: &Receiver<PresenterComma
         }
     }
 }
+
+// Tests + bench live in `event_thread_tests.rs`.
+#[cfg(test)]
+#[path = "event_thread_tests.rs"]
+mod tests;

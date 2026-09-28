@@ -1,4 +1,7 @@
 // SPDX-License-Identifier: MIT
+// perf: T1 · bench: draw_frame · sym: render_content_viewport_into · gate: perf-baseline.json
+// `sym:` because this page is `mod.rs`: the name it carries is the
+// module's, not the function's.
 
 #![allow(clippy::too_many_arguments)]
 

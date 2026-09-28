@@ -41,7 +41,27 @@ import re
 import sys
 from pathlib import Path
 
+# Default threshold — used when a bench doesn't match any prefix below.
 REGRESSION_PCT = 2.0
+
+# Per-bench-group thresholds from plan §"Tier-1 acceptance":
+#   stretch    — ≥ 5% p50 delta on the stretch_upscale benches
+#   letterbox  — ≥ 2% p50 delta (it's already the bottleneck)
+#   render_content_viewport — ≥ 3% p50 delta
+# The bench name prefix is matched left-to-right; first match wins.
+BENCH_THRESHOLDS = (
+    ("letterbox/", 2.0),
+    ("stretch/", 5.0),
+    ("render_content_viewport/", 3.0),
+    ("draw_frame/", 3.0),
+)
+
+
+def threshold_for(name: str) -> float:
+    for prefix, pct in BENCH_THRESHOLDS:
+        if name.startswith(prefix):
+            return pct
+    return REGRESSION_PCT
 
 
 def parse_cargo_bench_output(text: str) -> dict:
@@ -117,22 +137,23 @@ def compare(baseline_path: Path, current_path: Path) -> int:
             print(f"  {name}: could not parse p50 from current output")
             continue
         delta_pct = (curr_p50 - base_p50) / base_p50 * 100
+        threshold = threshold_for(name)
         marker = "OK"
-        if delta_pct > REGRESSION_PCT:
-            marker = "REGRESSION"
-            regressions.append((name, base_p50, curr_p50, delta_pct))
-        elif delta_pct < -REGRESSION_PCT:
+        if delta_pct > threshold:
+            marker = f"REGRESSION (> {threshold}%)"
+            regressions.append((name, base_p50, curr_p50, delta_pct, threshold))
+        elif delta_pct < -threshold:
             marker = "IMPROVED"
         print(f"  {name}: {base_p50/1_000:.2f} µs -> {curr_p50/1_000:.2f} µs ({delta_pct:+.1f}%) [{marker}]")
 
     if regressions:
         print()
-        print(f"REGRESSION: {len(regressions)} bench(es) regressed ≥ {REGRESSION_PCT}%:")
-        for name, base, curr, pct in regressions:
-            print(f"  {name}: {base/1_000:.2f} µs -> {curr/1_000:.2f} µs ({pct:+.1f}%)")
+        print(f"REGRESSION: {len(regressions)} bench(es) regressed past their per-group threshold:")
+        for name, base, curr, pct, threshold in regressions:
+            print(f"  {name}: {base/1_000:.2f} µs -> {curr/1_000:.2f} µs ({pct:+.1f}%, threshold {threshold}%)")
         return 1
     print()
-    print(f"OK: no regression ≥ {REGRESSION_PCT}%")
+    print("OK: no regression past any per-group threshold")
     return 0
 
 

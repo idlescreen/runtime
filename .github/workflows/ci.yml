@@ -27,7 +27,7 @@ jobs:
       run: |
         over=$(find . -name '*.rs' -not -path './target/*' \
             | xargs wc -l \
-            | awk '$2 != "total" && ($1 > 256 || $1 < 16)'' )
+            | awk '$2 != "total" && ($1 > 256 || $1 < 16)' )
         if [ -n "$over" ]; then
           echo "Files outside 16-256 line range:"
           echo "$over"

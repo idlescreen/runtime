@@ -72,7 +72,7 @@ pub(super) fn sample_bilinear(src: &[u8], width: u32, height: u32, x: f32, y: f3
 /// but overflows i16 (which holds ±32 767). The intermediate lives
 /// in i32; the result lands in [0, 255] after the shift.
 #[inline]
-fn lerp_u8(a: u8, b: u8, t: u8) -> u8 {
+pub(super) fn lerp_u8(a: u8, b: u8, t: u8) -> u8 {
     let diff = (i32::from(b) - i32::from(a)) * i32::from(t);
     // Round-half-up: 0.5 ULP bias. The original f32 path used
     // `.round()` (banker's rounding), but the bias error is ≤ 0.5 ULP

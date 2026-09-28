@@ -6,6 +6,7 @@
 use crate::FilterMode;
 
 use super::sample::{sample_src, write_pixel};
+use super::simd::bilinear_row;
 
 #[allow(clippy::too_many_arguments)]
 pub fn upscale_letterbox_into(
@@ -67,19 +68,74 @@ pub fn upscale_letterbox_into(
         dst[bottom_start..needed].fill(0);
     }
 
-    for dst_y in 0..display_h {
-        for dst_x in 0..display_w {
-            let out_x = offset_x + dst_x;
-            let out_y = offset_y + dst_y;
-            let color = sample_src(
-                src,
-                src_w,
-                src_h,
-                (dst_x as f32 + 0.5) / display_w as f32 * src_w as f32 - 0.5,
-                (dst_y as f32 + 0.5) / display_h as f32 * src_h as f32 - 0.5,
-                filter,
-            );
-            write_pixel(dst, dst_w, out_x, out_y, color);
+    // Tier-3 SIMD fast path: the Linear (bilinear) filter is the
+    // dominant hot path. Process 4 horizontally-adjacent display
+    // pixels per iteration via `bilinear_row` (SSE2 on x86_64,
+    // scalar fallback elsewhere). The remainder (when `display_w`
+    // is not a multiple of 4) falls through to `write_pixel`.
+    match filter {
+        FilterMode::Nearest => {
+            for dst_y in 0..display_h {
+                for dst_x in 0..display_w {
+                    let out_x = offset_x + dst_x;
+                    let out_y = offset_y + dst_y;
+                    let color = sample_src(
+                        src,
+                        src_w,
+                        src_h,
+                        (dst_x as f32 + 0.5) / display_w as f32 * src_w as f32 - 0.5,
+                        (dst_y as f32 + 0.5) / display_h as f32 * src_h as f32 - 0.5,
+                        FilterMode::Nearest,
+                    );
+                    write_pixel(dst, dst_w, out_x, out_y, color);
+                }
+            }
+        }
+        FilterMode::Linear => {
+            for dst_y in 0..display_h {
+                // Compute the fractional y once per row — every
+                // pixel in a row shares it.
+                let fy = (dst_y as f32 + 0.5) / display_h as f32 * src_h as f32 - 0.5;
+                let y_clamped = fy.clamp(0.0, (src_h - 1) as f32);
+                let y0 = y_clamped.floor() as u32;
+                let y1 = (y0 + 1).min(src_h - 1);
+                let ty = ((y_clamped - y0 as f32) * 256.0) as u32 as u8;
+
+                let out_y = offset_y + dst_y;
+                let row_start = out_y as usize * row_bytes + offset_x as usize * 4;
+
+                // Process the display area in chunks of 4 pixels.
+                let chunks = display_w / 4;
+                for chunk in 0..chunks {
+                    let dst_x = chunk * 4;
+                    let fx = (dst_x as f32 + 0.5) / display_w as f32 * src_w as f32 - 0.5;
+                    let x0_clamped = fx.clamp(0.0, (src_w - 1) as f32);
+                    let x0 = x0_clamped.floor() as u32;
+                    let tx = ((x0_clamped - x0 as f32) * 256.0) as u32 as u8;
+                    let x1 = (x0 + 1).min(src_w - 1);
+
+                    let mut block = [0u8; 16];
+                    bilinear_row(src, src_w, src_h, x0, y0, x1, y1, tx, ty, &mut block);
+
+                    let col_start = row_start + dst_x as usize * 4;
+                    dst[col_start..col_start + 16].copy_from_slice(&block);
+                }
+
+                // Tail (when display_w is not a multiple of 4) —
+                // scalar `sample_src` for the leftover 1–3 pixels.
+                for dst_x in (chunks * 4)..display_w {
+                    let out_x = offset_x + dst_x;
+                    let color = sample_src(
+                        src,
+                        src_w,
+                        src_h,
+                        (dst_x as f32 + 0.5) / display_w as f32 * src_w as f32 - 0.5,
+                        (dst_y as f32 + 0.5) / display_h as f32 * src_h as f32 - 0.5,
+                        FilterMode::Linear,
+                    );
+                    write_pixel(dst, dst_w, out_x, out_y, color);
+                }
+            }
         }
     }
 }

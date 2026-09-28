@@ -37,9 +37,9 @@ pub use upscale_stretch_into::upscale_stretch_into;
 // they do not collide with the identically-named submodules above.
 #[doc(hidden)]
 pub mod bench_exports {
-    pub use super::bilinear_row::bilinear_row;
     #[cfg(target_arch = "x86_64")]
     pub use super::bilinear_avx2::bilinear_row_avx2;
+    pub use super::bilinear_row::bilinear_row;
     pub use super::letterbox::upscale_letterbox_into;
     pub use super::stretch_byte_rows::stretch_byte_rows;
     pub use super::stretch_cache::StretchCache;

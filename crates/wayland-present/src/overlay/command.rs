@@ -92,4 +92,3 @@ mod tests {
         assert!(matches!(show, PresenterCommand::ShowScreensaver));
     }
 }
-

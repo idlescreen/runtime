@@ -125,4 +125,3 @@ mod tests {
         drop(contested);
     }
 }
-

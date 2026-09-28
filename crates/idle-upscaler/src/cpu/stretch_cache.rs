@@ -80,4 +80,3 @@ mod tests {
         assert_eq!(cache.x_map, vec![0, 2, 5, 7]);
     }
 }
-

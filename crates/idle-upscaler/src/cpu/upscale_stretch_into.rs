@@ -135,4 +135,3 @@ mod tests {
         assert!(super::try_cast_u8_to_u32(&v).is_ok());
     }
 }
-

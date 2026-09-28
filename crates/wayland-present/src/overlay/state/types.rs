@@ -11,6 +11,7 @@ use wayland_protocols_wlr::layer_shell::v1::client::{zwlr_layer_shell_v1, zwlr_l
 
 use wayland_protocols::wp::viewporter::client::{wp_viewport, wp_viewporter};
 
+use crate::frame_signal::FrameSignal;
 use crate::output::OutputRegistry;
 
 use super::super::buffer::MappedBuffer;
@@ -51,4 +52,8 @@ pub struct SessionState {
     pub output_scale: HashMap<u32, i32>,
     pub dismiss_grace_until: Option<Instant>,
     pub queue: QueueHandle<SessionState>,
+    /// Frame-presented signal. Notified by `update_frame` after a
+    /// successful `commit_frame_buffer` so the daemon's frame loop
+    /// wakes from its vsync-relative sleep without 2 ms polling.
+    pub frame_signal: FrameSignal,
 }

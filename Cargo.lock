@@ -664,6 +664,7 @@ dependencies = [
  "idle-upscaler",
  "libc",
  "mimalloc",
+ "parking_lot",
  "tokio",
  "wayland-idle",
  "zbus",
@@ -1663,6 +1664,7 @@ version = "0.4.0"
 dependencies = [
  "idle-log",
  "libc",
+ "parking_lot",
  "wayland-client",
  "wayland-protocols",
  "wayland-protocols-wlr",

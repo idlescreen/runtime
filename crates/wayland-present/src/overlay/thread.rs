@@ -11,6 +11,7 @@ use std::thread;
 use wayland_client::Connection;
 
 use crate::appearance::OverlayAppearance;
+use crate::frame_signal::FrameSignal;
 use crate::output::OutputRegistry;
 
 use super::error_utils::is_wayland_would_block;
@@ -39,6 +40,7 @@ pub fn spawn_event_thread(
     is_alive: Arc<AtomicBool>,
     supports_scaling: Arc<AtomicBool>,
     wake_rx: std::os::fd::OwnedFd,
+    frame_signal: FrameSignal,
 ) -> thread::JoinHandle<()> {
     thread::spawn(move || {
         if let Err(message) = run_event_loop(
@@ -49,6 +51,7 @@ pub fn spawn_event_thread(
             outputs,
             supports_scaling,
             wake_rx,
+            frame_signal,
         ) {
             idle_log::error!(
                 fault = message,
@@ -69,6 +72,7 @@ fn run_event_loop(
     outputs: OutputRegistry,
     supports_scaling: Arc<AtomicBool>,
     wake_rx: std::os::fd::OwnedFd,
+    frame_signal: FrameSignal,
 ) -> Result<(), &'static str> {
     let connection = match Connection::connect_to_env() {
         Ok(conn) => conn,
@@ -102,6 +106,7 @@ fn run_event_loop(
         output_scale: HashMap::new(),
         dismiss_grace_until: None,
         queue: queue.clone(),
+        frame_signal,
     };
 
     event_queue

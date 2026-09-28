@@ -8,6 +8,7 @@ use std::thread::JoinHandle;
 use std::time::Duration;
 
 use crate::appearance::OverlayAppearance;
+use crate::frame_signal::FrameSignal;
 use crate::output::{OutputLayout, OutputRegistry};
 use crate::overlay::{PresenterCommand, spawn_event_thread};
 
@@ -21,6 +22,14 @@ pub struct OverlayPresenter {
     outputs: OutputRegistry,
     is_alive: Arc<AtomicBool>,
     supports_scaling: Arc<AtomicBool>,
+    /// Frame-presented signal. The event thread notifies this after each
+    /// successful surface commit. The daemon's frame loop waits on it
+    /// instead of polling a 2 ms slice.
+    ///
+    /// When the compositor's `wl_callback::done` dispatcher (in
+    /// `handlers/buffer_objects.rs`) is wired, this signal can be
+    /// notified on actual vsync — see the `FrameSignal` module docs.
+    frame_signal: FrameSignal,
     /// Self-wake for the event thread: writing makes its `poll()` return so
     /// queued commands are applied immediately rather than after the next
     /// compositor event (or the 100ms poll timeout).
@@ -46,6 +55,10 @@ impl OverlayPresenter {
         let outputs = OutputRegistry::new();
         let is_alive = Arc::new(AtomicBool::new(true));
         let supports_scaling = Arc::new(AtomicBool::new(false));
+        // Frame-presence signal shared between the event thread (which
+        // notifies after a successful commit) and the daemon's frame loop
+        // (which waits on it instead of polling). Cheap to clone.
+        let frame_signal = FrameSignal::new();
 
         // SAFETY: fresh eventfd; NONBLOCK so a wake write never stalls the
         // render loop when a wake is already pending. CLOEXEC keeps it out
@@ -69,6 +82,7 @@ impl OverlayPresenter {
             is_alive.clone(),
             supports_scaling.clone(),
             wake_rx,
+            frame_signal.clone(),
         );
 
         match ready_rx.recv_timeout(Duration::from_secs(5)) {
@@ -81,6 +95,7 @@ impl OverlayPresenter {
                 outputs,
                 is_alive,
                 supports_scaling,
+                frame_signal,
                 wake_fd,
                 event_thread: Some(event_thread),
             }),
@@ -112,6 +127,14 @@ impl OverlayPresenter {
     /// Returns `true` if the compositor supports `wp_viewporter` hardware scaling.
     pub fn supports_scaling(&self) -> bool {
         self.supports_scaling.load(Ordering::SeqCst)
+    }
+
+    /// Handle the daemon's frame loop can wait on. Cheap to clone.
+    /// Currently notified on every successful frame commit; will be
+    /// additionally notified on `wl_callback::done` for true vsync
+    /// once the dispatch hook is wired.
+    pub fn frame_signal(&self) -> FrameSignal {
+        self.frame_signal.clone()
     }
 
     pub fn output_layouts(&self) -> Vec<OutputLayout> {

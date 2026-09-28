@@ -181,7 +181,20 @@ impl SessionState {
                 output_id,
                 "wayland-present: frame buffer missing after ensure; skipping frame"
             );
+            return;
         }
+        // Frame committed. Wake the daemon's frame loop so it can start
+        // producing the next frame as soon as the previous one is on its
+        // way to the compositor. The condvar-signal pattern is the
+        // upgrade path over the prior 2 ms slice-poll: the loop wakes
+        // on commit, then re-waits for the next budget slice.
+        //
+        // When `wl_callback::done` is wired (handlers/buffer_objects.rs),
+        // this should move to that path — that's the true vsync signal
+        // and would let the daemon wait exactly one frame period per
+        // commit rather than waking on commit and immediately re-waiting
+        // for the remaining slice.
+        self.frame_signal.notify();
     }
 
     pub fn remove_overlay(&mut self, output_id: u32) {

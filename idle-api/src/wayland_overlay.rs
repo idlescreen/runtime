@@ -112,6 +112,10 @@ impl OverlaySurface for WaylandOverlay {
     fn get_frame_buffer(&self, size: usize) -> Vec<u8> {
         self.presenter.get_frame_buffer(size)
     }
+
+    fn frame_signal(&self) -> Option<wayland_present::FrameSignal> {
+        Some(self.presenter.frame_signal())
+    }
 }
 
 #[cfg(test)]

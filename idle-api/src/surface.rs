@@ -70,6 +70,18 @@ pub trait OverlaySurface: Send + Sync + 'static {
     fn get_frame_buffer(&self, size: usize) -> Vec<u8> {
         vec![0u8; size]
     }
+
+    /// Frame-presence signal surfaced by the surface. The daemon's
+    /// frame loop waits on this instead of polling a 2 ms slice;
+    /// stub surfaces return `None` and the loop falls back to its
+    /// legacy slice-poll path.
+    ///
+    /// Notified on every successful frame commit. When
+    /// `wayland_present`'s `wl_callback::done` dispatch is wired,
+    /// it'll also be notified on actual vsync.
+    fn frame_signal(&self) -> Option<wayland_present::FrameSignal> {
+        None
+    }
 }
 
 /// Solid-color "screen blank" appearance. Real impls translate this to

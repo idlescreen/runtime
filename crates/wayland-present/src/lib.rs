@@ -16,11 +16,13 @@
 //! Requires a compositor that implements wlr-layer-shell (COSMIC, Sway, Hyprland, etc.).
 
 mod appearance;
+mod frame_signal;
 mod output;
 mod overlay;
 mod presenter;
 
 pub use appearance::OverlayAppearance;
+pub use frame_signal::{FrameSignal, FrameWaitOutcome};
 pub use output::OutputLayout;
 pub use presenter::OverlayPresenter;
 

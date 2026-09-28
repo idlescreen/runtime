@@ -167,26 +167,38 @@ fn update_fps_counter(state: &mut FrameLoopState, frame_index: u64) {
     }
 
     if elapsed < state.frame_duration {
-        // Tier-2 perf change: poll the `stop` flag during the sleep so
-        // shutdown interrupts within ~2 ms instead of waiting out the
-        // full frame duration. The previous `thread::sleep(remaining)`
-        // could park the loop for up to 16 ms after the user pressed
-        // stop — a 60 Hz cycle is enough to make shutdown feel sticky.
+        let remaining = state.frame_duration.saturating_sub(elapsed);
+        // Tier-2 perf change (round 1): poll the `stop` flag during the
+        // sleep so shutdown interrupts within ~2 ms instead of waiting
+        // out the full frame duration.
         //
-        // Sliced sleep is the minimum-viable version of the
-        // plan-§Tier-2 "frame-loop condvar wait"; a proper
-        // `parking_lot::Condvar::wait_for` would save the periodic
-        // wakeups but needs a wake source threaded through the
-        // presenter. Filed as Tier-2 step 2.5 for that plumbing.
-        sleep_interruptible(state.frame_duration.saturating_sub(elapsed), state.stop);
+        // Tier-2 step 2.5 (round 2): wait on the presenter's frame
+        // signal instead of slicing. The presenter notifies after a
+        // successful surface commit (and, when the `wl_callback::done`
+        // dispatch hook is wired in `wayland-present`, on actual
+        // vsync). Avoids the systematic 2 ms polling wakeup that was
+        // stealing ~30 wakeups/sec from the daemon even when no frames
+        // were being produced.
+        //
+        // If the presenter does not expose a frame signal (stub or
+        // platform impl without Wayland), fall back to the slice-poll.
+        if let Some(signal) = state.presenter.frame_signal() {
+            // Block up to `remaining`. If the signal fires earlier we
+            // wake, re-check the loop, and either draw the next frame
+            // immediately or wait again for the next slice.
+            let _ = signal.wait_for(state.stop, remaining);
+        } else {
+            sleep_interruptible(remaining, state.stop);
+        }
     }
 }
 
 /// Sleep up to `remaining`, polling `stop` every `SLICE` so a Ctrl-C
 /// or presenter-detach interrupts within a slice boundary.
 ///
-/// Returns as soon as either `stop` flips or `remaining` elapses.
-/// `remaining = 0` is an instant return (used when a frame ran over).
+/// Used as a fallback when the presenter has no frame signal (stub
+/// implementations, platform impls without vsync plumbing). Returns
+/// as soon as either `stop` flips or `remaining` elapses.
 fn sleep_interruptible(remaining: Duration, stop: &AtomicBool) {
     const SLICE: Duration = Duration::from_millis(2);
     let deadline = Instant::now() + remaining;

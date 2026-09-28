@@ -52,10 +52,10 @@ impl OverlaySurface for WaylandOverlay {
     }
 
     fn submit_frame(&self, output: OutputId, frame: Arc<Vec<u8>>, width: u32, height: u32) {
-        // Convert Arc<Vec<u8>> -> Vec<u8> at the boundary. The presenter
-        // owns the buffer for one frame, so the cheap clone is bounded.
-        let bytes = Arc::try_unwrap(frame).unwrap_or_else(|arc| (*arc).clone());
-        self.presenter.submit_frame(output.0, width, height, bytes);
+        // Hand the Arc straight through to the presenter's triple-
+        // buffer pool. Refcount bump on `Arc::clone` (when the
+        // presenter holds the buffer across the Wayland commit).
+        self.presenter.submit_frame(output.0, width, height, frame);
     }
 
     fn is_alive(&self) -> bool {

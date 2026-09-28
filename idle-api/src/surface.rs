@@ -34,6 +34,12 @@ pub trait OverlaySurface: Send + Sync + 'static {
 
     /// Submit a per-output BGRA frame for presentation. Frame buffer is
     /// `width * height * 4` bytes; row-major, BGRA.
+    ///
+    /// The buffer is wrapped in `Arc<Vec<u8>>` so the presenter can
+    /// hold it across one Wayland commit without copying bytes at
+    /// the trait seam. The recycler is the presenter's triple-
+    /// buffer pool (replaces the prior `mpsc::Sender<Vec<u8>>`
+    /// round-trip with a single atomic bump on `Arc::clone`).
     fn submit_frame(&self, output: OutputId, frame: Arc<Vec<u8>>, width: u32, height: u32);
 
     /// True when the surface is still attached and rendering. Returns

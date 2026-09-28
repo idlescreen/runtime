@@ -298,8 +298,7 @@ mod tests {
             let mult = (123.0 / 500.0 * 256.0) as u32;
             let expected = ((v * mult + 128) >> 8) as u8;
             assert_eq!(
-                pixels[i],
-                expected,
+                pixels[i], expected,
                 "pixel {i} mismatch: got {}, expected {expected} (v={v}, mult={mult})",
                 pixels[i]
             );

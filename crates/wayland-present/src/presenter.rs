@@ -2,7 +2,7 @@
 
 use std::os::fd::{AsRawFd, FromRawFd, OwnedFd};
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::mpsc::{self, Sender, SyncSender};
+use std::sync::mpsc::{self, SyncSender};
 use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
 use std::time::Duration;
@@ -12,11 +12,28 @@ use crate::frame_signal::FrameSignal;
 use crate::output::{OutputLayout, OutputRegistry};
 use crate::overlay::{PresenterCommand, spawn_event_thread};
 
+// Frame buffer pool. Triple-buffered across the `daemon` and the
+// event thread. The daemon hands the presenter an
+// `Arc<Vec<u8>>` via `Arc::new(pixels)`, the presenter holds it
+// across one Wayland commit, then pushes it back. The Vec keeps
+// `try_unwrap` available (sized), so the recycling path can
+// reclaim the heap allocation without a clone.
+//
+// Replaces the prior `mpsc::Sender<Vec<u8>>` + `sync_channel(1)`
+// round-trip. Steady-state cost is one `Arc::clone` per frame.
+// Type alias: `Arc<Mutex<VecDeque<Arc<Vec<u8>>>>>`. We can't use
+// `Arc<[u8]>` here because `[u8]` is unsized and lacks
+// `try_unwrap`/`into_inner`, so the recycler couldn't reclaim
+// the bytes without a copy.
+type FramePool = Arc<Mutex<std::collections::VecDeque<Arc<Vec<u8>>>>>;
+
 /// Presents fullscreen Wayland overlays on top of the desktop.
 pub struct OverlayPresenter {
     command_tx: SyncSender<PresenterCommand>,
-    buffer_tx: Sender<Vec<u8>>,
-    buffer_rx: Mutex<mpsc::Receiver<Vec<u8>>>,
+    /// Frame buffer pool. `VecDeque<Arc<Vec<u8>>>` keeps one or
+    /// two returned buffers around for reuse; steady-state cost is
+    /// `Arc::clone` per frame instead of mpsc channel ops.
+    frame_pool: FramePool,
     visible: Arc<AtomicBool>,
     shutdown: Arc<AtomicBool>,
     outputs: OutputRegistry,
@@ -49,7 +66,14 @@ impl OverlayPresenter {
 
         let (ready_tx, ready_rx) = mpsc::channel();
         let (command_tx, command_rx) = mpsc::sync_channel(1);
-        let (buffer_tx, buffer_rx) = mpsc::channel();
+        // Arc<Vec<u8>> pool — owned by the daemon. Replaces the prior
+        // `mpsc::Sender<Vec<u8>>` channel (`Sender::clone` +
+        // `sync_channel(1).send` per frame). The new path is
+        // `Arc::clone` + `Mutex<VecDeque>::push_back` per frame; the
+        // daemon's `get_frame_buffer` consumes the pool and recycles
+        // via `Arc::try_unwrap`. Sized (Vec is Sized) so the
+        // recycler can reclaim the heap allocation cleanly.
+        let frame_pool: FramePool = Arc::new(Mutex::new(std::collections::VecDeque::new()));
         let visible = Arc::new(AtomicBool::new(false));
         let shutdown = Arc::new(AtomicBool::new(false));
         let outputs = OutputRegistry::new();
@@ -88,8 +112,7 @@ impl OverlayPresenter {
         match ready_rx.recv_timeout(Duration::from_secs(5)) {
             Ok(Ok(())) => Some(Self {
                 command_tx,
-                buffer_tx,
-                buffer_rx: Mutex::new(buffer_rx),
+                frame_pool,
                 visible,
                 shutdown,
                 outputs,
@@ -168,22 +191,50 @@ impl OverlayPresenter {
         self.send_cmd(PresenterCommand::ShowScreensaver);
     }
 
-    pub fn submit_frame(&self, output_id: u32, width: u32, height: u32, pixels: Vec<u8>) {
+    pub fn submit_frame(&self, output_id: u32, width: u32, height: u32, pixels: Arc<Vec<u8>>) {
         self.send_cmd(PresenterCommand::UpdateFrame {
             output_id,
             width,
             height,
             pixels,
-            return_pool: self.buffer_tx.clone(),
+            return_pool: self.frame_pool.clone(),
         });
     }
 
+    /// Pop a recyclable buffer from the return pool, sizing it to
+    /// `size` if the cached buffer doesn't match. If the pool is
+    /// empty we allocate a fresh zeroed `Vec<u8>` — the daemon's
+    /// first frame.
+    ///
+    /// Returns a `Vec<u8>` so the daemon can write into it via
+    /// `&mut [u8]`; the producer wraps it in `Arc::new(pixels)`
+    /// before submitting. Recycling relies on `Arc::try_unwrap`
+    /// succeeding (refcount == 1, only the pool held the Arc).
     pub fn get_frame_buffer(&self, size: usize) -> Vec<u8> {
-        if let Ok(mut buf) = self.buffer_rx.lock().unwrap().try_recv() {
-            if buf.len() != size {
-                buf.resize(size, 0);
+        let mut pool = self.frame_pool.lock().unwrap_or_else(|p| {
+            idle_log::warn!("wayland-present: frame_pool mutex poisoned; recovering");
+            p.into_inner()
+        });
+        while let Some(arc) = pool.pop_front() {
+            match Arc::try_unwrap(arc) {
+                Ok(v) => {
+                    if v.len() == size {
+                        return v;
+                    }
+                    let mut v = v;
+                    v.resize(size, 0);
+                    return v;
+                }
+                Err(arc) => {
+                    // Another caller still references this buffer
+                    // (e.g. the event thread hasn't dropped its Arc
+                    // yet). Skip it; the next iteration pulls the
+                    // next available one. Bounded: steady-state each
+                    // frame produces one buffer and consumes one.
+                    idle_log::debug!("wayland-present: skip contested frame buffer (refcount > 1)");
+                    drop(arc);
+                }
             }
-            return buf;
         }
         vec![0; size]
     }

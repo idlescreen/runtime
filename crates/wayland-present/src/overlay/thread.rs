@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
 
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use std::os::fd::AsFd;
 use std::os::unix::io::AsRawFd;
 use std::sync::Arc;
+use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{Receiver, Sender};
 use std::thread;
@@ -24,8 +25,16 @@ pub enum PresenterCommand {
         output_id: u32,
         width: u32,
         height: u32,
-        pixels: Vec<u8>,
-        return_pool: Sender<Vec<u8>>,
+        /// Frozen BGRA buffer wrapped in `Arc<Vec<u8>>`. The event
+        /// thread commits it, then pushes the Arc back to
+        /// `return_pool` for the daemon's `get_frame_buffer` path.
+        /// Sized (Vec is Sized) so the recycler can `Arc::try_unwrap`
+        /// and reclaim the heap without a copy.
+        pixels: Arc<Vec<u8>>,
+        /// Triple-buffer return pool shared between daemon + event
+        /// thread. `Arc::clone` per frame replaces the prior
+        /// `mpsc::Sender<Vec<u8>>` round-trip.
+        return_pool: Arc<Mutex<VecDeque<Arc<Vec<u8>>>>>,
     },
     Hide,
 }
@@ -313,7 +322,17 @@ fn apply_commands(state: &mut SessionState, command_rx: &Receiver<PresenterComma
                 return_pool,
             } => {
                 state.update_frame(output_id, width, height, &pixels);
-                let _ = return_pool.send(pixels);
+                // Push the Arc back to the daemon's pool. Bounded:
+                // VecDeque push_back. Lock is held briefly under
+                // normal flow (single producer, single consumer).
+                match return_pool.lock() {
+                    Ok(mut pool) => pool.push_back(pixels),
+                    Err(_) => {
+                        idle_log::warn!(
+                            "wayland-present: frame_pool mutex poisoned; dropping returned frame"
+                        );
+                    }
+                }
             }
             PresenterCommand::Hide => state.hide(),
         }

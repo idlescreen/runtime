@@ -35,19 +35,14 @@ tokio = { workspace = true }
 idle-err = { workspace = true }
 idle-log = { workspace = true }
 
-[features]
-# Default off: the daemon ships with the system allocator (glibc malloc)
-# so musl/BSD builds are unaffected. Opt in via
-# `cargo build --release -p idle-daemon --features mimalloc` for the
-# typical x86_64 Linux desktop build. The actual allocator selection
-# happens in `src/bin/idle-daemon.rs` (#[global_allocator] gated on the
-# same feature).
-mimalloc = ["dep:mimalloc"]
-
-[dependencies.mimalloc]
-workspace = true
-optional = true
-default-features = false
+# mimalloc is the default allocator on glibc Linux (x86_64 + aarch64).
+# Picked up automatically on `cfg(target_env = "gnu")` so users get the
+# per-CPU heap win on the platforms where it matters. musl static builds
+# (Alpine, scratch distros), FreeBSD, and macOS keep the system allocator
+# — mimalloc's coverage on those targets is partial or untested, and
+# pulling it in would force non-portable libc shims downstream.
+[target.'cfg(target_env = "gnu")'.dependencies]
+mimalloc = { workspace = true, default-features = false }
 
 [dev-dependencies]
 criterion = { workspace = true }

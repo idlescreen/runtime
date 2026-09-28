@@ -12,6 +12,7 @@ mod liveness_validation_tests;
 #[cfg(test)]
 mod m2_concurrency_stress_tests;
 pub(crate) mod pidfile;
+pub(crate) mod power_watcher;
 pub(crate) mod presentation;
 pub(crate) mod preview_queue;
 pub(crate) mod recovery;

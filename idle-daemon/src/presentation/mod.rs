@@ -6,6 +6,7 @@
 //! refresh rate, and submits BGRA buffers per output. Display modes (expand,
 //! mirror, primary-only, span) are handled in the frame loop submodule.
 
+mod apply_fade_in;
 mod frame_loop;
 #[cfg(test)]
 mod frame_loop_tests;
@@ -22,8 +23,8 @@ mod ipc_session_tests;
 mod layout;
 mod overlays;
 mod plugin_loop;
+mod present_frame;
 mod refresh;
-mod render;
 mod timeout;
 pub mod topology;
 

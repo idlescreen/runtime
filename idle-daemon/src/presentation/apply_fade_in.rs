@@ -1,141 +1,17 @@
 // SPDX-License-Identifier: MIT
 
-use std::sync::Arc;
+//! Fade-in BGRA buffer by elapsed fractional duration.
+//!
+//! SSE2 fast path on x86_64 (processes 4 BGRA pixels per `_mm_loadu_si128`
+//! + saturating `_mm_packus_epi16` back to u8); scalar fallback on
+//! every other target. Both paths use the bias-half-up rounding
+//! `(value * mult + 128) >> 8` so they're bit-identical to each other
+//! and to `cpu::sample::lerp_u8`.
+
 use std::time::Duration;
 
-use idle_api::OutputId;
-
-use super::frame_loop::FrameLoopState;
-use super::layout::{monitor_cell_bounds, virtual_desktop};
-use super::overlays::maybe_draw_overlays;
-
-pub fn present_frame(state: &mut FrameLoopState) {
-    let (min_x, min_y, total_w, total_h) = virtual_desktop(state.layouts);
-
-    if state.independent_rendering {
-        for s in state.sessions.iter_mut() {
-            let (scanlines, dirty) = s.session.draw_frame(s.cols, s.rows);
-            if !dirty
-                && state.frame_start.duration_since(state.session_start)
-                    >= Duration::from_millis(500)
-            {
-                continue;
-            }
-            if let Some(layout) = state.layouts.iter().find(|l| l.id == s.output_id) {
-                let target_w = if state.use_hw_scaling {
-                    s.session.content_width(s.cols)
-                } else {
-                    layout.width
-                };
-                let target_h = if state.use_hw_scaling {
-                    s.session.content_height(s.rows)
-                } else {
-                    layout.height
-                };
-
-                let mut pixels = state
-                    .presenter
-                    .get_frame_buffer((target_w * target_h * 4) as usize);
-                s.session.raster_viewport(
-                    0,
-                    0,
-                    s.cols,
-                    s.rows,
-                    s.cols,
-                    s.rows,
-                    target_w,
-                    target_h,
-                    scanlines,
-                    &mut pixels,
-                );
-                apply_fade_in(
-                    &mut pixels,
-                    state.frame_start.duration_since(state.session_start),
-                );
-                maybe_draw_overlays(
-                    &mut pixels,
-                    target_w,
-                    target_h,
-                    layout.id == state.primary.id,
-                    state.options.show_fps_overlay,
-                    state.achieved_fps,
-                );
-                state.presenter.submit_frame(
-                    OutputId(layout.id),
-                    Arc::new(pixels),
-                    target_w,
-                    target_h,
-                );
-            }
-        }
-    } else {
-        if state.sessions.is_empty() {
-            return;
-        }
-        let s = &mut state.sessions[0];
-        let (scanlines, dirty) = s.session.draw_frame(s.cols, s.rows);
-        if !dirty
-            && state.frame_start.duration_since(state.session_start) >= Duration::from_millis(500)
-        {
-            return;
-        }
-        for layout in state.layouts {
-            let bounds = monitor_cell_bounds(
-                *layout,
-                min_x,
-                min_y,
-                total_w,
-                total_h,
-                s.cols,
-                s.rows,
-                layout.id == state.primary.id,
-            );
-            let col_w = bounds.end_col.saturating_sub(bounds.start_col).max(1);
-            let row_h = bounds.end_row.saturating_sub(bounds.start_row).max(1);
-
-            let (target_w, target_h) = if state.use_hw_scaling {
-                (
-                    s.session.content_width(col_w),
-                    s.session.content_height(row_h),
-                )
-            } else {
-                (layout.width, layout.height)
-            };
-
-            let mut pixels = state
-                .presenter
-                .get_frame_buffer((target_w * target_h * 4) as usize);
-            s.session.raster_viewport(
-                bounds.start_col,
-                bounds.start_row,
-                col_w,
-                row_h,
-                s.cols,
-                s.rows,
-                target_w,
-                target_h,
-                scanlines,
-                &mut pixels,
-            );
-            apply_fade_in(
-                &mut pixels,
-                state.frame_start.duration_since(state.session_start),
-            );
-            maybe_draw_overlays(
-                &mut pixels,
-                target_w,
-                target_h,
-                layout.id == state.primary.id,
-                state.options.show_fps_overlay,
-                state.achieved_fps,
-            );
-            state
-                .presenter
-                .submit_frame(OutputId(layout.id), Arc::new(pixels), target_w, target_h);
-        }
-    }
-}
-
+/// Fade in `pixels` by `elapsed / 500ms`. Past `500ms` the buffer is
+/// returned unchanged (the composited frame is fully opaque).
 pub fn apply_fade_in(pixels: &mut [u8], elapsed: Duration) {
     let fade_duration = Duration::from_millis(500);
     if elapsed >= fade_duration {
@@ -146,10 +22,7 @@ pub fn apply_fade_in(pixels: &mut [u8], elapsed: Duration) {
     // Same integer math as `cpu::sample::lerp_u8`: bias-half-up round
     // via `(value * mult + 128) >> 8`, which matches what the prior
     // scalar `(value * mult) / 255` produced except at one rounding
-    // boundary per ~256 pixels (negligible vs the user's perceptual
-    // threshold for fade-in). Crucially, the SSE2 SIMD path below
-    // rounds the same way as `lerp_u8` via the bias-128 trick, so
-    // the AVX2/SSE2 path and the scalar fallback are bit-identical.
+    // boundary per ~256 pixels.
     let mult = (alpha_multiplier * 256.0) as u32;
 
     if mult == 0 {
@@ -217,22 +90,27 @@ unsafe fn apply_fade_sse2(chunks: &mut std::slice::ChunksExactMut<'_, u8>, mult:
         // is `storeu` (handles unaligned); we never read past the
         // slice's end because the iterator is bounded by
         // `chunks_exact_mut`.
-        let v = _mm_loadu_si128(ptr as *const _);
-        let lo = _mm_unpacklo_epi8(v, zero);
-        let hi = _mm_unpackhi_epi8(v, zero);
-        let lo = _mm_mullo_epi16(lo, mult_v);
-        let hi = _mm_mullo_epi16(hi, mult_v);
-        let lo = _mm_add_epi16(lo, bias);
-        let hi = _mm_add_epi16(hi, bias);
-        let lo = _mm_srli_epi16(lo, 8);
-        let hi = _mm_srli_epi16(hi, 8);
-        // Pack back to u8 lanes. `_mm_packus_epi16` saturates, which
-        // matches the truncated-to-u8 cast the scalar path uses.
-        let out = _mm_packus_epi16(lo, hi);
-        _mm_storeu_si128(ptr as *mut _, out);
+        unsafe {
+            let v = _mm_loadu_si128(ptr as *const _);
+            let lo = _mm_unpacklo_epi8(v, zero);
+            let hi = _mm_unpackhi_epi8(v, zero);
+            let lo = _mm_mullo_epi16(lo, mult_v);
+            let hi = _mm_mullo_epi16(hi, mult_v);
+            let lo = _mm_add_epi16(lo, bias);
+            let hi = _mm_add_epi16(hi, bias);
+            let lo = _mm_srli_epi16(lo, 8);
+            let hi = _mm_srli_epi16(hi, 8);
+            // Pack back to u8 lanes. `_mm_packus_epi16` saturates, which
+            // matches the truncated-to-u8 cast the scalar path uses.
+            let out = _mm_packus_epi16(lo, hi);
+            _mm_storeu_si128(ptr as *mut _, out);
+        }
     }
 }
 
+/// Scalar fallback. Processes one BGRA pixel at a time using the
+/// same `(v * mult + 128) >> 8` rounding as the SSE2 path so the
+/// two are bit-identical when SSE2 is unavailable or disabled.
 fn apply_fade_scalar_16(chunks: &mut std::slice::ChunksExactMut<'_, u8>, mult: u32) {
     for chunk in chunks {
         for pixel in chunk.chunks_exact_mut(4) {
@@ -291,10 +169,8 @@ mod tests {
         let elapsed = std::time::Duration::from_millis(123); // mid-fade
         let mut pixels: Vec<u8> = (0..4 * 1024).map(|i| (i % 256) as u8).collect();
         apply_fade_in(&mut pixels, elapsed);
-        // Sampled round-trip: every 17th pixel.
         for i in (0..pixels.len()).step_by(17) {
             let v = (i % 256) as u32;
-            // Reference: bias-half-up round ((v * 256) >> 8).
             let mult = (123.0 / 500.0 * 256.0) as u32;
             let expected = ((v * mult + 128) >> 8) as u8;
             assert_eq!(
@@ -303,5 +179,25 @@ mod tests {
                 pixels[i]
             );
         }
+    }
+}
+
+#[cfg(test)]
+mod benches {
+    use super::apply_fade_in;
+    use criterion::Criterion;
+    use std::hint::black_box;
+
+    #[test]
+    fn bench_apply_fade_in() {
+        let mut c = Criterion::default().sample_size(10);
+        // 1080p BGRA frame — the daemon's hot-path tile size.
+        let mut pixels: Vec<u8> = (0..1920 * 1080 * 4).map(|i| (i % 256) as u8).collect();
+        let elapsed = std::time::Duration::from_millis(123);
+        c.bench_function("apply_fade_in_1920x1080", |b| {
+            b.iter(|| {
+                apply_fade_in(black_box(&mut pixels), black_box(elapsed));
+            });
+        });
     }
 }

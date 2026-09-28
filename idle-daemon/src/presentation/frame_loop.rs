@@ -9,7 +9,7 @@ use std::time::{Duration, Instant};
 use super::ipc_session::IpcPluginSession;
 use idle_api::{OutputLayout, OverlaySurface};
 
-use super::render::present_frame;
+use super::present_frame::present_frame;
 use crate::presentation::PresentationOptions;
 
 pub struct ActiveSession {

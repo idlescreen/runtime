@@ -42,6 +42,7 @@ jobs:
       # rides along here because the fmt job already has the checkout.
       run: bash scripts/check-perf-labels.sh
 
+    - name: bench labels are reachable
       # A page labelled `check: bench` claims a criterion target
       # measures it. This walks the module call graph from each
       # bench's entry point and fails if no path reaches that page,

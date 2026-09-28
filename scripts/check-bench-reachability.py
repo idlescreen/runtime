@@ -251,6 +251,7 @@ def gate(repos):
     import re as _re
     FN_BODY = _re.compile(r'\bfn\s+(\w+)\s*(?:<[^>]*>)?\s*\([^)]*\)[^{;]*\{')
     verdict, bad, review_cov, review_unc, review_unk = {}, [], 0, 0, 0
+    n_scanned = 0
     for r in repos:
         c, u = analyse_repo(r)
         for x in c + u:
@@ -263,6 +264,7 @@ def gate(repos):
             lab = load_label(f)
             if not lab:
                 continue
+            n_scanned += 1
             v = verdict.get(s, "UNKNOWN")
             if lab.get("check") == "bench" and v == "UNCOVERED":
                 bad.append(s)
@@ -274,6 +276,10 @@ def gate(repos):
                 else:
                     code = _re.sub(r'//[^\n]*', '', _re.sub(r'/\*.*?\*/', '', f.read_text(errors="replace"), flags=_re.S))
                     review_unc += 1 if FN_BODY.search(code) else 0
+    if n_scanned == 0:
+        print("ERROR: no perf-labelled pages found — refusing to pass vacuously", file=sys.stderr)
+        return 2
+    print(f"scanned {n_scanned} labelled pages")
     print(f"check: review pages — bench-reachable {review_cov}, "
           f"not reachable but has executable code {review_unc}, outside the module tree {review_unk}")
     if bad:
@@ -285,7 +291,31 @@ def gate(repos):
     return 0
 
 
+# Resolve scan roots against this script's own repository, never against
+# the process CWD. CI runs the step from the checkout root, where a
+# literal "runtime" directory does not exist -- an earlier version
+# scanned nothing and exited 0, which is the worst possible outcome for a
+# gate: it reported success while checking no files at all.
+REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent
+
+
+def resolve_roots(names):
+    """Map repo names to real directories under this checkout."""
+    roots = []
+    for n in names:
+        cand = REPO_ROOT / n
+        roots.append(cand if cand.is_dir() else REPO_ROOT)
+    return roots or [REPO_ROOT]
+
+
+def rel(p):
+    try:
+        return str(pathlib.Path(p).resolve().relative_to(REPO_ROOT))
+    except ValueError:
+        return str(p)
+
+
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "--gate":
-        sys.exit(gate(sys.argv[2:]))
-    report(sys.argv[1:] or ["runtime", "savers"])
+        sys.exit(gate(resolve_roots(sys.argv[2:])))
+    report(resolve_roots(sys.argv[1:] or ["."]))

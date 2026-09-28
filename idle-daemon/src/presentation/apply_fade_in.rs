@@ -3,11 +3,11 @@
 // perf: T1 · bench: draw_frame · gate: perf-baseline.json
 //! Fade-in BGRA buffer by elapsed fractional duration.
 //!
-//! SSE2 fast path on x86_64 (processes 4 BGRA pixels per `_mm_loadu_si128`
-//! + saturating `_mm_packus_epi16` back to u8); scalar fallback on
-//! every other target. Both paths use the bias-half-up rounding
-//! `(value * mult + 128) >> 8` so they're bit-identical to each other
-//! and to `cpu::sample::lerp_u8`.
+//! SSE2 fast path on x86_64, processing 4 BGRA pixels per
+//! `_mm_loadu_si128` with a saturating `_mm_packus_epi16` back to u8,
+//! and a scalar fallback on every other target. Both paths use the
+//! bias-half-up rounding `(value * mult + 128) >> 8` so they are
+//! bit-identical to each other and to `cpu::sample::lerp_u8`.
 
 use std::time::Duration;
 

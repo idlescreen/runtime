@@ -10,6 +10,9 @@
 use crate::cpu::stretch_byte_rows::stretch_byte_rows;
 use crate::cpu::stretch_cache::StretchCache;
 
+// Pulled in with `#[path]` as `mod tests`, which clippy reads as
+// inception; `mod tests` is the org-wide convention (RULES.md §4).
+#[allow(clippy::module_inception)]
 #[cfg(test)]
 mod tests {
     use super::*;

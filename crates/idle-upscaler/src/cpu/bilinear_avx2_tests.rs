@@ -5,6 +5,9 @@
 
 use crate::cpu::bilinear_avx2::bilinear_row_avx2;
 
+// Pulled in with `#[path]` as `mod tests`, which clippy reads as
+// inception; `mod tests` is the org-wide convention (RULES.md §4).
+#[allow(clippy::module_inception)]
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -81,7 +84,13 @@ mod tests {
             let bias = _mm256_set1_epi32(128);
             let r = crate::cpu::bilinear_avx2::lerp_avx2(a, b, t, bias);
             let mut buf = [0u32; 8];
-            _mm256_storeu_si256(buf.as_mut_ptr() as *mut _, r);
+            // `storeu` is the explicitly-unaligned store, so a `[u32; 8]`
+            // is a valid destination whatever its address. The cast is a
+            // false positive for `cast_ptr_alignment`.
+            #[allow(clippy::cast_ptr_alignment)]
+            {
+                _mm256_storeu_si256(buf.as_mut_ptr() as *mut _, r);
+            }
             for &lane in &buf[..4] {
                 assert_eq!(lane, 15, "AVX2 lerp at t=128 must equal 15");
             }

@@ -11,6 +11,12 @@
 //! that produced off-by-1 errors for negative intermediates.
 
 #![cfg(target_arch = "x86_64")]
+// Every function below is already an `unsafe fn` documenting its own
+// `# Safety` precondition, and each intrinsic is called exactly where
+// that precondition is discharged. Re-stating it as an `unsafe {}`
+// block per call would add ~20 lines of ceremony to a 176-line page
+// without changing what is checked.
+#![allow(unsafe_op_in_unsafe_fn)]
 
 use std::arch::x86_64::{
     __m256i, _mm256_add_epi32, _mm256_mullo_epi32, _mm256_set1_epi32, _mm256_setr_epi32,

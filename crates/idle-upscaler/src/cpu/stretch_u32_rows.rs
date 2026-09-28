@@ -9,8 +9,9 @@ use super::stretch_cache::StretchCache;
 /// Nearest-neighbor stretch with both buffers viewed as `&[u32]`.
 ///
 /// Two paths:
+///
 /// - **Upscale** (`dst_w >= src_w`): row-copy on duplicate source rows
-///   + Bresenham-span dst fills per row. Spans are sequential
+///   plus Bresenham-span dst fills per row. Spans are sequential
 ///   `memcpy`-class throughput; the inner loop has zero divisions.
 /// - **Downscale** (`dst_w < src_w`): per-pixel `x_map[dx]` lookup.
 #[allow(clippy::too_many_arguments)]
@@ -93,6 +94,8 @@ mod tests {
 
     /// u32 view of a BGRA byte buffer; requires 4-byte alignment and
     /// a multiple-of-4 length.
+    // Alignment is asserted on the line below, so the u32 view is sound.
+    #[allow(clippy::cast_ptr_alignment)]
     fn view_u32(bytes: &[u8]) -> &[u32] {
         let ptr = bytes.as_ptr();
         assert!(ptr.addr().is_multiple_of(4));
@@ -100,6 +103,8 @@ mod tests {
         unsafe { std::slice::from_raw_parts(ptr.cast::<u32>(), bytes.len() / 4) }
     }
 
+    // As above: alignment and length are asserted before the cast.
+    #[allow(clippy::cast_ptr_alignment)]
     fn view_u32_mut(bytes: &mut [u8]) -> &mut [u32] {
         let ptr = bytes.as_mut_ptr();
         assert!(ptr.addr().is_multiple_of(4));

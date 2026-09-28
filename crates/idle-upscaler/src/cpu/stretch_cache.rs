@@ -19,6 +19,13 @@ pub struct StretchCache {
     pub x_map: Vec<u32>,
 }
 
+/// `StretchCache::new` and `Default` are the same empty state.
+impl Default for StretchCache {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl StretchCache {
     pub fn new() -> Self {
         Self {

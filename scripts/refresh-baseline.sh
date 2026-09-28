@@ -5,11 +5,14 @@
 #   scripts/refresh-baseline.sh                # capture all benches
 #   scripts/refresh-baseline.sh stretch        # capture stretch only
 #   scripts/refresh-baseline.sh draw_frame     # capture draw_frame only
+#   scripts/refresh-baseline.sh --comment [stretch|draw_frame]
+#                                           # refresh + open a PR via gh CLI
 #
 # The script writes the new baseline to `perf-baseline.json.tmp` and
 # (after a sanity check on JSON validity + delta vs the current
 # baseline) renames it over `perf-baseline.json`. The git commit is
-# left to the maintainer so the change is attributed in git history.
+# left to the maintainer so the change is attributed in git history
+# (except in --comment mode, where the PR branch is pushed directly).
 #
 # Reads the git HEAD sha automatically so the baseline.json records
 # which commit the numbers came from.
@@ -17,13 +20,29 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-GROUP="${1:-}"
+OPEN_PR=0
+GROUP=""
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --comment) OPEN_PR=1; shift ;;
+        --help|-h)
+            sed -n '2,12p' "$0"
+            exit 0
+            ;;
+        stretch|draw_frame|"") GROUP="$1"; shift ;;
+        *)
+            echo "Usage: $0 [--comment] [stretch|draw_frame]" >&2
+            exit 2
+            ;;
+    esac
+done
+
 BENCH_ARGS=""
 case "$GROUP" in
     "")          BENCH_ARGS="-p idle-upscaler --bench stretch -- -q --warm-up-time 1 --measurement-time 3" ;;
     stretch)     BENCH_ARGS="-p idle-upscaler --bench stretch -- -q --warm-up-time 1 --measurement-time 3" ;;
     draw_frame)  BENCH_ARGS="-p idle-daemon --bench draw_frame -- -q --warm-up-time 1 --measurement-time 3" ;;
-    *)           echo "Usage: $0 [stretch|draw_frame]" >&2; exit 2 ;;
+    *)           echo "Usage: $0 [--comment] [stretch|draw_frame]" >&2; exit 2 ;;
 esac
 
 OUT=$(mktemp)
@@ -92,6 +111,44 @@ if [ -f perf-baseline.json ]; then
 fi
 
 mv perf-baseline.json.tmp perf-baseline.json
+
+if [ "$OPEN_PR" = "0" ]; then
+    echo
+    echo "Wrote perf-baseline.json. Review the diff, then:"
+    echo "  git add perf-baseline.json && git commit -m 'runtime: refresh perf baseline'"
+    exit 0
+fi
+
+# --comment mode: branch + push + open a PR with gh CLI.
+if ! command -v gh >/dev/null 2>&1; then
+    echo "ERROR: --comment requires the gh CLI on PATH" >&2
+    exit 1
+fi
+if ! gh auth status >/dev/null 2>&1; then
+    echo "ERROR: --comment requires an authenticated gh session" >&2
+    exit 1
+fi
+
+BRANCH="perf-baseline-${CAPTURED_AT}"
+git checkout -b "$BRANCH" >/dev/null
+git add perf-baseline.json
+if git diff --cached --quiet; then
+    echo "No baseline change to commit — exiting."
+    git checkout - >/dev/null
+    git branch -D "$BRANCH" >/dev/null
+    exit 0
+fi
+git -c user.name=jeryd -c user.email=jeryd@users.noreply.github.com \
+    commit -m "runtime: refresh perf baseline ($CAPTURED_AT)" \
+            -m "Captured by scripts/refresh-baseline.sh --comment on commit $COMMIT." >/dev/null
+git -c user.name=jeryd -c user.email=jeryd@users.noreply.github.com \
+    push --set-upstream origin "$BRANCH" 2>&1 | tail -3
+PR_URL=$(gh pr create \
+    --base master \
+    --head "$BRANCH" \
+    --title "runtime: refresh perf baseline ($CAPTURED_AT)" \
+    --body "Automated baseline update via \`scripts/refresh-baseline.sh --comment\`.
+
+Bench numbers captured against \`$COMMIT\`. See \`scripts/compare-bench.py perf-baseline.json <current-bench-output>\` for deltas vs the prior baseline.")
 echo
-echo "Wrote perf-baseline.json. Review the diff, then:"
-echo "  git add perf-baseline.json && git commit -m 'runtime: refresh perf baseline'"
+echo "Opened PR: $PR_URL"

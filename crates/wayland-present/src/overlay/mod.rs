@@ -23,6 +23,16 @@ mod state;
 pub use command::PresenterCommand;
 pub use event_thread::spawn_event_thread;
 
+// Measurement seam, re-exported to `lib.rs::bench_exports` for the
+// `[[bench]] hot_path` target. It lives here rather than in `lib.rs`
+// because `epoll` is *this* module's private child: Rust privacy
+// flows downward, so a sibling/parent cannot name it, but the owner
+// always can. See RULES.md §5.
+#[doc(hidden)]
+pub mod bench_exports {
+    pub use super::epoll::{drain_eventfd, epoll_ctl_add, make_epoll};
+}
+
 // Solid-color previews and screensaver frames share the same overlay map.
 // Configure events may arrive before the first frame submission.
 // Output removal destroys layer surfaces and registry entries together.

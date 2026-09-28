@@ -27,6 +27,19 @@ pub mod ooda;
 pub mod presentation;
 pub mod sleep_monitor;
 
+// Re-exports for `benches/draw_frame.rs`.
+//
+// `apply_fade_in` is the T1 page (gated); `consume_events` and
+// `power_watcher` are T2 (benched on demand, not gated). A `[[bench]]`
+// target compiles as its own crate, so each one's owning module
+// re-exports them through a `#[doc(hidden)]` seam before they land
+// here. Mirrors `savers/ripple/src/lib.rs::bench_exports`.
+#[doc(hidden)]
+pub mod bench_exports {
+    pub use crate::daemon::bench_exports::*;
+    pub use crate::presentation::bench_exports::*;
+}
+
 /// Shared mutex for tests that mutate process env. Environment is
 /// process-global and the whole lib test suite runs in one process —
 /// file-local locks can't exclude siblings in other modules. Any test

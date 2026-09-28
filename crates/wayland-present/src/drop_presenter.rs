@@ -48,7 +48,11 @@ impl Drop for OverlayPresenter {
 
 /// Bounded `JoinHandle::join` via a watcher thread + `recv_timeout`.
 /// Keeps Drop from blocking indefinitely on a wedged event thread.
-fn join_with_timeout(handle: JoinHandle<()>, timeout: Duration) {
+///
+/// `pub` only so `bench_exports` below can re-export it to the
+/// `hot_path` bench target. `mod drop_presenter` is private in
+/// `lib.rs`, so this adds no reachable path on its own.
+pub fn join_with_timeout(handle: JoinHandle<()>, timeout: Duration) {
     let (done_tx, done_rx) = mpsc::channel();
     std::thread::spawn(move || {
         let _ = handle.join();
@@ -96,3 +100,9 @@ mod tests {
     }
 }
 
+// Measurement seam, re-exported to `lib.rs::bench_exports` for the
+// `[[bench]] hot_path` target. See RULES.md §5.
+#[doc(hidden)]
+pub mod bench_exports {
+    pub use super::join_with_timeout;
+}

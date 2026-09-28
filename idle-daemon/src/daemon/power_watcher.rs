@@ -142,6 +142,32 @@ impl PowerWatcher {
     }
 }
 
+// Measurement seam, re-exported to `daemon/mod.rs::bench_exports` for
+// the `draw_frame` bench target. See RULES.md §5.
+#[doc(hidden)]
+pub mod bench_exports {
+    use super::{Condvar, Inner, Mutex, Predicate};
+    use std::sync::Arc;
+    use std::sync::atomic::{AtomicBool, AtomicU64};
+
+    pub use super::{PowerWatcher, WaitOutcome};
+
+    /// Bench-only handle. The production handle is built in
+    /// `power_thread` from a live inotify fd; this constructs the same
+    /// `Inner` with no I/O so the `wait_for_heartbeat` lock/condvar
+    /// path can be measured in isolation.
+    pub fn new_bench_handle() -> PowerWatcher {
+        PowerWatcher {
+            inner: Arc::new(Inner {
+                cached_on_battery: AtomicBool::new(false),
+                notify_count: AtomicU64::new(0),
+                predicate_lock: Mutex::new(Predicate { notify_count: 0 }),
+                condvar: Condvar::new(),
+            }),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

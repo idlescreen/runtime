@@ -32,6 +32,17 @@ use crate::controller::DaemonController;
 
 pub use tick_loop::tick_loop_until_shutdown;
 
+// Measurement seam, re-exported to `lib.rs::bench_exports` for the
+// `[[bench]] draw_frame` target. Lives here because `consume_events`
+// and `power_watcher` are *this* module's children — Rust privacy
+// flows downward, so the crate root cannot name them directly, but the
+// owner always can. See RULES.md §5.
+#[doc(hidden)]
+pub mod bench_exports {
+    pub use super::consume_events::consume_events;
+    pub use super::power_watcher::bench_exports::*;
+}
+
 pub fn run_daemon() -> idle_err::Result<()> {
     check_wayland_env()?;
     let Some(pidfile) = pidfile::acquire_pidfile()? else {

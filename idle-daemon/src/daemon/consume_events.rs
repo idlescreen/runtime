@@ -7,7 +7,10 @@
 /// we don't care *which* file changed, only *that something* did. Returns
 /// the number of events seen so the caller can decide whether to refresh
 /// the cache.
-pub(crate) fn consume_events(buf: &[u8]) -> usize {
+///
+/// `pub` (not `pub(crate)`) solely so `daemon/mod.rs::bench_exports` can
+/// re-export it to the `draw_frame` bench target. See RULES.md §5.
+pub fn consume_events(buf: &[u8]) -> usize {
     let mut off = 0usize;
     let mut n = 0usize;
     while off + 16 <= buf.len() {

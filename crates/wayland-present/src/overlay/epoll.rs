@@ -6,9 +6,14 @@
 //! The Wayland socket + the daemon's self-wake eventfd are the two
 //! fds the event loop multiplexes. Each helper is a one-purpose
 //! page: see `make_epoll`, `epoll_ctl_add`, and `drain_eventfd`.
-///
-/// Create a new epoll fd. CLOEXEC so a child fork doesn't inherit it.
-pub(super) fn make_epoll() -> Result<libc::c_int, &'static str> {
+//!
+//! These three are `pub` rather than `pub(super)` solely so
+//! `overlay/mod.rs::bench_exports` can re-export them to the
+//! `hot_path` bench target. `mod overlay` is private in `lib.rs`, so
+//! `pub` here adds no reachable path on its own — see RULES.md §5.
+
+// Create a new epoll fd. CLOEXEC so a child fork doesn't inherit it.
+pub fn make_epoll() -> Result<libc::c_int, &'static str> {
     // SAFETY: epoll_create1 with EPOLL_CLOEXEC returns a fresh fd.
     let raw = unsafe { libc::epoll_create1(libc::EPOLL_CLOEXEC) };
     if raw < 0 {
@@ -29,7 +34,7 @@ pub(super) fn make_epoll() -> Result<libc::c_int, &'static str> {
 /// `fd` must be a valid descriptor (we own it or it is the Wayland
 /// socket lifetime). `event` is a valid `epoll_event` struct; the
 /// pointer is taken by `libc::epoll_ctl` only inside this call.
-pub(super) fn epoll_ctl_add(
+pub fn epoll_ctl_add(
     epoll_fd: libc::c_int,
     fd: libc::c_int,
     mask: libc::c_int,
@@ -52,7 +57,7 @@ pub(super) fn epoll_ctl_add(
 }
 
 /// Drain an eventfd by reading 8 bytes (the counter) until EAGAIN.
-pub(super) fn drain_eventfd(fd: libc::c_int) {
+pub fn drain_eventfd(fd: libc::c_int) {
     let mut buf = [0u8; 8];
     loop {
         // SAFETY: `fd` is a valid eventfd; `buf` is a valid 8-byte

@@ -28,6 +28,28 @@ pub use frame_signal::{FrameSignal, FrameWaitOutcome};
 pub use output::OutputLayout;
 pub use presenter::OverlayPresenter;
 
+// Re-exports for `benches/hot_path.rs`.
+//
+// Every module in this crate is private, so a `[[bench]]` target —
+// which compiles as its own crate — can only reach the four items
+// above. The T2 pages (`frame_pool`, `drop_presenter`, `overlay::epoll`)
+// each name a bench target in their `// perf:` label, and the CI
+// linter checks the bench source actually exercises them; without this
+// seam those labels would be unfalsifiable.
+//
+// `#[doc(hidden])` keeps it out of the rendered docs: it is a
+// measurement seam, not public API. Mirrors the convention in
+// `savers/ripple/src/lib.rs::bench_exports` and
+// `idle-upscaler/src/cpu/mod.rs::bench_exports`.
+#[doc(hidden)]
+pub mod bench_exports {
+    pub use crate::frame_pool::{
+        empty_frame_pool, get_frame_buffer, return_frame_buffer, FramePool,
+    };
+    pub use crate::overlay::bench_exports::*;
+    pub use crate::drop_presenter::bench_exports::*;
+}
+
 // Presenter commands are processed on a dedicated Wayland thread.
 
 #[cfg(test)]

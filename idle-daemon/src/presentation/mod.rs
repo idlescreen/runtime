@@ -37,6 +37,14 @@ use idle_runner::launcher::LaunchMode;
 
 pub use plugin_loop::run_plugin_loop;
 
+// Measurement seam, re-exported to `lib.rs::bench_exports` for the
+// `[[bench]] draw_frame` target. Lives here because `apply_fade_in`
+// is *this* module's private child. See RULES.md §5.
+#[doc(hidden)]
+pub mod bench_exports {
+    pub use super::apply_fade_in::apply_fade_in;
+}
+
 #[derive(Clone)]
 pub struct PresentationOptions {
     pub show_fps_overlay: bool,

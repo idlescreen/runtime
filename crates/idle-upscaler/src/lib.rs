@@ -25,6 +25,22 @@
 
 mod cpu;
 
+/// Re-exports for `benches/stretch.rs`.
+///
+/// The `cpu` module is private, so a `[[bench]]` target — which compiles
+/// as its own crate — can only reach [`FrameUpscaler`]. That is not
+/// enough: the T1 pages inside `cpu` each name a distinct bench target
+/// symbol (`stretch_u32_rows`, `bilinear_row`, …) and the CI linter
+/// checks that the bench source actually calls the function its page
+/// claims to cover. Without this escape hatch the T1 labels would be
+/// unfalsifiable.
+///
+/// Mirrors the convention already used by every saver crate — see
+/// `savers/ripple/src/lib.rs::bench_exports`. `#[doc(hidden)]` keeps it
+/// out of the rendered docs; it is a measurement seam, not public API.
+#[doc(hidden)]
+pub use cpu::bench_exports;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum FilterMode {
     Nearest,

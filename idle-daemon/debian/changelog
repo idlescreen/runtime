@@ -1,3 +1,18 @@
+idle-daemon (3.5.20-1) unstable; urgency=medium
+
+  * Tiered perf promise: 17 inline `mod benches` blocks deleted and their
+  * T1/T2 work re-homed into real `[[bench]]` targets (stretch, draw_frame,
+  * and a new T2-only wayland-present hot_path).
+  * Baseline pipeline now reads criterion's `estimates.json` instead of
+  * scraped stdout, so a compare that finds nothing can no longer report
+  * a pass. T1 regressions fail the build; the PR comment runs first.
+  * `scripts/check-perf-labels.sh` fails CI on a false T1 claim.
+  * Fixes: a deadlock in the overlay event-thread test (sync_channel(1)
+  * with no receiver), and `cargo bench -p bursts --bench tick` panicking
+  * on every grid because prepare_for_bench skipped skyline init.
+
+ -- IdleScreen Maintainers <maintainers@idlescreen.dev>  Mon, 28 Sep 2026 18:02:57 -0000
+
 idle-daemon (3.5.19-1) unstable; urgency=medium
 
   * studio2201 security-gate workflow + suite badge in README.

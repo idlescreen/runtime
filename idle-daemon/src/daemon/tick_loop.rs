@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+// perf: T3 · metric: iterative; cost scales with its input, not with a fixed bound · check: review
 
 //! Main idle-detection tick loop delegates to the openOODA coordinator.
 //!

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-// perf: T2 · bench: hot_path · on-demand only; not gated
+// perf: T2 · bench: hot_path · on-demand only; not gated · check: bench
 //! Frame buffer pool for the overlay presenter.
 //!
 //! Triple-buffered across the daemon and the event thread. The

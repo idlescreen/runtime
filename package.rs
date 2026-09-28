@@ -1,3 +1,4 @@
+// perf: T3 · metric: spawns a subprocess; cost is dominated by fork/exec, not by this page · check: review
 #!/usr/bin/env cargo
 //! ```cargo
 //! [dependencies]

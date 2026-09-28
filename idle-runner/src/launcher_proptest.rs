@@ -1,3 +1,4 @@
+// perf: T3 · metric: bounded single-pass work; no syscalls, no locks, no allocation on the steady path · check: test
 //! Property tests for plugin name sanitization and allowlist policy.
 
 use super::{ALLOWED_SAVERS, is_allowed_saver, sanitize_saver_name};

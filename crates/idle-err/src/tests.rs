@@ -1,3 +1,4 @@
+// perf: T3 · metric: allocates on the call path; cost scales with allocation count · check: test
 use super::*;
 
 #[test]

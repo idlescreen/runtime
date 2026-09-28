@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+// perf: T3 · metric: lock-sensitive; cost depends on contention the caller creates · check: test
 
 //! Background inotify thread that drives the [`PowerWatcher`].
 //!

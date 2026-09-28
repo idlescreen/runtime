@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+// perf: T3 · metric: contains unsafe; cost depends on what the caller passes in · check: test
 
 //! `CAbiSaver` — adapts a foreign plugin's [`IdleSaverOps`] vtable to the
 //! host [`Screensaver`] trait.

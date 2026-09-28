@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+// perf: T3 · metric: crosses a process or socket boundary; dominated by IPC latency · check: review
 
 #![deny(clippy::unwrap_used)]
 #![deny(clippy::expect_used)]

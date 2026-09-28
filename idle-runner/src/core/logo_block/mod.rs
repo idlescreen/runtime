@@ -1,3 +1,4 @@
+// perf: T3 · metric: lock-sensitive; cost depends on contention the caller creates · check: test
 //! 5x5 block-letter logo renderer. Pure string-transformer with a static
 //! cache — fits in `core` (no `interface` / `role` dependencies) so both
 //! the console app effects (interface layer) and the r* screensaver effects

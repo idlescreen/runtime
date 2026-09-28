@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-// perf: T1 · bench: draw_frame · gate: perf-baseline.json
+// perf: T1 · bench: draw_frame · gate: perf-baseline.json · check: bench
 //! Fade-in BGRA buffer by elapsed fractional duration.
 //!
 //! SSE2 fast path on x86_64, processing 4 BGRA pixels per

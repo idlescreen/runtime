@@ -1,3 +1,4 @@
+// perf: T3 · metric: lock-sensitive; cost depends on contention the caller creates · check: test
 // Temporary stress verifier for SHM boundary and alignment checks
 #[cfg(test)]
 mod stress_tests {

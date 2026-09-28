@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+// perf: T3 · metric: test-only page, not compiled into the shipped binary · check: test
 //
 // Frame-pipeline timing probe: measures the production render path
 // (content raster → stretch upscale → submit-side memcpy) at real

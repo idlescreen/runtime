@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// perf: T2 · bench: stretch · on-demand only; not gated
+// perf: T2 · bench: stretch · on-demand only; not gated · check: bench
 // Copyright 2026 IdleScreen
 
 //! Cached nearest-neighbor column map for stretch upscale.

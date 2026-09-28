@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+// perf: T3 · metric: touches the filesystem; dominated by syscall latency, not by this page's logic · check: review
 
 //! Pidfile acquire/release with `O_NOFOLLOW | O_CREAT | O_EXCL` to close the
 //! read-then-write TOCTOU window and refuse symlink redirection by a same-UID

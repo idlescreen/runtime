@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+// perf: T3 · metric: contains unsafe; cost depends on what the caller passes in · check: review
 // Copyright 2026 IdleScreen
 
 //! Bench harness for `wayland-present`. Backs the T2 pages that live in

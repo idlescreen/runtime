@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+// perf: T3 · metric: iterative; cost scales with its input, not with a fixed bound · check: review
 
 use super::parser::Parser;
 use super::parser_value::utf8_len;

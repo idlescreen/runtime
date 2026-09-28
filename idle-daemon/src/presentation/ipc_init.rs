@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+// perf: T3 · metric: spawns a subprocess; cost is dominated by fork/exec, not by this page · check: review
 
 use idle_ipc::{
     IpcCommand, IpcResponse, SHM_MAGIC, SharedMemory, compute_shm_size, validate_grid_dims,

@@ -2,24 +2,37 @@
 # SPDX-License-Identifier: MIT
 # Copyright 2026 IdleScreen
 #
-# Check that the performance claims written into `// perf:` page labels
-# are backed by something a machine can verify. Tier definitions live in
-# .github/RULES.md §4.
+# Every page declares what it costs and how a machine would notice if
+# that cost changed. This script enforces both halves.
 #
-# The check is deliberately narrow. It polices T1 *claims*, not T1
-# coverage: a page with no label is simply not gated, while a page that
-# claims T1 had better be telling the truth about its bench. Requiring
-# every page to carry a label would be the slogan this replaces — 962
-# public functions against 13 real bench targets.
+# Label grammar (fields separated by U+00B7 MIDDLE DOT):
 #
-# For a T1 label we require:
-#   1. `bench:` names a real `[[bench]]` target, not `none`.
-#   2. That target's source actually references the page's symbol.
-#   3. `gate:` names a baseline file that exists in the repo root.
+#   // perf: T1 · bench: stretch · gate: perf-baseline.json · check: bench
+#   // perf: T2 · bench: hot_path · on-demand only · check: bench
+#   // perf: T3 · metric: no syscalls on the steady path · check: test
+#   // perf: T3 · metric: process-exit, never on a hot path · check: review
 #
-# T2 is advisory: a named bench target must still exist so the claim
-# cannot rot, but the symbol reference and the gate are not required.
-# T3 is QA-only and carries no bench claim at all.
+#   perf:   T1 | T2 | T3        required
+#   check:  bench | test | review   required -- the detection mechanism
+#   bench:  [[bench]] target name, or `none`   required for T1/T2
+#   gate:   baseline file at the repo root     required for T1 only
+#   sym:    symbol to find in the bench source; defaults to the filename
+#   metric: what this page costs, in words     required for T3
+#
+# `check:` is the field that answers "how would we know if this got
+# slower?". Three answers, and a page must pick one that is true:
+#
+#   bench   a criterion target measures it and CI compares the median
+#           against a baseline
+#   test    a property test asserts it -- call counts, allocation
+#           counts, no-syscall invariants. This is how a page that is
+#           too fast to time gets real machine checking.
+#   review  neither is possible, so a human checks the `metric:` claim
+#           when the page changes. This is the honest floor, not a
+#           pass.
+#
+# Every `.rs` page must carry a label. An unlabelled page is a page
+# nobody has thought about, and that is the failure this replaces.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -57,36 +70,68 @@ declare -A BENCH
 while IFS= read -r f; do
     name="$(basename "$f" .rs)"
     [ -n "${BENCH[$name]:-}" ] || BENCH[$name]="$f"
-done < <(find . -type f -path '*/benches/*.rs' -not -path '*/target/*')
+done < <(find . -type f -path '*/benches/*.rs' -not -path '*/target/*' -not -path '*/runtime/*')
+
+# Every page that counts. `lib.rs` and `main.rs` are crate roots that
+# only re-export or hold `fn main`; they are pages too and are held to
+# the same rule, because a crate root is exactly where a reader looks
+# first.
+page_list() {
+    find . -name '*.rs' \
+        -not -path './target/*' -not -path './dist/*' -not -path './.git/*' \
+        -not -path './.agents/*' -not -path './node_modules/*' \
+        -not -path './.local/*' -not -path './containers/*' \
+        -not -path './.cache/*' -not -path './runtime/*' \
+        | sed 's|^\./||' | sort
+}
 
 checked=0
+declare -A SEEN
 
-while IFS= read -r hit; do
-    file="${hit%%:*}"
-    rest="${hit#*:}"
-    lineno="${rest%%:*}"
-    label="${rest#*:}"
+while IFS= read -r file; do
+    [ -n "$file" ] || continue
+    # A vendored copy of another repo is not this repo's page.
+    case "$file" in runtime/*) continue ;; esac
+
+    label="$(grep -m1 -E '^[[:space:]]*//[[:space:]]*perf:[[:space:]]' "$file" || true)"
+    checked=$((checked + 1))
+    where="$file"
+
+    if [ -z "$label" ]; then
+        fail "$where: no // perf: label -- every page declares what it costs and how it is checked"
+        continue
+    fi
+    SEEN["$file"]=1
+
+    lineno="$(printf '%s' "$label" | grep -o '^[0-9]*' || true)"
+    [ -n "$lineno" ] && where="$file:$lineno"
 
     fields="${label//$DOT/|}"
     tier="$(field "$fields" perf)"
     bench="$(field "$fields" bench)"
     sym="$(field "$fields" sym)"
     gate="$(field "$fields" gate)"
+    check="$(field "$fields" check)"
+    metric="$(field "$fields" metric)"
 
-    # A `sym:` override exists because some pages can never match their
-    # own filename: a trait impl must stay co-located with the trait, so
-    # `screensaver_impl.rs` never contains the symbol `screensaver_impl`.
     if [ -z "$sym" ]; then
         sym="$(basename "$file" .rs)"
     fi
-
-    checked=$((checked + 1))
-    where="$file:$lineno"
 
     if [ -z "$tier" ]; then
         fail "$where: label has no tier (expected T1, T2 or T3)"
         continue
     fi
+
+    if [ -z "$check" ]; then
+        fail "$where: $tier label has no check: field -- say how a machine would notice (bench, test or review)"
+        continue
+    fi
+
+    case "$check" in
+        bench|test|review) ;;
+        *) fail "$where: unknown check '$check' (expected bench, test or review)"; continue ;;
+    esac
 
     if [ -n "$bench" ] && [ "$bench" != "none" ] && [ -z "${BENCH[$bench]:-}" ]; then
         fail "$where: $tier names bench '$bench', which is not a bench target in this repo"
@@ -95,8 +140,12 @@ while IFS= read -r hit; do
 
     case "$tier" in
         T1)
-            if [ "$bench" = "none" ] || [ -z "$bench" ]; then
+            if [ -z "$bench" ] || [ "$bench" = "none" ]; then
                 fail "$where: T1 must name a bench target; '$sym' is never gated if it has none"
+                continue
+            fi
+            if [ "$check" != "bench" ]; then
+                fail "$where: T1 is measured by criterion, so check: must be 'bench', not '$check'"
                 continue
             fi
             if ! grep -q -- "$sym" "${BENCH[$bench]}"; then
@@ -113,31 +162,59 @@ while IFS= read -r hit; do
             fi
             ;;
         T2)
-            # Target existence already checked above; nothing else is owed.
+            if [ -z "$bench" ]; then
+                fail "$where: T2 must name a bench target or say bench: none with a reason"
+                continue
+            fi
+            if [ "$bench" = "none" ]; then
+                # Un-bencheable on this runner -- an aarch64-only path, say.
+                # It is not measured, so it cannot claim check: bench, and
+                # it needs a stated reason for being unmeasured.
+                if [ "$check" = "bench" ]; then
+                    fail "$where: T2 says bench: none, so check: cannot be 'bench' -- use test or review"
+                    continue
+                fi
+                if [ -z "$metric" ]; then
+                    fail "$where: T2 with bench: none must state a metric: explaining why it is unmeasured"
+                    continue
+                fi
+            elif [ "$check" != "bench" ]; then
+                fail "$where: T2 is benched, so check: must be 'bench', not '$check'"
+                continue
+            fi
             ;;
         T3)
             if [ -n "$bench" ] && [ "$bench" != "none" ]; then
                 fail "$where: T3 is QA-only and must not claim a bench"
+                continue
+            fi
+            if [ "$check" = "bench" ]; then
+                fail "$where: T3 must not claim check: bench; that is a T1/T2 measurement"
+                continue
+            fi
+            if [ -z "$metric" ]; then
+                fail "$where: T3 must state a metric: -- what does this page cost?"
+                continue
+            fi
+            if [ "$check" = "test" ] && ! grep -q '#\[test\]' "$file"; then
+                fail "$where: check: test claims a property test, but the page has no #[test]"
+                continue
             fi
             ;;
         *)
             fail "$where: unknown tier '$tier' (expected T1, T2 or T3)"
             ;;
     esac
-done < <(
-    grep -rn --include='*.rs' --exclude-dir=target \
-        -E '^[[:space:]]*//[[:space:]]*perf:[[:space:]]' . |
-        sed 's|^\./||'
-)
+done < <(page_list)
 
 if [ "$checked" -eq 0 ]; then
-    echo "perf-label: no labels found — is the grep pattern stale?" >&2
+    echo "perf-label: no pages found -- is the find pattern stale?" >&2
     exit 1
 fi
 
 if [ "$errors" -gt 0 ]; then
-    echo "perf-label: $errors bad label(s) across $checked checked" >&2
+    echo "perf-label: $errors bad page(s) across $checked checked" >&2
     exit 1
 fi
 
-echo "perf-label: $checked label(s) OK"
+echo "perf-label: $checked page(s) OK"

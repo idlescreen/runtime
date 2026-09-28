@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+// perf: T3 · metric: contains unsafe; cost depends on what the caller passes in · check: review
 
 //! Plugin loading orchestration: manifest gate → Landlock → CPU budget →
 //! ABI check → `Library::new` → entry-point resolution → `PluginGuard`.

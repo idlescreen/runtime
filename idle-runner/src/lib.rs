@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+// perf: T3 · metric: lock-sensitive; cost depends on contention the caller creates · check: review
 // Copyright 2026 IdleScreen
 
 #![deny(clippy::unwrap_used)]

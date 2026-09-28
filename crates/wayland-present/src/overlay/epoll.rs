@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-// perf: T2 · bench: hot_path · on-demand only; not gated
+// perf: T2 · bench: hot_path · on-demand only; not gated · check: bench
 //! Epoll fd setup + eventfd draining for the overlay event thread.
 //!
 //! The Wayland socket + the daemon's self-wake eventfd are the two

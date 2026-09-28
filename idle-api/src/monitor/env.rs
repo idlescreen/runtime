@@ -1,3 +1,4 @@
+// perf: T3 · metric: lock-sensitive; cost depends on contention the caller creates · check: review
 //! In-process cache for primary monitor cell bounds.
 //!
 //! `idle-api::publish_primary_bounds` and `idle-api::clear_primary_bounds` are

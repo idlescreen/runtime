@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+// perf: T3 · metric: test-only page, not compiled into the shipped binary · check: test
 // Copyright 2026 IdleScreen
 
 //! Adversarial tests for F-005 (`publish_primary_bounds` must not call

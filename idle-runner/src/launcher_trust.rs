@@ -1,3 +1,4 @@
+// perf: T3 · metric: iterative; cost scales with its input, not with a fixed bound · check: review
 //! Trusted plugin path validation (permissions and directory confinement).
 
 use std::path::{Path, PathBuf};

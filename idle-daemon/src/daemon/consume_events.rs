@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-// perf: T2 · bench: draw_frame · on-demand only; not gated
+// perf: T2 · bench: draw_frame · on-demand only; not gated · check: bench
 //! Parse an inotify read buffer into a count of whole records.
 
 /// Parse an inotify read buffer. Currently only consumes whole records —

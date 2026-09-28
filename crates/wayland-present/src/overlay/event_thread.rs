@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+// perf: T3 · metric: crosses a process or socket boundary; dominated by IPC latency · check: review
 
 //! Overlay event thread: spawn + event loop.
 //! Per-resource helpers live in sibling modules

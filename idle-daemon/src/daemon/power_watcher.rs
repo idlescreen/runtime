@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-// perf: T2 · bench: draw_frame · on-demand only; not gated
+// perf: T2 · bench: draw_frame · on-demand only; not gated · check: bench
 //! Event-driven battery / AC watcher.
 //!
 //! The OODA main tick loop used to poll `/sys/class/power_supply` on every

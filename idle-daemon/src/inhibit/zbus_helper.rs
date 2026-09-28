@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+// perf: T3 · metric: touches the filesystem; dominated by syscall latency, not by this page's logic · check: test
 
 //! Panic-safe zbus blocking call wrapper under resource exhaustion.
 

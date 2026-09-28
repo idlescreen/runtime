@@ -1,3 +1,4 @@
+// perf: T3 · metric: lock-sensitive; cost depends on contention the caller creates · check: review
 //! Differential renderer: only writes cells that changed since the last
 //! frame, with ANSI escape codes for fg/bg/bold. Drops 11.5–38.4 MB/s of
 //! redundant writes compared to "clear + rewrite the whole grid every frame".

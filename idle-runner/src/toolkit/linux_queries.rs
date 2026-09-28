@@ -1,3 +1,4 @@
+// perf: T3 · metric: touches the filesystem; dominated by syscall latency, not by this page's logic · check: test
 //! Linux-specific platform queries (disk drives, GPU names, monitor enumeration).
 //! Bypasses lspci and df subprocess commands using native FFI (statvfs) and sysfs.
 

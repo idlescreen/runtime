@@ -1,3 +1,4 @@
+// perf: T3 · metric: lock-sensitive; cost depends on contention the caller creates · check: test
 //! Host system information. Vendored and slimmed from `runner::toolkit::sys_info`.
 //!
 //! Public API: `get_system_info`, `query_dark_mode`,

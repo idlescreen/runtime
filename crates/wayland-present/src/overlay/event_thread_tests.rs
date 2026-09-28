@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+// perf: T3 · metric: test-only page, not compiled into the shipped binary · check: test
 
 //! QA tests + criterion bench for [`super::event_thread`].
 //!

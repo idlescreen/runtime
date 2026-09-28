@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+// perf: T3 · metric: bounded single-pass work; no syscalls, no locks, no allocation on the steady path · check: review
 
 //! Viewport rasterization: turn the cell grid + content buffer into a frame
 //! for the Wayland surface. Hardware-scaled short-circuit lives here so

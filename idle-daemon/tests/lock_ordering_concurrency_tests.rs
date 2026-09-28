@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+// perf: T3 · metric: test-only page, not compiled into the shipped binary · check: test
 //! Empirical stress tests for multi-threaded lock ordering across config, inhibitors,
 //! status, and teardown_requested.
 

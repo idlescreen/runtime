@@ -1,3 +1,4 @@
+// perf: T3 · metric: touches the filesystem; dominated by syscall latency, not by this page's logic · check: review
 pub struct ProcStats {
     mem_total_kb: u64,
     mem_available_kb: u64,

@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+// perf: T3 · metric: crosses a process or socket boundary; dominated by IPC latency · check: test
 
 use idle_ipc::{
     FfiTerminalCell, IpcCommand, IpcResponse, SharedMemory, compute_shm_size,

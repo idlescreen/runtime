@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+// perf: T3 · metric: test-only page, not compiled into the shipped binary · check: test
 
 //! Unit tests for `frame_loop`. Kept in a sibling file so the main
 //! `frame_loop.rs` stays under the repo's 256-line cap (CI gate at

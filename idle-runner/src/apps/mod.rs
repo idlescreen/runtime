@@ -1,3 +1,4 @@
+// perf: T3 · metric: contains unsafe; cost depends on what the caller passes in · check: review
 //! Application identity helpers used by screensaver plugins at load time.
 
 pub fn username() -> String {

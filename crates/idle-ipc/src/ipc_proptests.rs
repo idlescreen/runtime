@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+// perf: T3 · metric: bounded single-pass work; no syscalls, no locks, no allocation on the steady path · check: test
 // Copyright 2026 IdleScreen
 //
 // Split out of `lib.rs` to keep that file under the 256-line cap (F-016/PROBE F-006).

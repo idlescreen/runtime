@@ -1,3 +1,4 @@
+// perf: T3 · metric: test-only page, not compiled into the shipped binary · check: test
 use super::*;
 use crate::FilterMode;
 

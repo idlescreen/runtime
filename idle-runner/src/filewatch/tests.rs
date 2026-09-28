@@ -1,3 +1,4 @@
+// perf: T3 · metric: touches the filesystem; dominated by syscall latency, not by this page's logic · check: test
 use super::*;
 use std::sync::mpsc;
 use std::time::{Duration, Instant};

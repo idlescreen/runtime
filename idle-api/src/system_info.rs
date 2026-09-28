@@ -1,3 +1,4 @@
+// perf: T3 · metric: touches the filesystem; dominated by syscall latency, not by this page's logic · check: review
 /// Cross-platform "where are we running" descriptor.
 #[derive(Debug, Clone)]
 pub struct SystemInfo {

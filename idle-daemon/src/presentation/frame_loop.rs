@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+// perf: T3 · metric: iterative; cost scales with its input, not with a fixed bound · check: review
 
 #![allow(clippy::too_many_arguments)]
 

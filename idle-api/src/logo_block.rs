@@ -1,3 +1,4 @@
+// perf: T3 · metric: lock-sensitive; cost depends on contention the caller creates · check: review
 //! 5x5 block-letter logo renderer. Pure string-transformer with a static cache.
 
 fn get_5x5_pattern(ch: char) -> Option<[&'static str; 5]> {

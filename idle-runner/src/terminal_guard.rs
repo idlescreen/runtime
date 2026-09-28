@@ -1,3 +1,4 @@
+// perf: T3 · metric: contains unsafe; cost depends on what the caller passes in · check: review
 //! RawTerminalGuard: enters raw terminal mode on startup, restores on drop.
 //! Linux-only (Windows support stripped per multi-distro Linux plan).
 

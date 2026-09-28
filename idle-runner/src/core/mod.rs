@@ -1,3 +1,4 @@
+// perf: T3 · metric: bounded single-pass work; no syscalls, no locks, no allocation on the steady path · check: review
 //! Core shared types and primitives. Vendored from `runner::core`.
 //! Source: /home/jeryd/library/src/core/mod.rs (and included submodules).
 //!

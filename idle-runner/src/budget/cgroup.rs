@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+// perf: T3 · metric: touches the filesystem; dominated by syscall latency, not by this page's logic · check: review
 
 //! cgroup v2 plumbing for the plugin CPU/memory budget — root detection,
 //! child creation, `cpu.max`/`memory.max` writes, usage reads.

@@ -1,3 +1,4 @@
+// perf: T3 · metric: contains unsafe; cost depends on what the caller passes in · check: test
 //! Fullscreen animation loop helpers split out from `idle_runner.rs`.
 //!
 //! `setup_terminal` installs signal handlers and enters raw mode; `teardown_terminal`

@@ -1,3 +1,4 @@
+// perf: T3 · metric: contains unsafe; cost depends on what the caller passes in · check: review
 pub(crate) fn block_on_future<F: std::future::Future>(future: F) -> F::Output {
     if tokio::runtime::Handle::try_current().is_ok() {
         tokio::task::block_in_place(|| spin_block_on(future))

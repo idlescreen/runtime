@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+// perf: T3 · metric: crosses a process or socket boundary; dominated by IPC latency · check: test
 
 //! External idle blocks (logind + MPRIS) — same sources as [`super::InhibitorState::is_inhibited`].
 

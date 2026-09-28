@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+// perf: T3 · metric: test-only page, not compiled into the shipped binary · check: test
 
 //! Fuzz tests for the validation layer behind the D-Bus control methods.
 //! `set_saver`/`preview` both route names through `sanitize_saver_name` —

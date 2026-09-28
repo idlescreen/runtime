@@ -1,3 +1,4 @@
+// perf: T3 · metric: crosses a process or socket boundary; dominated by IPC latency · check: test
 use wayland_client::backend::WaylandError;
 
 /// `prepare_read`/`read` can return WouldBlock (EAGAIN) when the socket was

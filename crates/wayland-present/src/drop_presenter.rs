@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-// perf: T2 · bench: hot_path · on-demand only; not gated
+// perf: T2 · bench: hot_path · on-demand only; not gated · check: bench
 //! Bounded shutdown of the overlay presenter.
 //!
 //! `Drop for OverlayPresenter` is the one place where the daemon

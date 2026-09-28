@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+// perf: T3 · metric: lock-sensitive; cost depends on contention the caller creates · check: test
 // Copyright 2026 IdleScreen
 
 //! Wayland idle detection using the [`ext-idle-notify-v1`] protocol.

@@ -36,7 +36,7 @@ fn sample_nearest(src: &[u8], width: u32, height: u32, x: f32, y: f32) -> [u8; 4
 /// `[0, 255]` (0 = use `c00` exactly, 255 = use `c10` exactly).
 /// The 4-channel horizontal lerp produces an intermediate u16, then
 /// the vertical lerp collapses back to u8.
-fn sample_bilinear(src: &[u8], width: u32, height: u32, x: f32, y: f32) -> [u8; 4] {
+pub(super) fn sample_bilinear(src: &[u8], width: u32, height: u32, x: f32, y: f32) -> [u8; 4] {
     let x_clamped = x.clamp(0.0, (width - 1) as f32);
     let y_clamped = y.clamp(0.0, (height - 1) as f32);
     let x0 = x_clamped.floor() as u32;

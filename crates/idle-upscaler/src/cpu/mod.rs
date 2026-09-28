@@ -5,6 +5,7 @@
 
 mod letterbox;
 mod sample;
+mod simd;
 mod stretch;
 
 pub use letterbox::upscale_letterbox_into;

@@ -16,6 +16,8 @@
 //! Requires a compositor that implements wlr-layer-shell (COSMIC, Sway, Hyprland, etc.).
 
 mod appearance;
+mod drop_presenter;
+mod frame_pool;
 mod frame_signal;
 mod output;
 mod overlay;

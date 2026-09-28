@@ -2,8 +2,8 @@
 
 //! Commands sent from the daemon to the overlay event thread.
 
-use std::sync::Mutex;
 use std::sync::Arc;
+use std::sync::Mutex;
 
 use crate::appearance::OverlayAppearance;
 

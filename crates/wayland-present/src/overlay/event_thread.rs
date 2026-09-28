@@ -231,17 +231,8 @@ fn apply_commands(state: &mut SessionState, command_rx: &Receiver<PresenterComma
                 return_pool,
             } => {
                 state.update_frame(output_id, width, height, &pixels);
-                // Push the Arc back to the daemon's pool. Bounded:
-                // VecDeque push_back. Lock is held briefly under
-                // normal flow (single producer, single consumer).
-                match return_pool.lock() {
-                    Ok(mut pool) => pool.push_back(pixels),
-                    Err(_) => {
-                        idle_log::warn!(
-                            "wayland-present: frame_pool mutex poisoned; dropping returned frame"
-                        );
-                    }
-                }
+                // Push the Arc back to the daemon's pool.
+                crate::frame_pool::return_frame_buffer(&return_pool, pixels);
             }
             PresenterCommand::Hide => state.hide(),
         }

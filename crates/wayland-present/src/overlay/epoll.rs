@@ -105,7 +105,12 @@ mod tests {
         // SAFETY: pipe2 with O_NONBLOCK | O_CLOEXEC is a standard
         // self-pipe construction; the fds array is valid for 2
         // outputs.
-        let rc = unsafe { libc::pipe2(fds.as_mut_ptr() as *mut _, libc::O_NONBLOCK | libc::O_CLOEXEC) };
+        let rc = unsafe {
+            libc::pipe2(
+                fds.as_mut_ptr() as *mut _,
+                libc::O_NONBLOCK | libc::O_CLOEXEC,
+            )
+        };
         assert_eq!(rc, 0);
         epoll_ctl_add(ep, fds[0], libc::EPOLLIN, 7).expect("add to epoll");
         // SAFETY: fds are live descriptors we own.

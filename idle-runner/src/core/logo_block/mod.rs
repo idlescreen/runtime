@@ -3,7 +3,19 @@
 //! the console app effects (interface layer) and the r* screensaver effects
 //! (role layer) can call it without violating the 4-layer taxonomy.
 
-mod patterns;
+mod alpha_am;
+mod alpha_nz;
+mod digits;
+mod symbols;
+
+/// 5x5 block font patterns (█ = on).
+pub fn get_5x5_pattern(ch: char) -> Option<[&'static str; 5]> {
+    let u = ch.to_ascii_uppercase();
+    alpha_am::pattern(u)
+        .or_else(|| alpha_nz::pattern(u))
+        .or_else(|| digits::pattern(u))
+        .or_else(|| symbols::pattern(u))
+}
 
 type LogoCacheEntry = (String, Option<String>, Vec<String>);
 
@@ -26,7 +38,7 @@ pub fn render_logo_block(text: &str, sub_text: Option<&str>) -> Vec<String> {
     let chars: Vec<char> = text.chars().collect();
     let mut rows: Vec<String> = vec![String::new(); 5];
     for ch in &chars {
-        let pattern = patterns::get_5x5_pattern(*ch).unwrap_or(["     "; 5]);
+        let pattern = get_5x5_pattern(*ch).unwrap_or(["     "; 5]);
         for (i, line) in pattern.iter().enumerate() {
             rows[i].push_str(line);
             rows[i].push(' ');

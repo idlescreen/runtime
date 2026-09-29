@@ -3,12 +3,12 @@
 use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
-use super::ipc_session::IpcPluginSession;
 use idle_api::{OutputLayout, OverlaySurface, clear_caption, clear_primary_bounds};
 
-use super::frame_loop::ActiveSession;
-use super::frame_pacing::{FramePacing, log_run_startup};
-use super::layout::{
+use super::frame::ActiveSession;
+use super::frame::frame_pacing::{FramePacing, log_run_startup};
+use super::session::IpcPluginSession;
+use super::surface::layout::{
     install_primary_bounds_callback, primary_bounds_in_grid, span_simulation_grid, virtual_desktop,
 };
 use super::refresh::wait_for_output_layouts;

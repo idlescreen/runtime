@@ -12,19 +12,13 @@
 //! implementations), each paired with a sibling
 //! `*_tests.rs` for QA + bench.
 
-mod bilinear_avx2;
-mod bilinear_neon;
-mod bilinear_row;
+pub mod bilinear;
 mod letterbox;
 mod sample;
-mod stretch_byte_rows;
-mod stretch_cache;
-mod stretch_u32_rows;
-mod upscale_stretch_into;
+pub mod stretch;
 
 pub use letterbox::upscale_letterbox_into;
-pub use stretch_cache::StretchCache;
-pub use upscale_stretch_into::upscale_stretch_into;
+pub use stretch::{upscale_stretch_into, StretchCache};
 
 // Measurement seam, re-exported to `lib.rs::bench_exports`.
 //
@@ -38,13 +32,13 @@ pub use upscale_stretch_into::upscale_stretch_into;
 #[doc(hidden)]
 pub mod bench_exports {
     #[cfg(target_arch = "x86_64")]
-    pub use super::bilinear_avx2::bilinear_row_avx2;
-    pub use super::bilinear_row::bilinear_row;
+    pub use super::bilinear::avx2::bilinear_row_avx2;
+    pub use super::bilinear::bilinear_row;
     pub use super::letterbox::upscale_letterbox_into;
-    pub use super::stretch_byte_rows::stretch_byte_rows;
-    pub use super::stretch_cache::StretchCache;
-    pub use super::stretch_u32_rows::stretch_u32_rows;
-    pub use super::upscale_stretch_into::upscale_stretch_into;
+    pub use super::stretch::byte_rows::stretch_byte_rows;
+    pub use super::stretch::cache::StretchCache;
+    pub use super::stretch::u32_rows::stretch_u32_rows;
+    pub use super::stretch::upscale_stretch_into;
 }
 
 #[cfg(test)]

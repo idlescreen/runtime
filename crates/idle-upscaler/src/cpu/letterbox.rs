@@ -5,7 +5,7 @@
 
 use crate::FilterMode;
 
-use super::bilinear_row::bilinear_row;
+use super::bilinear::bilinear_row;
 use super::sample::{sample_src, write_pixel};
 
 #[allow(clippy::too_many_arguments)]

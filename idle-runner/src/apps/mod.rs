@@ -1,5 +1,8 @@
 //! Application identity helpers used by screensaver plugins at load time.
 
+pub mod platform;
+pub use platform::*;
+
 pub fn username() -> String {
     std::env::var("USERNAME")
         .or_else(|_| std::env::var("USER"))

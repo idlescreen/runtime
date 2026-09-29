@@ -7,25 +7,18 @@
 #![warn(clippy::unimplemented)]
 
 pub mod config;
-pub mod config_parse;
 pub mod futures_util;
 
 pub mod cli_main;
-#[cfg(test)]
-mod config_fuzz_tests;
-#[cfg(test)]
-mod config_merge_tests;
-pub mod config_watcher;
 pub mod controller;
 pub mod daemon;
 pub mod dbus_server;
 pub mod inhibit;
 pub mod ipc_runner;
-pub mod lock_monitor;
-pub mod locks;
+pub mod monitors;
+pub use monitors::locks;
 pub mod ooda;
 pub mod presentation;
-pub mod sleep_monitor;
 
 // Re-exports for `benches/draw_frame.rs`.
 //

@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use crate::terminal_cell::TerminalCell;
+use crate::surface::TerminalCell;
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Default, PartialEq)]

@@ -25,23 +25,24 @@
 
 pub mod apps;
 pub mod budget;
-pub mod caption_overlay;
 pub mod cell_renderer;
 pub mod core;
 pub mod discovery;
 pub mod dylib;
 pub mod filewatch;
-pub mod fps_overlay;
 pub mod gpu_budget;
 pub mod idle_runner;
 pub mod launcher;
-mod launcher_resolve;
-mod launcher_trust;
+pub mod overlay;
 pub mod plugin_session;
 pub mod sandbox;
-pub mod sandbox_profiles;
 pub mod toolkit;
 pub mod watchdog;
+
+pub use apps::platform as platform_helpers;
+pub use overlay::caption as caption_overlay;
+pub use overlay::fps as fps_overlay;
+pub use sandbox::profiles as sandbox_profiles;
 
 // Tests can run with `cargo test -- --nocapture` to see tracing output.
 
@@ -90,21 +91,4 @@ pub(crate) mod test_util {
 }
 
 #[cfg(test)]
-#[path = "abi_version_tests.rs"]
-mod abi_version_tests;
-
-#[cfg(test)]
-#[path = "frame_perf_tests.rs"]
-mod frame_perf_tests;
-
-#[cfg(test)]
-#[path = "plugin_manifest_tests.rs"]
-mod plugin_manifest_tests;
-
-#[cfg(test)]
-#[path = "capability_gate_tests.rs"]
-mod capability_gate_tests;
-
-#[cfg(test)]
-#[path = "c_abi_conformance_tests.rs"]
-mod c_abi_conformance_tests;
+mod tests;

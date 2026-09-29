@@ -7,10 +7,7 @@
 mod atlas;
 mod font;
 mod geom;
-mod gpu_cells;
-mod gpu_init;
-mod gpu_render;
-mod gpu_render_setup;
+mod gpu;
 mod pixels;
 
 use std::collections::HashMap;
@@ -43,7 +40,7 @@ pub struct CellRenderer {
     pub(crate) atlas_cols: usize,
     pub(crate) atlas_rows: usize,
     pub(crate) atlas_dirty: bool,
-    gpu_renderer: Option<gpu_init::GpuCellRenderer>,
+    gpu_renderer: Option<gpu::GpuCellRenderer>,
 }
 
 impl CellRenderer {
@@ -84,7 +81,7 @@ impl CellRenderer {
             idle_log::info!("IDLE_DISABLE_CELL_GPU set — CPU cell rasterizer");
             return Ok(renderer);
         }
-        renderer.gpu_renderer = match gpu_init::GpuCellRenderer::new() {
+        renderer.gpu_renderer = match gpu::GpuCellRenderer::new() {
             Ok(gpu) => {
                 idle_log::info!("wgpu cell renderer initialized successfully");
                 Some(gpu)

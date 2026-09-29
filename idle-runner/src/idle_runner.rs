@@ -8,8 +8,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 mod args;
 #[path = "idle_runner_fullscreen.rs"]
 mod idle_runner_fullscreen;
-#[path = "platform_helpers.rs"]
-mod platform_helpers;
+use crate::apps::platform as platform_helpers;
 #[path = "renderer.rs"]
 mod renderer;
 #[path = "terminal_guard.rs"]

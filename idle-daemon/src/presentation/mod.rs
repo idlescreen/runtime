@@ -6,27 +6,19 @@
 //! refresh rate, and submits BGRA buffers per output. Display modes (expand,
 //! mirror, primary-only, span) are handled in the frame loop submodule.
 
-mod apply_fade_in;
-mod frame_loop;
-#[cfg(test)]
-mod frame_loop_tests;
-mod frame_pacing;
-mod hw_scaling;
-mod ipc_init;
-mod ipc_lifecycle;
-mod ipc_peer;
-mod ipc_raster;
-mod ipc_session;
-mod ipc_session_methods;
-#[cfg(test)]
-mod ipc_session_tests;
-mod layout;
-mod overlays;
-mod plugin_loop;
-mod present_frame;
-mod refresh;
-mod timeout;
-pub mod topology;
+pub mod frame;
+pub mod session;
+pub mod surface;
+
+pub use frame::*;
+pub use session::*;
+pub use surface::*;
+
+pub mod ipc_raster;
+pub mod overlays;
+pub mod plugin_loop;
+pub mod refresh;
+pub mod timeout;
 
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -42,7 +34,7 @@ pub use plugin_loop::run_plugin_loop;
 // is this module's private child.
 #[doc(hidden)]
 pub mod bench_exports {
-    pub use super::apply_fade_in::apply_fade_in;
+    pub use super::frame::apply_fade_in;
 }
 
 #[derive(Clone)]

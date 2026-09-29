@@ -7,10 +7,7 @@ pub mod ffi_cell;
 pub mod path_safety;
 pub mod protocol;
 pub mod shm;
-pub mod shm_cells;
-
-#[cfg(test)]
-mod shm_stress;
+pub use shm::cells as shm_cells;
 
 pub use ffi_cell::{
     FfiTerminalCell, MAX_GRID_CELLS, MAX_GRID_DIM, SHM_MAGIC, SharedMemoryHeader, compute_shm_size,

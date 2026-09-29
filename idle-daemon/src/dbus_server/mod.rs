@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: MIT
 
 mod auth;
-#[cfg(test)]
-mod dbus_validation_tests;
-#[cfg(test)]
-mod queue_overflow_tests;
 mod screensaver;
 mod service;
-pub mod service_helpers;
+pub mod service_dispatch;
+pub use service_dispatch as service_helpers;
 mod sniff_policy;
+#[cfg(test)]
+mod tests;
 mod watchers;
 
 use std::sync::Arc;
@@ -20,7 +19,7 @@ use idle_err::Context;
 use zbus::fdo::RequestNameFlags;
 
 use crate::controller::DaemonController;
-use crate::{lock_monitor, sleep_monitor};
+use crate::monitors::{lock as lock_monitor, sleep as sleep_monitor};
 
 use service::TranceService;
 

@@ -1,6 +1,6 @@
 use std::sync::OnceLock;
 
-use crate::palette::ScreenPalette;
+use crate::color::ScreenPalette;
 use crate::system_info::SystemInfo;
 
 /// Host-provided factory for live [`SystemInfo`]. Set once at process startup.

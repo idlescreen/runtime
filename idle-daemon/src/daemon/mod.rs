@@ -5,16 +5,16 @@
 //! `run_daemon` is the orchestrator; setup helpers stay here and the runtime
 //! tick loop lives in sibling modules.
 
-pub mod battery;
 pub(crate) mod consume_events;
-pub(crate) mod idle_decision;
-#[cfg(test)]
-mod liveness_validation_tests;
+pub(crate) mod decision;
+pub(crate) use decision as idle_decision;
 #[cfg(test)]
 mod m2_concurrency_stress_tests;
 pub(crate) mod pidfile;
-pub(crate) mod power_thread;
-pub(crate) mod power_watcher;
+pub(crate) mod power;
+pub(crate) use power::battery;
+pub(crate) use power::thread as power_thread;
+pub(crate) use power::watcher as power_watcher;
 pub(crate) mod presentation;
 pub(crate) mod preview_queue;
 pub(crate) mod recovery;
@@ -40,7 +40,7 @@ pub use tick_loop::tick_loop_until_shutdown;
 #[doc(hidden)]
 pub mod bench_exports {
     pub use super::consume_events::consume_events;
-    pub use super::power_watcher::bench_exports::*;
+    pub use super::power::watcher::bench_exports::*;
 }
 
 pub fn run_daemon() -> idle_err::Result<()> {
@@ -57,7 +57,7 @@ pub fn run_daemon() -> idle_err::Result<()> {
         }
     }
     let controller = Arc::new(DaemonController::new(config));
-    crate::config_watcher::start_config_watcher(controller.clone());
+    crate::config::start_config_watcher(controller.clone());
     install_signal_handlers(&controller)?;
     log_daemon_startup();
     runtime::log_posture();

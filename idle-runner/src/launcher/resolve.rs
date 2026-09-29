@@ -5,8 +5,8 @@
 
 use std::path::{Path, PathBuf};
 
-use crate::launcher::{LaunchMode, sanitize_saver_name};
 use super::trust::is_trusted_plugin_path_cached;
+use crate::launcher::{LaunchMode, sanitize_saver_name};
 
 /// Candidate basenames for a cleaned saver name under a plugin directory.
 pub(crate) fn plugin_candidate_names(clean: &str) -> [String; 3] {

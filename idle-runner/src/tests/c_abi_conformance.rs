@@ -5,9 +5,9 @@
 //! drive it via the Screensaver trait — proving a non-Rust `.so` satisfies
 //! the plugin contract the host enforces.
 
+use crate::dylib::Library;
 use crate::plugin_session::PluginGuard;
 use crate::plugin_session::entry::resolve_entry;
-use crate::dylib::Library;
 use std::path::PathBuf;
 use std::process::Command;
 

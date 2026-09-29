@@ -7,11 +7,11 @@ use idle_api::{OutputLayout, OverlaySurface, clear_caption, clear_primary_bounds
 
 use super::frame::ActiveSession;
 use super::frame::frame_pacing::{FramePacing, log_run_startup};
+use super::refresh::wait_for_output_layouts;
 use super::session::IpcPluginSession;
 use super::surface::layout::{
     install_primary_bounds_callback, primary_bounds_in_grid, span_simulation_grid, virtual_desktop,
 };
-use super::refresh::wait_for_output_layouts;
 use crate::presentation::PresentationOptions;
 
 /// Run presentation using **out-of-process** plugin sessions only (crash isolation).

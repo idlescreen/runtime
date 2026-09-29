@@ -1,6 +1,6 @@
 {
  "repo": "runtime",
- "rev": "17e2902",
+ "rev": "5fd1448",
  "dirty": true,
  "pages": [
   {
@@ -880,7 +880,7 @@
   },
   {
    "path": "./idle-daemon/src/config/mod.rs",
-   "lines": 225,
+   "lines": 221,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
@@ -1958,7 +1958,7 @@
   },
   {
    "path": "./idle-runner/src/tests/plugin_manifest_f102.rs",
-   "lines": 90,
+   "lines": 86,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 0

@@ -4,8 +4,8 @@
 //! user-editable config.yaml must parse without panic and leave the config in
 //! a valid state (bounded timeout, finite in-range scale, charset-clean saver).
 
-use crate::config::DaemonConfig;
 use super::parse::apply_config_line;
+use crate::config::DaemonConfig;
 use idle_api::LcgRng;
 
 /// Post-parse invariants the parser must preserve regardless of input.

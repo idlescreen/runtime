@@ -8,9 +8,9 @@ use std::time::{Duration, Instant};
 use idle_api::{OutputLayout, OverlaySurface};
 
 use super::frame_loop::{ActiveSession, run_frame_loop};
+use crate::presentation::PresentationOptions;
 use crate::presentation::refresh::presentation_refresh_hz;
 use crate::presentation::session::IpcPluginSession;
-use crate::presentation::PresentationOptions;
 use idle_upscaler::{simulation_tick_hz, target_fps};
 
 /// Clamp present FPS so `Duration::from_secs_f32(1.0 / fps)` never sees 0/NaN/∞.

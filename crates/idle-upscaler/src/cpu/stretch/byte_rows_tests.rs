@@ -6,8 +6,8 @@
 //! Sibling to `stretch_byte_rows.rs` so the page that defines the
 //! function stays under the 256-line cap while tests stay
 //! colocated with the function they cover.
-use super::stretch_byte_rows;
 use super::super::cache::StretchCache;
+use super::stretch_byte_rows;
 
 // Pulled in with `#[path]` as `mod tests`, which clippy reads as module inception.
 #[allow(clippy::module_inception)]

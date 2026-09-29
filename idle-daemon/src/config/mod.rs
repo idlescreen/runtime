@@ -204,11 +204,8 @@ impl DaemonConfig {
             // Last-known-good snapshot so a bad write is recoverable.
             let _ = fs::write(parent.join("config.yaml.bak"), &existing);
         }
-        let content = parse::merge_config_body(
-            &existing,
-            &mut self.rendered_fields(),
-            &self.saver_params,
-        );
+        let content =
+            parse::merge_config_body(&existing, &mut self.rendered_fields(), &self.saver_params);
         static TMP_COUNTER: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
         let count = TMP_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         let tmp_path = parent.join(format!("config.tmp.{}.{}", std::process::id(), count));
@@ -222,4 +219,3 @@ impl DaemonConfig {
         }
     }
 }
-

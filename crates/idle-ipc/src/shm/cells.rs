@@ -7,8 +7,8 @@
 //! `# Safety` contract is written down, and where a reader auditing that
 //! contract should be looking.
 
-use crate::ffi_cell::{FfiTerminalCell, SHM_MAGIC, SharedMemoryHeader};
 use super::SharedMemory;
+use crate::ffi_cell::{FfiTerminalCell, SHM_MAGIC, SharedMemoryHeader};
 
 impl SharedMemory {
     /// Mutable header view.

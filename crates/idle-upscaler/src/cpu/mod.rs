@@ -18,7 +18,7 @@ mod sample;
 pub mod stretch;
 
 pub use letterbox::upscale_letterbox_into;
-pub use stretch::{upscale_stretch_into, StretchCache};
+pub use stretch::{StretchCache, upscale_stretch_into};
 
 // Measurement seam, re-exported to `lib.rs::bench_exports`.
 //

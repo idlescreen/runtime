@@ -3,8 +3,8 @@
 //! Merge/save tests for config.yaml: read-modify-write must preserve foreign
 //! keys, comments, `[saver]` extras, and accept `=` separators — never clobber.
 
-use crate::config::DaemonConfig;
 use super::parse::{apply_config_line, merge_config_body};
+use crate::config::DaemonConfig;
 use std::collections::BTreeMap;
 
 fn fields() -> Vec<(&'static str, String)> {

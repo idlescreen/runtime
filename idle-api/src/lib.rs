@@ -69,13 +69,13 @@ pub use monitor::{
 pub use plugin_manifest::signature::{signature_path, signature_required, verify_signature};
 pub use rng::{LcgRng, SEED_ENV_KEYS, seed_from_env};
 pub use screensaver::{GpuSpotlight, Screensaver, ScreensaverInstance, ScreensaverState};
+#[cfg(target_os = "linux")]
+pub use surface::WaylandOverlay;
 pub use surface::{
     BlankAppearance, CenteredLogo, OutputId, OutputLayout, OverlaySurface, StubOverlay,
     TerminalCell, is_span_layout, place_centered_logo, span_reach_scale,
 };
 pub use system_info::SystemInfo;
-#[cfg(target_os = "linux")]
-pub use surface::WaylandOverlay;
 
 /// `.idleplugin.toml` capability manifest (schema v1).
 pub mod plugin_manifest;

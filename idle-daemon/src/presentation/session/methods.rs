@@ -3,8 +3,8 @@
 use idle_api::TerminalCell;
 use idle_ipc::IpcResponse;
 
-use crate::presentation::ipc_raster::raster_viewport_into;
 use super::session::IpcPluginSession;
+use crate::presentation::ipc_raster::raster_viewport_into;
 use crate::presentation::timeout::is_timeout;
 
 impl IpcPluginSession {

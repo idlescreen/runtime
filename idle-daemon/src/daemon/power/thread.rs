@@ -14,8 +14,8 @@ use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use parking_lot::Mutex;
 
 use super::battery;
-use crate::daemon::consume_events::consume_events;
 use super::watcher::{Inner, PowerWatcher, Predicate};
+use crate::daemon::consume_events::consume_events;
 
 /// inotify event mask covering what `/sys/class/power_supply` cares about.
 /// `IN_MODIFY` (status files write through), `IN_CREATE` / `IN_DELETE` /

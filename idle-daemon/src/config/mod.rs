@@ -90,9 +90,12 @@ impl DaemonConfig {
         }
         let mut dirs = Vec::new();
         for base in bases {
+            dirs.push(base.join("idlescreen"));
             dirs.push(base.join("idle"));
             dirs.push(base.join("trance"));
         }
+        dirs.push(PathBuf::from("/etc/idlescreen"));
+        dirs.push(PathBuf::from("/etc/idle"));
         dirs
     }
 
@@ -101,9 +104,15 @@ impl DaemonConfig {
         if let Some(dir) = Self::config_dir_override() {
             return Some(dir.join("config.yaml"));
         }
+        if let Some(resolved) = Self::resolve_config_path()
+            && resolved.is_file()
+            && !resolved.starts_with("/etc")
+        {
+            return Some(resolved);
+        }
         Self::config_dir_candidates()
             .into_iter()
-            .find(|d| d.ends_with("idle"))
+            .find(|d| d.ends_with("idle") && !d.starts_with("/etc"))
             .map(|d| d.join("config.yaml"))
     }
 
@@ -132,11 +141,11 @@ impl DaemonConfig {
                 apply_config_line(&mut config, &mut current_section, line);
             }
         }
-        // Soft migrate: if we only had ~/.config/trance, copy to idle and write there next.
+        // Soft migrate: if we resolved an alternate source, copy to destination if dst is missing.
         if let (Some(src), Some(dst_path)) = (resolved, Self::get_config_path()) {
-            let is_legacy = src.components().any(|c| c.as_os_str() == "trance");
-            let idle_missing = !dst_path.is_file();
-            if is_legacy && idle_missing {
+            let is_diff = src != dst_path;
+            let dst_missing = !dst_path.is_file();
+            if is_diff && dst_missing {
                 if let Some(parent) = dst_path.parent() {
                     let _ = fs::create_dir_all(parent);
                 }

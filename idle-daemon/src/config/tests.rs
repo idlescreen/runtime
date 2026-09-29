@@ -40,3 +40,44 @@ fn default_show_fps_overlay_false() {
     let c = DaemonConfig::default();
     assert!(!c.show_fps_overlay);
 }
+
+#[test]
+fn config_dir_candidates_includes_idlescreen_and_etc() {
+    let candidates = DaemonConfig::config_dir_candidates();
+    assert!(
+        candidates.iter().any(|p| p.ends_with("idlescreen")),
+        "candidates must include an idlescreen directory"
+    );
+    assert!(
+        candidates
+            .iter()
+            .any(|p| p == std::path::Path::new("/etc/idlescreen")),
+        "candidates must include /etc/idlescreen"
+    );
+}
+
+#[test]
+fn get_config_path_preserves_existing_idlescreen_file() {
+    let _env_guard = crate::TEST_ENV_LOCK.lock().unwrap();
+    let tmp = std::env::temp_dir().join(format!("idle-test-cfg-{}", std::process::id()));
+    let idlescreen_dir = tmp.join("idlescreen");
+    std::fs::create_dir_all(&idlescreen_dir).unwrap();
+    let cfg_file = idlescreen_dir.join("config.yaml");
+    std::fs::write(&cfg_file, "idle_timeout_mins: 42\n").unwrap();
+
+    let prior_xdg = std::env::var("XDG_CONFIG_HOME").ok();
+    unsafe {
+        std::env::set_var("XDG_CONFIG_HOME", &tmp);
+    }
+
+    let resolved = DaemonConfig::resolve_config_path();
+    assert_eq!(resolved.as_ref(), Some(&cfg_file));
+    let write_path = DaemonConfig::get_config_path();
+    assert_eq!(write_path.as_ref(), Some(&cfg_file));
+
+    match prior_xdg {
+        Some(v) => unsafe { std::env::set_var("XDG_CONFIG_HOME", v) },
+        None => unsafe { std::env::remove_var("XDG_CONFIG_HOME") },
+    }
+    let _ = std::fs::remove_dir_all(&tmp);
+}

@@ -108,13 +108,13 @@ fn target_fps_matches_detected_when_unset() {
 }
 
 #[test]
-fn target_fps_floors_detected_at_60() {
+fn target_fps_respects_low_refresh_and_defaults_zero() {
     let _env_guard = ENV_LOCK.lock().unwrap();
     let prior = std::env::var("IDLE_MAX_FPS").ok();
     unsafe {
         std::env::remove_var("IDLE_MAX_FPS");
     }
-    assert!((target_fps(30) - (60.0)).abs() < 1e-3);
+    assert!((target_fps(30) - (30.0)).abs() < 1e-3);
     assert!((target_fps(0) - (60.0)).abs() < 1e-3);
     assert!((target_fps(60) - (60.0)).abs() < 1e-3);
     restore_max_fps(prior);

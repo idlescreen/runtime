@@ -117,7 +117,10 @@ pub fn simulation_tick_hz() -> f32 {
 }
 
 pub fn target_fps(detected_refresh_hz: u32) -> f32 {
-    let detected = detected_refresh_hz.max(60);
+    let detected = match detected_refresh_hz {
+        0 => 60,
+        hz => hz,
+    };
     let cap = max_fps();
     if cap == 0 {
         detected as f32

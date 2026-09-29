@@ -149,7 +149,6 @@ fn prepare_frame(state: &mut FrameLoopState) -> Result<(), String> {
 }
 
 fn update_fps_counter(state: &mut FrameLoopState, frame_index: u64) {
-    let elapsed = state.frame_start.elapsed();
     if state.fps_report.elapsed() >= Duration::from_secs(1) {
         state.achieved_fps = frame_index as f32 / state.fps_report.elapsed().as_secs_f32();
         if frame_index >= state.present_fps as u64
@@ -166,26 +165,14 @@ fn update_fps_counter(state: &mut FrameLoopState, frame_index: u64) {
         }
     }
 
-    if elapsed < state.frame_duration {
-        let remaining = state.frame_duration.saturating_sub(elapsed);
-        // Tier-2 perf change (round 1): poll the `stop` flag during the
-        // sleep so shutdown interrupts within ~2 ms instead of waiting
-        // out the full frame duration.
-        //
-        // Tier-2 step 2.5 (round 2): wait on the presenter's frame
-        // signal instead of slicing. The presenter notifies after a
-        // successful surface commit (and, when the `wl_callback::done`
-        // dispatch hook is wired in `wayland-present`, on actual
-        // vsync). Avoids the systematic 2 ms polling wakeup that was
-        // stealing ~30 wakeups/sec from the daemon even when no frames
-        // were being produced.
-        //
-        // If the presenter does not expose a frame signal (stub or
-        // platform impl without Wayland), fall back to the slice-poll.
+    let deadline = state.frame_start + state.frame_duration;
+    while !state.stop.load(Ordering::Relaxed) {
+        let now = Instant::now();
+        if now >= deadline {
+            break;
+        }
+        let remaining = deadline - now;
         if let Some(signal) = state.presenter.frame_signal() {
-            // Block up to `remaining`. If the signal fires earlier we
-            // wake, re-check the loop, and either draw the next frame
-            // immediately or wait again for the next slice.
             let _ = signal.wait_for(state.stop, remaining);
         } else {
             sleep_interruptible(remaining, state.stop);

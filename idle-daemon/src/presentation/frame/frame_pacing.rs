@@ -60,6 +60,10 @@ impl FramePacing {
             );
         }
 
+        if present_refresh > 0 {
+            present_fps = present_fps.min(present_refresh as f32);
+        }
+
         // target_fps / simulation_tick_hz already floor at ≥15; clamp again so a
         // future regression cannot pass 0/NaN into Duration::from_secs_f32.
         let present_fps = clamp_present_fps(present_fps);

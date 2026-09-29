@@ -14,27 +14,25 @@ use idle_api::{OutputLayout, OverlaySurface};
 ///
 /// Override sync policy with `IDLE_PRESENT_SYNC=min|primary|max` (default: primary).
 pub fn presentation_refresh_hz(layouts: &[OutputLayout], primary: OutputLayout) -> u32 {
+    let sanitize = |hz: u32| if hz == 0 { 60 } else { hz };
     if layouts.len() <= 1 {
         return layouts
             .first()
-            .map(|layout| layout.refresh_mhz)
-            .unwrap_or(60)
-            .max(60);
+            .map(|layout| sanitize(layout.refresh_mhz))
+            .unwrap_or_else(|| sanitize(primary.refresh_mhz));
     }
 
     let min_hz = layouts
         .iter()
-        .map(|layout| layout.refresh_mhz)
+        .map(|layout| sanitize(layout.refresh_mhz))
         .min()
-        .unwrap_or(60)
-        .max(60);
+        .unwrap_or(60);
     let max_hz = layouts
         .iter()
-        .map(|layout| layout.refresh_mhz)
+        .map(|layout| sanitize(layout.refresh_mhz))
         .max()
-        .unwrap_or(60)
-        .max(60);
-    let primary_hz = primary.refresh_mhz.max(60);
+        .unwrap_or(60);
+    let primary_hz = sanitize(primary.refresh_mhz);
 
     match idle_api::env_var_first(&["IDLE_PRESENT_SYNC"]).as_deref() {
         Some("min") => min_hz,
@@ -86,11 +84,13 @@ mod tests {
     }
 
     #[test]
-    fn single_output_uses_own_refresh_floored_at_60() {
+    fn single_output_uses_own_refresh() {
         let layouts = vec![layout(1, 144)];
         assert_eq!(presentation_refresh_hz(&layouts, layouts[0]), 144);
         let low = vec![layout(1, 30)];
-        assert_eq!(presentation_refresh_hz(&low, low[0]), 60);
+        assert_eq!(presentation_refresh_hz(&low, low[0]), 30);
+        let zero = vec![layout(1, 0)];
+        assert_eq!(presentation_refresh_hz(&zero, zero[0]), 60);
     }
 
     #[test]

@@ -4,7 +4,7 @@
 use std::sync::{Mutex, OnceLock};
 use std::time::{Duration, Instant};
 
-/// Prefer IdleScreen config (`idle`), then legacy `trance`.
+/// Prefer IdleScreen config (`idlescreen` then `idle`), then legacy `trance`, then `/etc`.
 fn get_global_theme_path() -> Option<std::path::PathBuf> {
     let base = std::env::var("XDG_CONFIG_HOME")
         .ok()
@@ -14,16 +14,20 @@ fn get_global_theme_path() -> Option<std::path::PathBuf> {
                 .ok()
                 .map(|home| std::path::PathBuf::from(home).join(".config"))
         })?;
-    let idle = base.join("idle").join("config.yaml");
-    if idle.is_file() {
-        return Some(idle);
+    for sub in ["idlescreen", "idle", "trance"] {
+        let p = base.join(sub).join("config.yaml");
+        if p.is_file() {
+            return Some(p);
+        }
     }
-    let trance = base.join("trance").join("config.yaml");
-    if trance.is_file() {
-        return Some(trance);
+    for sys in ["/etc/idlescreen/config.yaml", "/etc/idle/config.yaml"] {
+        let p = std::path::PathBuf::from(sys);
+        if p.is_file() {
+            return Some(p);
+        }
     }
     // Default write/read target for new installs.
-    Some(idle)
+    Some(base.join("idle").join("config.yaml"))
 }
 type ThemeSettings = (Option<(u8, u8, u8)>, Option<bool>);
 type CacheEntry = (Option<ThemeSettings>, Instant);

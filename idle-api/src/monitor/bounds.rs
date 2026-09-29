@@ -1,4 +1,3 @@
-// perf: T3 · metric: bounded single-pass work; no syscalls, no locks, no allocation on the steady path · check: review
 //! Cell-grid bounds for a single monitor in multi-monitor layouts.
 
 /// Inclusive-start / exclusive-end cell rectangle for one monitor.

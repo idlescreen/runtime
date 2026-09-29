@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: Apache-2.0
-// perf: T3 · metric: contains unsafe; cost depends on what the caller passes in · check: test
 // Copyright 2026 IdleScreen
 
 //! Fullscreen Wayland overlays using [`zwlr_layer_shell_v1`].
@@ -33,12 +32,11 @@ pub use presenter::OverlayPresenter;
 //
 // Every module in this crate is private, so a `[[bench]]` target —
 // which compiles as its own crate — can only reach the four items
-// above. The T2 pages (`frame_pool`, `drop_presenter`, `overlay::epoll`)
-// each name a bench target in their `// perf:` label, and the CI
-// linter checks the bench source actually exercises them; without this
-// seam those labels would be unfalsifiable.
+// above. The benchmarked modules (`frame_pool`, `drop_presenter`,
+// `overlay::epoll`) are exercised by `benches/hot_path.rs`; this seam
+// exposes them without adding to the crate's public API surface.
 //
-// `#[doc(hidden])` keeps it out of the rendered docs: it is a
+// `#[doc(hidden)]` keeps it out of the rendered docs: it is a
 // measurement seam, not public API. Mirrors the convention in
 // `savers/ripple/src/lib.rs::bench_exports` and
 // `idle-upscaler/src/cpu/mod.rs::bench_exports`.

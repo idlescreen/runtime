@@ -1,4 +1,3 @@
-// perf: T3 · metric: test-only page, not compiled into the shipped binary · check: test
 // Test files legitimately panic; suppress the lint at file scope.
 #![allow(clippy::panic)]
 // SPDX-License-Identifier: MIT

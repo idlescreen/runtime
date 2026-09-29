@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: Apache-2.0
-// perf: T3 · metric: crate root; holds re-exports and wiring, not hot-path logic · check: review
 // Copyright 2026 IdleScreen
 
 //! Shared memory layout and control protocol for out-of-process screensaver execution.

@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-// perf: T3 · metric: allocates on the call path; cost scales with allocation count · check: test
 
 //! openOODA Pillar 4: Act (Presentation Side-Effects & Surface Execution)
 

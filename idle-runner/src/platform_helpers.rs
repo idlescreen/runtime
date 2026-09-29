@@ -1,4 +1,3 @@
-// perf: T3 · metric: contains unsafe; cost depends on what the caller passes in · check: test
 //! Linux terminal/screen helpers used by the screensaver runner.
 //! (Windows support has been removed; this is now Linux-only for the supported
 //! distros: Debian family, Red Hat family, Gentoo, Arch.)

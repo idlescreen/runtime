@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: Apache-2.0
-// perf: T2 · bench: none · metric: aarch64-only path, never compiled or benched on the x86_64 CI runner · check: review
 // Copyright 2026 IdleScreen
 
 //! NEON (aarch64) bilinear row implementation.

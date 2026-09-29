@@ -1,4 +1,3 @@
-// perf: T3 · metric: bounded single-pass work; no syscalls, no locks, no allocation on the steady path · check: review
 //! Single character cell for grid-based terminal renderers.
 //!
 //! Plugins draw into a flat `[TerminalCell]` slice addressed in row-major order.

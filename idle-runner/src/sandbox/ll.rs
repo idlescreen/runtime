@@ -1,4 +1,3 @@
-// perf: T3 · metric: contains unsafe; cost depends on what the caller passes in · check: review
 use std::path::Path;
 
 pub const ACCESS_FS_EXECUTE: u64 = 1 << 0;

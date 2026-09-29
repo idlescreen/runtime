@@ -1,18 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
-// perf: T3 · metric: test-only page, not compiled into the shipped binary · check: test
 // Copyright 2026 IdleScreen
 
 //! QA tests + criterion bench for `stretch_byte_rows`.
 //!
 //! Sibling to `stretch_byte_rows.rs` so the page that defines the
-//! function stays under the 256-line cap while the tests stay
-//! colocated with the function they cover (RULES.md §4).
-
+//! function stays under the 256-line cap while tests stay
+//! colocated with the function they cover.
 use crate::cpu::stretch_byte_rows::stretch_byte_rows;
 use crate::cpu::stretch_cache::StretchCache;
 
-// Pulled in with `#[path]` as `mod tests`, which clippy reads as
-// inception; `mod tests` is the org-wide convention (RULES.md §4).
+// Pulled in with `#[path]` as `mod tests`, which clippy reads as module inception.
 #[allow(clippy::module_inception)]
 #[cfg(test)]
 mod tests {

@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-// perf: T2 · bench: draw_frame · on-demand only; not gated · check: bench
 //! Event-driven battery / AC watcher.
 //!
 //! The OODA main tick loop used to poll `/sys/class/power_supply` on every
@@ -143,7 +142,7 @@ impl PowerWatcher {
 }
 
 // Measurement seam, re-exported to `daemon/mod.rs::bench_exports` for
-// the `draw_frame` bench target. See RULES.md §5.
+// the `draw_frame` bench target.
 #[doc(hidden)]
 pub mod bench_exports {
     use super::{Condvar, Inner, Mutex, Predicate};

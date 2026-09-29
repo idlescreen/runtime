@@ -2,7 +2,6 @@
 # scripts/chaos_test.sh - E2E Chaos & Fault Injection Suite entry point
 # Sources chaos_common.sh and the per-test modules, runs them sequentially.
 #
-# Prereqs: XDG_RUNTIME_DIR + Wayland. See RULES.md §1.7 and DESIGN.md §"Channel truth".
 # CHAOS_ALLOW_NO_WAYLAND=1 permits run without Wayland (explicit residual; tests may fail).
 set -euo pipefail
 set +m

@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-// perf: T3 · metric: unsafe FFI view into a live mapping; cost is the caller’s write volume · check: test
 //! Borrowed views into a live shared-memory mapping.
 //!
 //! Split out of `shm.rs`, which sat exactly on the 256-line ceiling.

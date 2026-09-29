@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-// perf: T3 · metric: test-only page, not compiled into the shipped binary · check: test
 
 //! Merge/save tests for config.yaml: read-modify-write must preserve foreign
 //! keys, comments, `[saver]` extras, and accept `=` separators — never clobber.

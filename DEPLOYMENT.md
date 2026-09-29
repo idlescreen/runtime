@@ -90,7 +90,7 @@ is `false`, your deployment is still permissive.
 
 ## See also
 
-- `RULES.md` §1.4 default-deny (in this repo)
+- `AGENTS.md` (in this repo)
 - `install_audit.sh` — records the audit log shape (packages repo)
 - `docs/SIGNING.md` — manifest signing SOP (packages repo)
 - `TRUST.md` — installer trust model (packages repo)

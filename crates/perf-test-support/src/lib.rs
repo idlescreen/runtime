@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-// perf: T3 · metric: build-time and test-time only; a counting global allocator, never linked into a shipped binary · check: test
 
 //! Turns a `metric:` claim into something a test can fail on.
 //!

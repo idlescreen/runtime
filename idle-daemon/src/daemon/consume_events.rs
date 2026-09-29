@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-// perf: T2 · bench: draw_frame · on-demand only; not gated · check: bench
 //! Parse an inotify read buffer into a count of whole records.
 
 /// Parse an inotify read buffer. Currently only consumes whole records —
@@ -9,7 +8,7 @@
 /// the cache.
 ///
 /// `pub` (not `pub(crate)`) solely so `daemon/mod.rs::bench_exports` can
-/// re-export it to the `draw_frame` bench target. See RULES.md §5.
+/// re-export it to the `draw_frame` bench target.
 pub fn consume_events(buf: &[u8]) -> usize {
     let mut off = 0usize;
     let mut n = 0usize;

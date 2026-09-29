@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-// perf: T3 · metric: contains unsafe; cost depends on what the caller passes in · check: review
 
 #![allow(clippy::too_many_arguments)]
 
@@ -60,8 +59,8 @@ pub fn fill_rect(
         let end_offset = (row * width as usize + limit_x) * 4;
         if end_offset <= pixels.len() {
             let row_slice = &mut pixels[start_offset..end_offset];
-            for chunk in row_slice.chunks_exact_mut(4) {
-                chunk.copy_from_slice(&px_val);
+            for chunk in row_slice.as_chunks_mut::<4>().0 {
+                *chunk = px_val;
             }
         }
     }

@@ -12,9 +12,8 @@
 # this script started are collected, so a stale directory left behind by
 # a bench that was deleted or renamed cannot leak into the baseline.
 #
-# T1 targets are the ones perf.yml runs and the gate compares; see the
-# tier table in .github/RULES.md §4. T2 benches are deliberately not
-# baselined — they are on-demand, not gated.
+# T1 targets are the ones perf.yml runs and the gate compares. T2 benches
+# are deliberately not baselined — they are on-demand, not gated.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -34,9 +33,8 @@ while [ $# -gt 0 ]; do
 done
 
 # T1 `[[bench]]` targets: label `bench:` value -> cargo invocation.
-# T1 targets are the ones perf.yml runs and the gate compares; see the
-# tier table in .github/RULES.md §4. T2 benches are deliberately not
-# baselined — they are on-demand, not gated.
+# T1 targets are the ones perf.yml runs and the gate compares. T2 benches
+# are deliberately not baselined — they are on-demand, not gated.
 target_args() {
     case "$1" in
         "") printf '%s\n' "stretch" "draw_frame" ;;

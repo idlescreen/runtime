@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: Apache-2.0
-// perf: T1 · bench: stretch · gate: perf-baseline.json · check: bench
 // Copyright 2026 IdleScreen
 
 //! SIMD bilinear path for letterbox upscale.

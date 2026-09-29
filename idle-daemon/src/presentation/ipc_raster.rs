@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-// perf: T3 · metric: bounded single-pass work; no syscalls, no locks, no allocation on the steady path · check: review
 
 use idle_api::TerminalCell;
 use idle_runner::cell_renderer::CellRenderer;

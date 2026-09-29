@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-// perf: T3 · metric: bounded single-pass work; no syscalls, no locks, no allocation on the steady path · check: review
 
 const FONT_W: u32 = 8;
 const _FONT_H: u32 = 8;

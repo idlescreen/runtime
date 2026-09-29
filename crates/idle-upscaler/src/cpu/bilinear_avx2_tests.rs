@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
-// perf: T3 · metric: test-only page, not compiled into the shipped binary · check: test
 // Copyright 2026 IdleScreen
 
 //! QA tests + criterion bench for the AVX2 [`bilinear_row_avx2`].
 
 use crate::cpu::bilinear_avx2::bilinear_row_avx2;
 
-// Pulled in with `#[path]` as `mod tests`, which clippy reads as
-// inception; `mod tests` is the org-wide convention (RULES.md §4).
+// Pulled in with `#[path]` as `mod tests`, which clippy reads as module inception.
 #[allow(clippy::module_inception)]
 #[cfg(test)]
 mod tests {

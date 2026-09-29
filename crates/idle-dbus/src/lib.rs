@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: Apache-2.0
-// perf: T3 · metric: crate root; holds re-exports and wiring, not hot-path logic · check: test
 // Copyright 2026 IdleScreen
 
 //! D-Bus API for the IdleScreen screensaver daemon.

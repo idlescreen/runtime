@@ -1,4 +1,3 @@
-// perf: T3 · metric: lock-sensitive; cost depends on contention the caller creates · check: test
 use super::*;
 use std::sync::Mutex;
 

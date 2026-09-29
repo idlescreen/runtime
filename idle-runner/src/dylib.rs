@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-// perf: T3 · metric: contains unsafe; cost depends on what the caller passes in · check: review
 
 //! Minimal `libloading` replacement: `dlopen`/`dlsym`/`dlclose` over libc.
 //! Covers the two features the runner uses — `Library::new(path)` and

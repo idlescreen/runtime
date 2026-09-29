@@ -1,10 +1,9 @@
-// perf: T3 · metric: test-only page, not compiled into the shipped binary · check: test
 // Test files legitimately panic; suppress the lint at file scope.
 #![allow(clippy::panic)]
 // SPDX-License-Identifier: MIT
 
 //! F-102 regression tests for ABI version enforcement.
-//! Separated from plugin_manifest_tests.rs to enforce line lock (RULES §1.7).
+//! Separated from plugin_manifest_tests.rs for modularity.
 
 use crate::launcher::PluginError;
 use crate::plugin_session::entry::check_entry;

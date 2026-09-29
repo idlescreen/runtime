@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-// perf: T3 · metric: contains unsafe; cost depends on what the caller passes in · check: review
 
 use idle_api::TerminalCell;
 use idle_ipc::IpcResponse;

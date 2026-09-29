@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
-// perf: T3 · metric: bounded single-pass work; no syscalls, no locks, no allocation on the steady path · check: review
 // Copyright 2026 IdleScreen
 
 //! CPU stretch and letterbox upscalers.
 //!
-//! Per RULES.md, the stretch + bilinear paths are split into
-//! one-fn-per-page. The stretch pages are `upscale_stretch_into`,
+//! The stretch and bilinear paths are split into separate modules.
+//! The stretch pages are `upscale_stretch_into`,
 //! `stretch_cache`, `stretch_u32_rows`, `stretch_byte_rows` (+ a
 //! sibling `stretch_byte_rows_tests.rs`). The bilinear pages are
 //! `bilinear_row` (public entry + scalar fallback) +

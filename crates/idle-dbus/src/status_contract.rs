@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: Apache-2.0
-// perf: T3 · metric: iterative; cost scales with its input, not with a fixed bound · check: test
 // Copyright 2026 IdleScreen
 
 //! D-Bus / CLI status field contract — package-gate stable surface.

@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-// perf: T2 · bench: hot_path · on-demand only; not gated · check: bench
 //! Bounded shutdown of the overlay presenter.
 //!
 //! `Drop for OverlayPresenter` is the one place where the daemon
@@ -101,7 +100,7 @@ mod tests {
 }
 
 // Measurement seam, re-exported to `lib.rs::bench_exports` for the
-// `[[bench]] hot_path` target. See RULES.md §5.
+// `[[bench]] hot_path` target.
 #[doc(hidden)]
 pub mod bench_exports {
     pub use super::join_with_timeout;

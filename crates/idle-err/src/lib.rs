@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: Apache-2.0
-// perf: T3 · metric: iterative; cost scales with its input, not with a fixed bound · check: review
 // Copyright 2026 IdleScreen
 
 //! Minimal error plumbing replacing `anyhow`: a boxed error with context

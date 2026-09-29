@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-// perf: T1 · bench: draw_frame · gate: perf-baseline.json · check: bench
 //! Fade-in BGRA buffer by elapsed fractional duration.
 //!
 //! SSE2 fast path on x86_64, processing 4 BGRA pixels per
@@ -39,7 +38,7 @@ pub fn apply_fade_in(pixels: &mut [u8], elapsed: Duration) {
     // SSE2 reads/writes 16 bytes = 4 BGRA pixels at a time. Iterate
     // on 16-byte chunks first; the tail handles any 4-byte slice the
     // 16-byte grid didn't cover (0–3 leftover BGRA pixels).
-    let mut chunks = pixels.chunks_exact_mut(16);
+    let (chunks, remainder) = pixels.as_chunks_mut::<16>();
 
     #[cfg(target_arch = "x86_64")]
     {
@@ -47,21 +46,21 @@ pub fn apply_fade_in(pixels: &mut [u8], elapsed: Duration) {
             // SAFETY: SSE2 is baseline on x86_64 and we just
             // confirmed it via the runtime feature probe above.
             // The mult=0 case was short-circuited earlier in this fn.
-            unsafe { apply_fade_sse2(&mut chunks, mult) };
+            unsafe { apply_fade_sse2(chunks, mult) };
         } else {
-            apply_fade_scalar_16(&mut chunks, mult);
+            apply_fade_scalar_16(chunks, mult);
         }
     }
     #[cfg(not(target_arch = "x86_64"))]
     {
-        apply_fade_scalar_16(&mut chunks, mult);
+        apply_fade_scalar_16(chunks, mult);
     }
 
     // Per-pixel tail (when the buffer length isn't a multiple of 16
     // — should be unreachable for width * height * 4 BGRA frames
     // since 1080p and 1440p both have widths divisible by 4 and
     // heights even; the safe path is non-SIMD on the leftover).
-    for chunk in chunks.into_remainder().chunks_exact_mut(4) {
+    for chunk in remainder.as_chunks_mut::<4>().0 {
         chunk[0] = ((u32::from(chunk[0]) * mult + 128) >> 8) as u8;
         chunk[1] = ((u32::from(chunk[1]) * mult + 128) >> 8) as u8;
         chunk[2] = ((u32::from(chunk[2]) * mult + 128) >> 8) as u8;
@@ -76,7 +75,7 @@ pub fn apply_fade_in(pixels: &mut [u8], elapsed: Duration) {
 #[cfg(target_arch = "x86_64")]
 #[target_feature(enable = "sse2")]
 #[allow(unsafe_op_in_unsafe_fn, clippy::cast_ptr_alignment)]
-unsafe fn apply_fade_sse2(chunks: &mut std::slice::ChunksExactMut<'_, u8>, mult: u32) {
+unsafe fn apply_fade_sse2(chunks: &mut [[u8; 16]], mult: u32) {
     use std::arch::x86_64::{
         _mm_add_epi16, _mm_loadu_si128, _mm_mullo_epi16, _mm_packus_epi16, _mm_set1_epi16,
         _mm_srli_epi16, _mm_storeu_si128, _mm_unpackhi_epi8, _mm_unpacklo_epi8,
@@ -84,13 +83,13 @@ unsafe fn apply_fade_sse2(chunks: &mut std::slice::ChunksExactMut<'_, u8>, mult:
     let mult_v = _mm_set1_epi16(mult as i16);
     let bias = _mm_set1_epi16(128);
     let zero = _mm_set1_epi16(0);
-    for chunk in chunks {
+    for chunk in chunks.iter_mut() {
         let ptr = chunk.as_mut_ptr();
-        // SAFETY: 16 bytes — `chunks_exact_mut(16)` guarantees
+        // SAFETY: 16 bytes — `as_chunks_mut::<16>()` guarantees
         // exactly one full 16-byte window per iteration. The load
         // is `storeu` (handles unaligned); we never read past the
         // slice's end because the iterator is bounded by
-        // `chunks_exact_mut`.
+        // `as_chunks_mut`.
         unsafe {
             let v = _mm_loadu_si128(ptr as *const _);
             let lo = _mm_unpacklo_epi8(v, zero);
@@ -112,9 +111,9 @@ unsafe fn apply_fade_sse2(chunks: &mut std::slice::ChunksExactMut<'_, u8>, mult:
 /// Scalar fallback. Processes one BGRA pixel at a time using the
 /// same `(v * mult + 128) >> 8` rounding as the SSE2 path so the
 /// two are bit-identical when SSE2 is unavailable or disabled.
-fn apply_fade_scalar_16(chunks: &mut std::slice::ChunksExactMut<'_, u8>, mult: u32) {
-    for chunk in chunks {
-        for pixel in chunk.chunks_exact_mut(4) {
+fn apply_fade_scalar_16(chunks: &mut [[u8; 16]], mult: u32) {
+    for chunk in chunks.iter_mut() {
+        for pixel in chunk.as_chunks_mut::<4>().0 {
             pixel[0] = ((u32::from(pixel[0]) * mult + 128) >> 8) as u8;
             pixel[1] = ((u32::from(pixel[1]) * mult + 128) >> 8) as u8;
             pixel[2] = ((u32::from(pixel[2]) * mult + 128) >> 8) as u8;

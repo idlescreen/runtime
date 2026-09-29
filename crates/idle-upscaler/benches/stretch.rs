@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
-// perf: T3 · metric: contains unsafe; cost depends on what the caller passes in · check: review
 // Copyright 2026 IdleScreen
 
 //! Bench harness for `idle-upscaler`. Backs the T1 and T2 pages under
-//! `src/cpu/` (tier table: `.github/RULES.md` §4).
+//! `src/cpu/`.
 //!
 //! Two kinds of measurement live here. **Whole path**:
 //! [`FrameUpscaler::upscale_stretch_into`] and
@@ -14,9 +13,6 @@
 //!
 //! Inputs are wrapped in `std::hint::black_box` so the compiler can't
 //! constant-fold the source bytes or hoist the `out` allocation.
-//!
-//! Every page named by a `// perf:` label in this crate has a bench
-//! here; `scripts/check-perf-labels.sh` fails CI if one goes missing.
 //!
 //! ```bash
 //! cargo bench --bench stretch
@@ -72,9 +68,11 @@ fn make_src(w: u32, h: u32) -> Vec<u8> {
 /// [`make_src`] reinterpreted as one `u32` per pixel, so
 /// `stretch_u32_rows` is measured on the aligned path it ships on.
 fn make_src_u32(w: u32, h: u32) -> Vec<u32> {
-    make_src(w, h)
-        .chunks_exact(4)
-        .map(|p| u32::from_ne_bytes([p[0], p[1], p[2], p[3]]))
+    let src = make_src(w, h);
+    src.as_chunks::<4>()
+        .0
+        .iter()
+        .map(|p| u32::from_ne_bytes(*p))
         .collect()
 }
 

@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: Apache-2.0
-// perf: T3 · metric: crosses a process or socket boundary; dominated by IPC latency · check: test
 // Copyright 2026 IdleScreen
 
 //! Geometry helpers for layer-shell overlays (fullscreen savers vs panel inset).

@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-// perf: T3 · metric: crosses a process or socket boundary; dominated by IPC latency · check: test
 
 //! Background idle daemon: Wayland idle detection, overlay presentation, D-Bus API.
 //!
@@ -37,7 +36,7 @@ pub use tick_loop::tick_loop_until_shutdown;
 // `[[bench]] draw_frame` target. Lives here because `consume_events`
 // and `power_watcher` are *this* module's children — Rust privacy
 // flows downward, so the crate root cannot name them directly, but the
-// owner always can. See RULES.md §5.
+// owner always can.
 #[doc(hidden)]
 pub mod bench_exports {
     pub use super::consume_events::consume_events;

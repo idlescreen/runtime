@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: Apache-2.0
-// perf: T3 · metric: lock-sensitive; cost depends on contention the caller creates · check: test
 // Copyright 2026 IdleScreen
 
 //! CPU upscaling for trance screensaver frames.
@@ -30,11 +29,8 @@ mod cpu;
 ///
 /// The `cpu` module is private, so a `[[bench]]` target — which compiles
 /// as its own crate — can only reach [`FrameUpscaler`]. That is not
-/// enough: the T1 pages inside `cpu` each name a distinct bench target
-/// symbol (`stretch_u32_rows`, `bilinear_row`, …) and the CI linter
-/// checks that the bench source actually calls the function its page
-/// claims to cover. Without this escape hatch the T1 labels would be
-/// unfalsifiable.
+/// enough: internal functions inside `cpu` (`stretch_u32_rows`, `bilinear_row`, …)
+/// are exercised by the bench harness; this seam exports them for measurement.
 ///
 /// Mirrors the convention already used by every saver crate — see
 /// `savers/ripple/src/lib.rs::bench_exports`. `#[doc(hidden)]` keeps it

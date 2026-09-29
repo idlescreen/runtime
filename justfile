@@ -11,7 +11,7 @@ build:
 
 # Build a release binary (with hard-coded debug info for crash reports)
 build-debug:
-    cargo build --release --workspace --profile=release-with-debug
+    cargo build --workspace --profile=release-with-debug
 
 # Run the full test suite
 test:
@@ -72,12 +72,12 @@ qa-package-gate:
 
 # Host/preview regression units (no display; subset of package gate)
 qa-unit:
-    cargo test -p idle-cli -p idle-daemon -p idle-ipc -p wayland-present
+    cargo test -p idle-daemon -p idle-ipc -p idle-dbus -p wayland-present
     @echo "QA unit regression suite passed."
 
 # Named filters covering morning+preview+fullscreen regressions (docs/QA_REGRESSION.md)
 qa-unit-named:
-    cargo test -p idle-cli -p idle-daemon -p idle-ipc -p wayland-present -- \
+    cargo test -p idle-daemon -p idle-ipc -p idle-dbus -p wayland-present -- \
         doctor_rules inhibitors_fmt ignore_logind merge_drops merge_includes \
         recovery_plan present_cooldown thrash hold_idle exit_process \
         preview_starts idle_decision path_safety hw_scaling \

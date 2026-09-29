@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-// perf: T3 · metric: lock-sensitive; cost depends on contention the caller creates · check: review
 
 //! Helpers for poisoned `Mutex`/`RwLock` guards.
 //!

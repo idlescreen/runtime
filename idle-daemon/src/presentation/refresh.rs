@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-// perf: T3 · metric: lock-sensitive; cost depends on contention the caller creates · check: test
 
 use std::thread;
 use std::time::{Duration, Instant};
@@ -96,9 +95,7 @@ mod tests {
 
     #[test]
     fn multi_output_sync_policy_min_max_primary() {
-        let _g = crate::TEST_ENV_LOCK
-            .lock()
-            .unwrap_or_else(|e| e.into_inner());
+        let _g = crate::TEST_ENV_LOCK.lock().unwrap();
         let layouts = vec![layout(1, 60), layout(2, 144)];
         let primary = layouts[1];
         let prior = std::env::var("IDLE_PRESENT_SYNC").ok();

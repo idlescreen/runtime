@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-// perf: T3 · metric: iterative; cost scales with its input, not with a fixed bound · check: review
 
 use super::CellRenderer;
 

@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-// perf: T3 · metric: test-only page, not compiled into the shipped binary · check: test
 //! Integration test suite validating state synchronization across idle-daemon and idle-dbus.
 
 use idle_daemon::config::DaemonConfig;

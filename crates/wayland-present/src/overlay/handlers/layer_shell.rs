@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-// perf: T3 · metric: crosses a process or socket boundary; dominated by IPC latency · check: review
 
 use wayland_client::{Connection, Dispatch, QueueHandle};
 use wayland_protocols_wlr::layer_shell::v1::client::{zwlr_layer_shell_v1, zwlr_layer_surface_v1};

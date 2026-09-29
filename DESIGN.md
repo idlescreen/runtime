@@ -5,7 +5,7 @@ we render content during idle and yield back cleanly.
 
 **Org:** [github.com/idlescreen](https://github.com/idlescreen)
 **Human brand:** IdleScreen · **Ship names:** `idle-*` / `idlescreen*`
-**Process:** `RULES.md` (used while coding) · gates in `scripts/`
+**Process:** `AGENTS.md` (used while coding) · gates in `scripts/`
 
 ---
 
@@ -100,6 +100,6 @@ install, not user-configured.
 
 ## See also
 
-- `RULES.md` — always-on philosophy + hygiene bundle (used while
+- `AGENTS.md` — house laws & engineering standards (used while
   coding)
 

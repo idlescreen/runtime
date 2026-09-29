@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-// perf: T3 · metric: crosses a process or socket boundary; dominated by IPC latency · check: test
 
 //! UDS peer identity: XDG runtime dir + SO_PEERCRED checks.
 
@@ -70,9 +69,7 @@ mod tests {
     #[test]
     fn runtime_socket_dir_requires_xdg() {
         // XDG_RUNTIME_DIR is shared with pidfile tests — serialize.
-        let _guard = crate::TEST_ENV_LOCK
-            .lock()
-            .unwrap_or_else(|e| e.into_inner());
+        let _guard = crate::TEST_ENV_LOCK.lock().unwrap();
         // SAFETY: test isolation; holds TEST_ENV_LOCK.
         unsafe {
             std::env::remove_var("XDG_RUNTIME_DIR");

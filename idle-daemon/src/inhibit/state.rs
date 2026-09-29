@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-// perf: T3 · metric: crosses a process or socket boundary; dominated by IPC latency · check: review
 
 use std::collections::HashSet;
 use std::sync::Mutex;

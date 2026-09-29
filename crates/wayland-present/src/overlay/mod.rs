@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-// perf: T3 · metric: bounded single-pass work; no syscalls, no locks, no allocation on the steady path · check: review
 
 //! Layer-shell overlay thread: binds outputs, manages SHM buffers, routes input.
 //!
@@ -28,7 +27,7 @@ pub use event_thread::spawn_event_thread;
 // `[[bench]] hot_path` target. It lives here rather than in `lib.rs`
 // because `epoll` is *this* module's private child: Rust privacy
 // flows downward, so a sibling/parent cannot name it, but the owner
-// always can. See RULES.md §5.
+// always can.
 #[doc(hidden)]
 pub mod bench_exports {
     pub use super::epoll::{drain_eventfd, epoll_ctl_add, make_epoll};

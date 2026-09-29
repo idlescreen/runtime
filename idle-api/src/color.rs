@@ -1,4 +1,3 @@
-// perf: T3 · metric: per-cell colour arithmetic; zero allocations on the steady path, asserted below · check: test
 /// Convert HSL to RGB. `h` is in degrees [0, 360); `s`, `l` in [0.0, 1.0];
 /// returns `(r, g, b)` with each channel in `[0, 255]`.
 ///

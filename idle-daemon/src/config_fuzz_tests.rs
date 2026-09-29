@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-// perf: T3 · metric: test-only page, not compiled into the shipped binary · check: test
 
 //! Fuzz tests for the config parser: every byte pattern that can appear in a
 //! user-editable config.yaml must parse without panic and leave the config in

@@ -1,4 +1,3 @@
-// perf: T3 · metric: bounded single-pass work; no syscalls, no locks, no allocation on the steady path · check: review
 //! Platform & Architecture (Deployment).
 //! Vendored from `runner::toolkit::platform.rs`. The full module also includes
 //! WebPlatform, MobilePlatform, and EmbeddedPlatform stubs (not used by the

@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-// perf: T3 · metric: spawns a subprocess; cost is dominated by fork/exec, not by this page · check: review
 
 //! Per-vendor sampling implementations for the GPU budget.
 //!

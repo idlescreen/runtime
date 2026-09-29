@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-// perf: T3 · metric: spawns a subprocess; cost is dominated by fork/exec, not by this page · check: review
 
 //! Plugin manifest signature verification (Sprint 04 trust-surface).
 //!

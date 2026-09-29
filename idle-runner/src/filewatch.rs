@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-// perf: T3 · metric: contains unsafe; cost depends on what the caller passes in · check: review
 
 //! Minimal inotify-based directory watcher — replaces `notify` for the two
 //! watch patterns used here: "tell me when file X in directory Y is created

@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: Apache-2.0
-// perf: T3 · metric: bounded single-pass work; no syscalls, no locks, no allocation on the steady path · check: review
 // Copyright 2026 IdleScreen
 
 // mimalloc is the default allocator on glibc Linux (x86_64 + aarch64);

@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: Apache-2.0
-// perf: T3 · metric: touches the filesystem; dominated by syscall latency, not by this page's logic · check: review
 // Copyright 2026 IdleScreen
 
 //! `.idleplugin.toml` capability manifest (schema v1, `DECISION-MANIFEST-01`).

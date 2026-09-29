@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: Apache-2.0
-// perf: T3 · metric: contains unsafe; cost depends on what the caller passes in · check: review
 // Copyright 2026 IdleScreen
 
 use std::ffi::CString;

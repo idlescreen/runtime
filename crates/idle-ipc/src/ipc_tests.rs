@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: Apache-2.0
-// perf: T3 · metric: test-only page, not compiled into the shipped binary · check: test
 // Copyright 2026 IdleScreen
 //
 // Split out of `lib.rs` to keep that file under the 256-line cap (F-016/PROBE F-006).

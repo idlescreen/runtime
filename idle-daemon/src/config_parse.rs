@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: Apache-2.0
-// perf: T3 · metric: allocates on the call path; cost scales with allocation count · check: review
 // Copyright 2026 IdleScreen
 
 //! Key/value application for daemon `config.yaml` lines.

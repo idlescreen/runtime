@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-// perf: T3 · metric: touches the filesystem; dominated by syscall latency, not by this page's logic · check: review
 
 //! Per-saver CPU budget enforcement (Sprint 03 B).
 //!

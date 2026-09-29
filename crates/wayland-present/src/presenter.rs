@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: MIT
-// perf: T3 · metric: contains unsafe; cost depends on what the caller passes in · check: review
 
 //! Wayland overlay presenter (entry point).
 //!
 //! Owns the event thread, the frame pool, the wake-fd, and the
-//! command channel. Per RULES.md the rest of the page is split:
+//! command channel. Supporting modules:
 //!
 //! - [`crate::frame_pool`] — `FramePool` type alias + recycler.
 //! - [`crate::drop_presenter`] — `Drop for OverlayPresenter`

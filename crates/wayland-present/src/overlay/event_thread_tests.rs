@@ -1,18 +1,13 @@
 // SPDX-License-Identifier: MIT
-// perf: T3 · metric: test-only page, not compiled into the shipped binary · check: test
 
 //! QA tests + criterion bench for [`super::event_thread`].
 //!
 //! Sibling to `event_thread.rs` so the page that defines the
-//! dispatcher stays under the 256-line cap while the tests stay
-//! colocated with the function they cover (RULES.md §4).
-
+//! dispatcher stays under the 256-line cap while tests stay
+//! colocated with the function they cover.
 use crate::overlay::command::PresenterCommand;
 
-// Pulled in with `#[path]` as `mod tests`, so clippy reads the module
-// name as a repeat of the file's. The name is the org-wide convention
-// for `#[cfg(test)] mod tests` (RULES.md §4); only the file name is
-// page-specific.
+// Pulled in with `#[path]` as `mod tests`, which clippy reads as module inception.
 #[allow(clippy::module_inception)]
 #[cfg(test)]
 mod tests {
@@ -25,11 +20,9 @@ mod tests {
         // The bounded `sync_channel(1)` this test used to create was
         // a deadlock: the first `send` filled the slot, the second
         // blocked forever because no receiver was running, and libtest
-        // joins every test thread before exit — so it hung
-        // `cargo test --workspace` rather than failing. RULES.md §4
-        // now requires a test to terminate; a test whose subject is a
-        // non-blocking consumer must never put back-pressure on the
-        // producer side.
+        // joins every test thread before exit — so it hung rather than
+        // failing. A test whose subject is a non-blocking consumer must
+        // never put back-pressure on the producer side.
         //
         // Dropping `tx` before the drain loop is load-bearing: it
         // makes `try_recv` terminate on `Disconnected` rather than

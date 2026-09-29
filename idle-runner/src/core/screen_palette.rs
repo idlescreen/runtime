@@ -1,4 +1,3 @@
-// perf: T3 · metric: bounded single-pass work; no syscalls, no locks, no allocation on the steady path · check: test
 //! Backend-agnostic screen palette for r* pixel-rendered effects (GDI + console).
 //!
 //! **Taxonomy Classification**: System Role (Purpose - Application Software).

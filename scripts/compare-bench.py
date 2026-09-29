@@ -90,7 +90,6 @@ ADVISORY_PCT = 5.0
 GATE_PCT = 100.0
 
 # Criterion group names that are T1 — the only ones the gate may fail
-# the build on. See the tier table in .github/RULES.md §5.
 #
 # Everything else in the baseline (T2 groups such as `stretch_cache`,
 # `consume_events`, `power_watcher`) is measured and reported but never
@@ -131,7 +130,6 @@ MIN_GATED_MEDIAN_NS = 10.0
 # Per-group advisory thresholds, matched left-to-right on the bench name
 # prefix. This is the "worth a look" line, not the build-failing one —
 # see GATE_PCT above. All T1 groups under the tier table in
-# .github/RULES.md §5.
 BENCH_THRESHOLDS = (
     ("letterbox/", 5.0),
     ("stretch/", 5.0),

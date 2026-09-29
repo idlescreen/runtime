@@ -1,4 +1,3 @@
-// perf: T3 · metric: bounded single-pass work; no syscalls, no locks, no allocation on the steady path · check: review
 //! Toolkit module: platform-specific helpers. Vendored from `runner::toolkit`.
 //! Slim version: only the queries that screensaver-security actually uses are
 //! preserved. The full library has many more (monitors, GPU, IPC, eBPF,

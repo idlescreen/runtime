@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
-// perf: T3 · metric: contains unsafe; cost depends on what the caller passes in · check: review
 // Copyright 2026 IdleScreen
 
 //! Bench harness for `wayland-present`. Backs the T2 pages that live in
-//! this crate (tier table: `.github/RULES.md` §4).
+//! this crate.
 //!
 //! These pages are **T2 — benched on demand, not gated**. They sit on
 //! the frame path and are lock/alloc/syscall-sensitive, but none is
@@ -21,9 +20,6 @@
 //! - `frame_pool`      — buffer acquire/release around one Wayland commit
 //! - `overlay::epoll`  — epoll setup and the self-wake eventfd drain
 //! - `drop_presenter`  — the bounded join on presenter teardown
-//!
-//! Every page named by a `// perf:` label in this crate has a bench
-//! here; `scripts/check-perf-labels.sh` fails CI if one goes missing.
 
 use std::hint::black_box as bb;
 use std::sync::Arc;

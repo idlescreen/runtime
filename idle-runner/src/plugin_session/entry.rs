@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-// perf: T3 · metric: contains unsafe; cost depends on what the caller passes in · check: review
 
 //! Entry-point resolution: manifest entry validation, ABI-version gating
 //! symbol lookup, and the C-ABI vs legacy-Rust dispatch.

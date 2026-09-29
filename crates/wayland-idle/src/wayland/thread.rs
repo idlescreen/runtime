@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-// perf: T3 · metric: crosses a process or socket boundary; dominated by IPC latency · check: review
 
 use std::os::fd::{AsFd, AsRawFd, FromRawFd, OwnedFd};
 use std::sync::Arc;
@@ -32,27 +31,25 @@ pub fn spawn_event_thread(
     is_alive: Arc<AtomicBool>,
 ) -> JoinHandle<()> {
     thread::spawn(move || {
-        match run_event_loop(is_idle, shutdown, timeout_rx, initial_timeout_mins) {
-            Ok(()) => {
-                let _ = ready_tx.send(Ok(()));
-            }
-            Err(error) => {
-                let _ = ready_tx.send(Err(error.to_string()));
-                idle_log::warn!("wayland-idle: {error}");
-            }
+        if let Err(error) = run_event_loop(ready_tx, is_idle, shutdown, timeout_rx, initial_timeout_mins) {
+            idle_log::warn!("wayland-idle: {error}");
         }
         is_alive.store(false, Ordering::SeqCst);
     })
 }
 
 fn run_event_loop(
+    ready_tx: Sender<Result<(), String>>,
     is_idle: Arc<AtomicBool>,
     shutdown: Arc<AtomicBool>,
     timeout_rx: Receiver<u32>,
     initial_timeout_mins: u32,
 ) -> Result<(), String> {
-    let connection =
-        Connection::connect_to_env().map_err(|_| "failed to connect to Wayland".to_string())?;
+    let connection = Connection::connect_to_env().map_err(|e| {
+        let err = format!("failed to connect to Wayland: {e}");
+        let _ = ready_tx.send(Err(err.clone()));
+        err
+    })?;
 
     let mut event_queue = connection.new_event_queue();
     let queue = event_queue.handle();
@@ -67,15 +64,24 @@ fn run_event_loop(
         timeout_mins: initial_timeout_mins,
     };
 
-    event_queue
-        .roundtrip(&mut state)
-        .map_err(|_| "initial registry roundtrip failed".to_string())?;
+    if let Err(e) = event_queue.roundtrip(&mut state) {
+        let err = format!("initial registry roundtrip failed: {e}");
+        let _ = ready_tx.send(Err(err.clone()));
+        return Err(err);
+    }
 
     // Startup readiness. A compositor without ext-idle-notify-v1 (GNOME /
     // Mutter) or without a seat leaves this monitor permanently reporting
     // "not idle", so treat it as a failure the caller must see — never as a
     // healthy monitor that simply never fires.
-    state.refresh_idle_notification()?;
+    if let Err(e) = state.refresh_idle_notification() {
+        let err = e.to_string();
+        let _ = ready_tx.send(Err(err.clone()));
+        return Err(err);
+    }
+
+    // Handshake success: signal readiness to the constructor before entering the event loop!
+    let _ = ready_tx.send(Ok(()));
 
     // Tier-2 step 3 (perf plan §"Wayland epoll"): replace the per-iteration
     // `libc::poll(pollfd, 1, 100ms)` with an epoll fd that watches the

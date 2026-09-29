@@ -22,8 +22,7 @@ parking_lot = { workspace = true }
 [dev-dependencies]
 criterion = { workspace = true }
 
-# T2-only, on-demand. Deliberately absent from perf.yml — see
-# .github/RULES.md §4 on what T2 promises.
+# On-demand benchmark. Deliberately absent from perf.yml.
 [[bench]]
 name = "hot_path"
 harness = false

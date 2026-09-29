@@ -1,4 +1,3 @@
-// perf: T3 · metric: lock-sensitive; cost depends on contention the caller creates · check: test
 //! Environment helpers for IdleScreen host and plugins.
 //!
 //! Protocol keys are `IDLE_*` only (hard cut; no `TRANCE_*` dual-read).

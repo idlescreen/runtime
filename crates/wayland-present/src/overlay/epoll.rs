@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-// perf: T2 · bench: hot_path · on-demand only; not gated · check: bench
 //! Epoll fd setup + eventfd draining for the overlay event thread.
 //!
 //! The Wayland socket + the daemon's self-wake eventfd are the two
@@ -10,7 +9,7 @@
 //! These three are `pub` rather than `pub(super)` solely so
 //! `overlay/mod.rs::bench_exports` can re-export them to the
 //! `hot_path` bench target. `mod overlay` is private in `lib.rs`, so
-//! `pub` here adds no reachable path on its own — see RULES.md §5.
+//! `pub` here adds no reachable path outside the crate.
 
 // Create a new epoll fd. CLOEXEC so a child fork doesn't inherit it.
 pub fn make_epoll() -> Result<libc::c_int, &'static str> {

@@ -1,4 +1,3 @@
-// perf: T3 · metric: crosses a process or socket boundary; dominated by IPC latency · check: test
 use super::*;
 
 // `init` mutates the global threshold AND reads RUST_LOG — every env-

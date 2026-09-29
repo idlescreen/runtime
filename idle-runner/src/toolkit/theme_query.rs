@@ -1,4 +1,3 @@
-// perf: T3 · metric: touches the filesystem; dominated by syscall latency, not by this page's logic · check: review
 //! Theme loader and parsing queries.
 //! Linux-only (Windows accent/dark detection removed).
 

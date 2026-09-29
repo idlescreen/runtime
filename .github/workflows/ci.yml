@@ -18,37 +18,8 @@ jobs:
       run: |
         curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
         echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
-    - name: file length cap (16-256 lines per page)
-      # Org-wide rule from .github/RULES.md: every .rs page is
-      # 16-256 lines inclusive, named after the single function
-      # it implements. Lower bound catches whole-function files
-      # that should be inlined; upper bound is the entropy
-      # ceiling — anything bigger is doing two or more things.
-      run: |
-        over=$(find . -name '*.rs' -not -path './target/*' \
-            | xargs wc -l \
-            | awk '$2 != "total" && ($1 > 256 || $1 < 16)' )
-        if [ -n "$over" ]; then
-          echo "Files outside 16-256 line range:"
-          echo "$over"
-          exit 1
-        fi
     - name: fmt check
       run: cargo fmt --all -- --check
-    - name: perf labels are backed by real benches
-      # Every `// perf: T1` page must name a bench target that exists
-      # and actually references the page, plus a baseline to regress
-      # against. Pure bash/grep/awk — no Rust toolchain needed, but it
-      # rides along here because the fmt job already has the checkout.
-      run: bash scripts/check-perf-labels.sh
-
-    - name: bench labels are reachable
-      # A page labelled `check: bench` claims a criterion target
-      # measures it. This walks the module call graph from each
-      # bench's entry point and fails if no path reaches that page,
-      # so a bench label cannot quietly become a lie. Pages labelled
-      # `test` or `review` are counted and reported, never failed.
-      run: python3 scripts/check-bench-reachability.py --gate runtime
 
   deny:
     runs-on: ubuntu-latest

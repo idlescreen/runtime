@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-// perf: T3 · metric: lock-sensitive; `with_caption` borrows so the present path allocates zero times, asserted by caption_tests.rs · check: test
 
 //! Native-resolution caption text published by screensaver plugins.
 

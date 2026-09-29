@@ -8,7 +8,6 @@
 #   - debug idle-daemon binary (built if missing)
 #
 # Auth honesty: does NOT set IDLE_DBUS_TRUST_ALL. Chaos exercises GetStatus
-# and process survival — not the control-auth allowlist (see RULES.md §1.4).
 #
 # Env flags:
 #   CHAOS_ALLOW_NO_WAYLAND=1  — allow running without Wayland; C1/C2 will fail

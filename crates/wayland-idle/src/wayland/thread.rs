@@ -31,7 +31,13 @@ pub fn spawn_event_thread(
     is_alive: Arc<AtomicBool>,
 ) -> JoinHandle<()> {
     thread::spawn(move || {
-        if let Err(error) = run_event_loop(ready_tx, is_idle, shutdown, timeout_rx, initial_timeout_mins) {
+        if let Err(error) = run_event_loop(
+            ready_tx,
+            is_idle,
+            shutdown,
+            timeout_rx,
+            initial_timeout_mins,
+        ) {
             idle_log::warn!("wayland-idle: {error}");
         }
         is_alive.store(false, Ordering::SeqCst);

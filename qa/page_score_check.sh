@@ -44,15 +44,17 @@ check("coverage", not missing and not stale and not dupes,
 # as PAGE_RULE.md. Skipped when the snapshot has no bin data at all.
 def is_shim(path):
     try:
+        has_code = False
         with open(path) as f:
             for raw in f:
                 s = raw.strip()
-                if not s or s.startswith("//") or s.startswith("#["):
+                if not s or s.startswith("//") or s.startswith("#[") or s.startswith("#!["):
                     continue
                 if not (s.startswith("mod ") or s.startswith("use ")
                         or s.startswith("pub")):
                     return False
-        return True
+                has_code = True
+        return has_code
     except OSError:
         return False
 has_bin = any(p.get("bin_bytes") is not None for p in pages)
@@ -90,6 +92,18 @@ schema_bad = [p.get("path", "?") for p in pages
               or ("bin_bytes" in p and p["bin_bytes"] is not None and not isinstance(p["bin_bytes"], int))
               or ("heat_pct" in p and p["heat_pct"] is not None and not isinstance(p["heat_pct"], (int, float)))]
 check("schema", not schema_bad, f"{len(schema_bad)} bad entries, e.g. {schema_bad[:3]}")
+
+# 6. Page rule: 16 <= lines <= 256. Shims skip the 16-line floor; the 256-line
+# ceiling applies to every page unconditionally.
+sizing_bad = []
+for p in pages:
+    lines = p.get("lines", 0)
+    path = p.get("path", "")
+    if lines > 256:
+        sizing_bad.append(f"{path} ({lines} > 256)")
+    elif lines < 16 and not is_shim(path):
+        sizing_bad.append(f"{path} ({lines} < 16, not shim)")
+check("page-size", not sizing_bad, f"{len(sizing_bad)} bad entries, e.g. {sizing_bad[:3]}")
 
 sys.exit(1 if fails else 0)
 EOF

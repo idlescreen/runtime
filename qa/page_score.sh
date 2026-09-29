@@ -228,15 +228,17 @@ def is_shim(path):
     # after dropping blanks, comments, and attributes. Shims declare no
     # code, so any binary attribution to them is noise.
     try:
+        has_code = False
         with open(path) as f:
             for raw in f:
                 s = raw.strip()
-                if not s or s.startswith("//") or s.startswith("#["):
+                if not s or s.startswith("//") or s.startswith("#[") or s.startswith("#!["):
                     continue
                 if not (s.startswith("mod ") or s.startswith("use ")
                         or s.startswith("pub")):
                     return False
-        return True
+                has_code = True
+        return has_code
     except OSError:
         return False
 import subprocess

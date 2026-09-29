@@ -1,6 +1,6 @@
 {
  "repo": "runtime",
- "rev": "3bbb695",
+ "rev": "107ab8a",
  "dirty": true,
  "pages": [
   {
@@ -257,7 +257,7 @@
   },
   {
    "path": "./crates/idle-upscaler/src/lib.rs",
-   "lines": 254,
+   "lines": 248,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 0

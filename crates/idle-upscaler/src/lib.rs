@@ -6,7 +6,7 @@
 //! **Note (2026):** This crate is named `idle-upscaler` (renamed from
 //! `trance-gpu` in this release). The historical name implied GPU
 //! acceleration, but the implementation is always CPU-based — see
-//! [`gpu_enabled`] which unconditionally returns `false`. The rename
+//! [`FrameUpscaler::using_gpu`] which unconditionally returns `false`. The rename
 //! makes the actual behavior unambiguous.
 //!
 //! Two paths exist for upscaling a low-resolution simulation grid to the
@@ -61,12 +61,6 @@ impl FilterMode {
     }
 }
 
-/// Whether GPU upscaling should be attempted.
-///
-/// **Always returns `false`.** This function exists only as a placeholder
-/// for historical callers that branched on GPU availability. The crate
-/// contains no GPU code; all upscaling is CPU-based (see [`cpu`]).
-///
 /// Simulation grid scale factor in `(0, 1]`. Lower values render chunkier effects
 /// that are upscaled to the monitor resolution.
 pub fn render_scale() -> f32 {

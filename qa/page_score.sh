@@ -28,7 +28,7 @@ TMP="$(mktemp -d /tmp/page-score.XXXXXX)"
 trap 'rm -rf "$TMP"' EXIT
 
 # ---- pages + lines (exact) ----
-find . -name '*.rs' -not -path '*/target/*' -not -path '*/.git/*' | sort > "$TMP/pages.txt"
+find . -name '*.rs' -not -path '*/target/*' -not -path '*/.git/*' -not -path './runtime/*' -not -path './downstream/*' | sort > "$TMP/pages.txt"
 : > "$TMP/lines.tsv"
 while IFS= read -r f; do
   printf '%s\t%s\n' "$f" "$(wc -l < "$f")" >> "$TMP/lines.tsv"

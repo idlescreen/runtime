@@ -12,7 +12,7 @@ SCORE="${1:-page-score.json}"
 cd "$ROOT" || exit 1
 [ -f "$SCORE" ] || { echo "FAIL: $SCORE not found (run qa/page_score.sh first)"; exit 1; }
 
-find . -name '*.rs' -not -path '*/target/*' -not -path '*/.git/*' | sort > /tmp/pages.check.$$
+find . -name '*.rs' -not -path '*/target/*' -not -path '*/.git/*' -not -path './runtime/*' -not -path './downstream/*' | sort > /tmp/pages.check.$$
 trap 'rm -f /tmp/pages.check.$$' EXIT
 
 python3 - "$SCORE" /tmp/pages.check.$$ <<'EOF'

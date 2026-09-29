@@ -133,13 +133,6 @@ jobs:
         curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain none
         echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
         (cd downstream && rustup show)
-    - name: Cache cargo registry + build artifacts (downstream layout)
-      uses: Swatinem/rust-cache@v2
-      with:
-        workspaces: |
-          downstream -> .
-          runtime -> .
-        cache-on-failure: true
     - name: Wire path-dep layout
       # Idempotent on purpose: a fresh checkout can already carry a
       # `runtime` entry (a stale symlink or a directory), and plain

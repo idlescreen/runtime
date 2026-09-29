@@ -24,8 +24,7 @@ fn f102_missing_version_symbol_refuses() {
     let dir = crate::test_util::tempdir().expect("tempdir");
     let so = dir.path().join("libscreensaver_x.idleplugin.toml.so");
     std::fs::write(&so, b"not-an-elf").expect("write fake so");
-    let result =
-        crate::idle_runner::run_plugin_fullscreen(so.to_string_lossy().as_ref());
+    let result = crate::idle_runner::run_plugin_fullscreen(so.to_string_lossy().as_ref());
     unsafe { std::env::remove_var("IDLE_ALLOW_UNSIGNED_PLUGINS") };
     let err = result.expect_err("dlopen failure must surface as an error");
     // run_plugin_fullscreen returns Result<_, Box<dyn Error>>; we
@@ -53,9 +52,8 @@ fn f102_real_saver_with_version_symbol_loads() {
     let default_beams_so = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("../../idle-saver-beams/target/debug/libscreensaver_beams.so");
     let beams_so = std::path::PathBuf::from(
-        std::env::var("IDLE_TEST_BEAMS_SO").unwrap_or_else(|_| {
-            default_beams_so.to_string_lossy().to_string()
-        }),
+        std::env::var("IDLE_TEST_BEAMS_SO")
+            .unwrap_or_else(|_| default_beams_so.to_string_lossy().to_string()),
     );
     if !beams_so.exists() {
         eprintln!(
@@ -65,9 +63,7 @@ fn f102_real_saver_with_version_symbol_loads() {
         return;
     }
     unsafe { std::env::set_var("IDLE_ALLOW_UNSIGNED_PLUGINS", "1") };
-    let result = crate::idle_runner::run_plugin_fullscreen(
-        beams_so.to_string_lossy().as_ref(),
-    );
+    let result = crate::idle_runner::run_plugin_fullscreen(beams_so.to_string_lossy().as_ref());
     unsafe { std::env::remove_var("IDLE_ALLOW_UNSIGNED_PLUGINS") };
     // The plugin must NOT report a version error. The result is Ok
     // when the run loop exits cleanly (e.g. on a keypress in the

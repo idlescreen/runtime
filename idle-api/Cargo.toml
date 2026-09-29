@@ -20,3 +20,8 @@ wayland-present = { path = "../crates/wayland-present" }
 name = "minimal_saver"
 path = "examples/minimal_saver.rs"
 
+[[example]]
+name = "blank_saver"
+path = "examples/blank_saver.rs"
+
+

@@ -6,6 +6,7 @@ pub mod init;
 pub mod lifecycle;
 pub mod methods;
 pub mod peer;
+#[allow(clippy::module_inception)]
 pub mod session;
 #[cfg(test)]
 mod tests;

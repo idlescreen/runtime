@@ -1,7 +1,7 @@
 name: boneyard
 on:
-  push: { branches: [ master, main ] }
-  pull_request: { branches: [ master, main ] }
+  push: { branches: [ master ] }
+  pull_request: { branches: [ master ] }
   workflow_dispatch:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

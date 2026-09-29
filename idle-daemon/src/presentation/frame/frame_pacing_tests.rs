@@ -58,3 +58,21 @@ fn clamped_present_fps_yields_finite_frame_duration() {
         assert!(d < Duration::from_secs(2));
     }
 }
+
+#[test]
+fn power_throttling_on_battery_clamps_fps_and_tick() {
+    let (fps, tick) = super::apply_power_throttling(60.0, 60.0, true);
+    assert!((fps - 30.0).abs() < 1e-3);
+    assert!((tick - 30.0).abs() < 1e-3);
+
+    let (fps_low, tick_low) = super::apply_power_throttling(20.0, 10.0, true);
+    assert!((fps_low - 20.0).abs() < 1e-3);
+    assert!((tick_low - 15.0).abs() < 1e-3);
+}
+
+#[test]
+fn power_throttling_on_ac_restores_nominal() {
+    let (fps, tick) = super::apply_power_throttling(144.0, 60.0, false);
+    assert!((fps - 144.0).abs() < 1e-3);
+    assert!((tick - 60.0).abs() < 1e-3);
+}

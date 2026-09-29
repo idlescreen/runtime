@@ -84,6 +84,31 @@ pub(crate) struct Predicate {
 }
 
 impl PowerWatcher {
+    /// Construct a new watcher handle initialized with an explicit battery state.
+    pub(crate) fn from_initial_state(on_battery: bool) -> Self {
+        Self {
+            inner: Arc::new(Inner {
+                cached_on_battery: AtomicBool::new(on_battery),
+                notify_count: AtomicU64::new(0),
+                predicate_lock: Mutex::new(Predicate { notify_count: 0 }),
+                condvar: Condvar::new(),
+            }),
+        }
+    }
+
+    /// Notify that the power state has updated.
+    pub(crate) fn notify_update(&self, on_battery: bool) {
+        self.inner
+            .cached_on_battery
+            .store(on_battery, Ordering::Release);
+        let next = self.inner.notify_count.fetch_add(1, Ordering::AcqRel) + 1;
+        {
+            let mut guard = self.inner.predicate_lock.lock();
+            guard.notify_count = next;
+        }
+        self.inner.condvar.notify_all();
+    }
+
     /// Cached, atomic snapshot of `battery::is_on_battery()`. Held here
     /// so consumers can read it via a single atomic load once the
     /// watcher handle is plumbed through to OODA. The field is updated
@@ -145,10 +170,6 @@ impl PowerWatcher {
 // the `draw_frame` bench target.
 #[doc(hidden)]
 pub mod bench_exports {
-    use super::{Condvar, Inner, Mutex, Predicate};
-    use std::sync::Arc;
-    use std::sync::atomic::{AtomicBool, AtomicU64};
-
     pub use super::{PowerWatcher, WaitOutcome};
 
     /// Bench-only handle. The production handle is built in
@@ -156,14 +177,7 @@ pub mod bench_exports {
     /// `Inner` with no I/O so the `wait_for_heartbeat` lock/condvar
     /// path can be measured in isolation.
     pub fn new_bench_handle() -> PowerWatcher {
-        PowerWatcher {
-            inner: Arc::new(Inner {
-                cached_on_battery: AtomicBool::new(false),
-                notify_count: AtomicU64::new(0),
-                predicate_lock: Mutex::new(Predicate { notify_count: 0 }),
-                condvar: Condvar::new(),
-            }),
-        }
+        PowerWatcher::from_initial_state(false)
     }
 }
 
@@ -173,13 +187,7 @@ mod tests {
 
     #[test]
     fn wait_returns_stopped_when_stop_already_set() {
-        let inner = Arc::new(Inner {
-            cached_on_battery: AtomicBool::new(false),
-            notify_count: AtomicU64::new(0),
-            predicate_lock: Mutex::new(Predicate { notify_count: 0 }),
-            condvar: Condvar::new(),
-        });
-        let watcher = PowerWatcher { inner };
+        let watcher = PowerWatcher::from_initial_state(false);
         let stop = AtomicBool::new(true);
         let outcome = watcher.wait_for_heartbeat(&stop, HEARTBEAT);
         assert_eq!(outcome, WaitOutcome::Stopped);
@@ -187,13 +195,7 @@ mod tests {
 
     #[test]
     fn wait_returns_heartbeat_on_deadline() {
-        let inner = Arc::new(Inner {
-            cached_on_battery: AtomicBool::new(false),
-            notify_count: AtomicU64::new(0),
-            predicate_lock: Mutex::new(Predicate { notify_count: 0 }),
-            condvar: Condvar::new(),
-        });
-        let watcher = PowerWatcher { inner };
+        let watcher = PowerWatcher::from_initial_state(false);
         let stop = AtomicBool::new(false);
         let start = Instant::now();
         let outcome = watcher.wait_for_heartbeat(&stop, Duration::from_millis(50));
@@ -207,15 +209,8 @@ mod tests {
 
     #[test]
     fn wait_returns_notified_on_generation_bump() {
-        let inner = Arc::new(Inner {
-            cached_on_battery: AtomicBool::new(false),
-            notify_count: AtomicU64::new(0),
-            predicate_lock: Mutex::new(Predicate { notify_count: 0 }),
-            condvar: Condvar::new(),
-        });
-        let watcher = PowerWatcher {
-            inner: inner.clone(),
-        };
+        let watcher = PowerWatcher::from_initial_state(false);
+        let inner = watcher.inner.clone();
         let stop = AtomicBool::new(false);
         // Fire a notify on a sibling thread so the wait returns early.
         let inner_clone = inner.clone();

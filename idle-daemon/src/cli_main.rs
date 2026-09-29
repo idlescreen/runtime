@@ -28,6 +28,8 @@ pub fn run() -> idle_err::Result<()> {
         .set(idle_runner::toolkit::sys_info::get_primary_monitor_bounds);
     let _ = idle_api::IS_SECONDARY_MONITOR_CALLBACK
         .set(idle_runner::toolkit::sys_info::is_secondary_monitor);
+    let _ =
+        idle_api::audio::AUDIO_BANDS_CALLBACK.set(idle_runner::toolkit::audio::query_audio_bands);
 
     let args: Vec<String> = std::env::args().collect();
 

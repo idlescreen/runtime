@@ -68,6 +68,7 @@ pub fn initialize_ipc_session(
         header.cols = cols as u32;
         header.rows = rows as u32;
         header.frame_counter = 0;
+        header.audio_bands = [0.0; 4];
     }
 
     let current_exe =

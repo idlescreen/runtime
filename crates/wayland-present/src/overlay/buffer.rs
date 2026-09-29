@@ -38,6 +38,27 @@ impl Drop for MappedBuffer {
 }
 
 impl MappedBuffer {
+    /// Return the mapped pixel buffer as a byte slice.
+    pub fn as_slice(&self) -> &[u8] {
+        let stride = self.width.saturating_mul(4);
+        let length = stride.saturating_mul(self.height) as usize;
+        if self.mapped_ptr.is_null() || length > self.mapped_len {
+            return &[];
+        }
+        // SAFETY: `mapped_ptr` is non-null and points to `mapped_len` bytes from a successful
+        // mmap call in `allocate_buffer`. The memory is valid for reads of `length` bytes
+        // for the entire lifetime of `&self`.
+        unsafe { std::slice::from_raw_parts(self.mapped_ptr, length) }
+    }
+
+    pub fn width(&self) -> u32 {
+        self.width
+    }
+
+    pub fn height(&self) -> u32 {
+        self.height
+    }
+
     pub fn write_pixels(&mut self, pixels: &[u8]) -> bool {
         let stride = self.width.saturating_mul(4);
         let length = stride.saturating_mul(self.height) as usize;

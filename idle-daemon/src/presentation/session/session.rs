@@ -163,6 +163,12 @@ impl IpcPluginSession {
     }
 
     pub fn tick(&mut self, frame_dt: Duration) {
+        if let Some(ref shm) = self.shm {
+            // SAFETY: mapping is live; updating audio bands before frame tick.
+            unsafe {
+                shm.header_mut().audio_bands = idle_api::audio::query_audio_bands();
+            }
+        }
         if let Some(ref mut socket) = self.socket {
             let cmd = IpcCommand::TickAndDraw {
                 dt_micros: frame_dt.as_micros() as u64,

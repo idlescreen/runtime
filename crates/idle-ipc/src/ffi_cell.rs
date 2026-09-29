@@ -50,11 +50,13 @@ impl From<FfiTerminalCell> for TerminalCell {
 }
 
 #[repr(C)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct SharedMemoryHeader {
     pub magic: u32,
     pub cols: u32,
     pub rows: u32,
     pub frame_counter: u64,
+    pub audio_bands: [f32; 4],
 }
 
 pub const SHM_MAGIC: u32 = 0x54524e43;

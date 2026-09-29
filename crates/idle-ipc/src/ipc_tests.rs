@@ -64,6 +64,21 @@ fn test_compute_shm_size_zero_dimensions() {
 }
 
 #[test]
+fn test_shm_header_audio_bands() {
+    let header = SharedMemoryHeader {
+        magic: SHM_MAGIC,
+        cols: 80,
+        rows: 24,
+        frame_counter: 42,
+        audio_bands: [0.1, 0.4, 0.7, 0.9],
+    };
+    assert_eq!(header.audio_bands[0], 0.1);
+    assert_eq!(header.audio_bands[1], 0.4);
+    assert_eq!(header.audio_bands[2], 0.7);
+    assert_eq!(header.audio_bands[3], 0.9);
+}
+
+#[test]
 fn test_compute_shm_size_overflow_is_none() {
     assert!(compute_shm_size(usize::MAX, 2).is_none());
     assert!(compute_shm_size(usize::MAX / 2, usize::MAX / 2).is_none());

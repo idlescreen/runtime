@@ -50,7 +50,7 @@ mod stress_tests {
         assert_eq!(ptr % header_align, 0, "Header pointer unaligned!");
 
         let header_sz = std::mem::size_of::<SharedMemoryHeader>();
-        assert_eq!(header_sz, 24);
+        assert_eq!(header_sz, 40);
         let cells_ptr = ptr + header_sz;
         assert_eq!(cells_ptr % cell_align, 0, "Cells pointer unaligned!");
 

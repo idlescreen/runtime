@@ -92,6 +92,7 @@ impl SessionState {
         overlay: &mut MonitorOverlay,
         width: u32,
         height: u32,
+        damage: Option<super::super::damage::DamageRect>,
     ) -> bool {
         let Some(buffer) = overlay.buffers[overlay.current_buffer].as_ref() else {
             return false;
@@ -136,9 +137,16 @@ impl SessionState {
         );
 
         overlay.surface.attach(Some(&buffer.wl_buffer), 0, 0);
-        overlay
-            .surface
-            .damage_buffer(0, 0, width as i32, height as i32);
+        if let Some(rect) = damage {
+            overlay.surface.damage_buffer(
+                rect.x as i32,
+                rect.y as i32,
+                rect.width as i32,
+                rect.height as i32,
+            );
+        } else {
+            overlay.surface.damage_buffer(0, 0, 0, 0);
+        }
 
         // Request frame callback to wake up `poll()` on VSync, enabling backpressure.
         let _ = overlay.surface.frame(queue, ());

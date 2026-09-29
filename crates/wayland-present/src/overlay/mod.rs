@@ -14,6 +14,7 @@
 
 pub(crate) mod buffer;
 pub(crate) mod command;
+pub mod damage;
 pub(crate) mod epoll;
 pub(crate) mod error_utils;
 pub(crate) mod event_thread;

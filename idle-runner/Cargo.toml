@@ -18,3 +18,4 @@ idle-upscaler = { workspace = true }
 idle-log = { workspace = true }
 wgpu = "28.0.0"
 tokio = { workspace = true }
+zbus = { workspace = true, features = ["blocking-api"] }

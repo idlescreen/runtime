@@ -18,7 +18,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use crate::controller::DaemonController;
-use crate::daemon::power_thread::PowerWatcherThread;
+use crate::daemon::power::upower::spawn_power_watcher;
 use crate::daemon::power_watcher::{HEARTBEAT, PowerWatcher, WaitOutcome};
 use crate::daemon::watchdog;
 use crate::ooda::OodaLoopController;
@@ -44,12 +44,9 @@ pub fn tick_loop_until_shutdown(controller: Arc<DaemonController>) -> idle_err::
 
     // PowerWatcher: spawned before the loop so the first OODA tick reads
     // the cached value populated by the watcher's startup sample. If
-    // inotify fails (sandbox / no `/sys`), fall back to the prior
-    // 250 ms sleep so the daemon still functions — the cost is the same
-    // cached fs reads we used to pay per tick, but only on platforms
-    // where the kernel-side state isn't observable.
-    let power: PowerWatcher = match PowerWatcherThread::spawn() {
-        Ok(thread) => thread.handle(),
+    // both UPower and inotify fail, fall back to the prior 250 ms sleep.
+    let (power, _watcher_backend): (PowerWatcher, _) = match spawn_power_watcher() {
+        Ok(backend) => (backend.handle(), Some(backend)),
         Err(err) => {
             idle_log::warn!(
                 "power_watcher: falling back to polling battery state ({err}); \

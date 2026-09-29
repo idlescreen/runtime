@@ -30,7 +30,7 @@ idle-upscaler = { workspace = true }
 idle-ipc = { path = "../crates/idle-ipc" }
 wayland-idle = { workspace = true }
 libc = { workspace = true }
-zbus = { workspace = true }
+zbus = { workspace = true, features = ["blocking-api"] }
 tokio = { workspace = true }
 idle-err = { workspace = true }
 idle-log = { workspace = true }

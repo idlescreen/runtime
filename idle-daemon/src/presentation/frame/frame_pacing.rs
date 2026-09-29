@@ -31,7 +31,19 @@ pub(super) fn clamp_tick_hz(tick_hz: f32) -> f32 {
     }
 }
 
+/// Compute throttled (or nominal) presentation FPS and simulation tick Hz.
+pub fn apply_power_throttling(nominal_fps: f32, nominal_tick: f32, on_battery: bool) -> (f32, f32) {
+    if on_battery {
+        (nominal_fps.min(30.0), nominal_tick.clamp(15.0, 30.0))
+    } else {
+        (nominal_fps, nominal_tick)
+    }
+}
+
 pub(crate) struct FramePacing {
+    nominal_fps: f32,
+    nominal_tick: f32,
+    on_battery: bool,
     present_fps: f32,
     tick_hz: f32,
     frame_duration: Duration,
@@ -48,32 +60,33 @@ impl FramePacing {
         sessions: &mut [ActiveSession],
     ) -> Self {
         let present_refresh = presentation_refresh_hz(layouts, primary);
-        let mut present_fps = target_fps(present_refresh);
-        let mut tick_hz = simulation_tick_hz();
+        let mut nominal_fps = target_fps(present_refresh);
+        let mut nominal_tick = simulation_tick_hz();
 
-        let sys = idle_runner::toolkit::sys_info::get_system_info();
-        if sys.power_status.contains("Battery") {
-            present_fps = present_fps.min(30.0);
-            tick_hz = tick_hz.min(30.0);
+        if present_refresh > 0 {
+            nominal_fps = nominal_fps.min(present_refresh as f32);
+            nominal_tick = nominal_tick.min(present_refresh as f32);
+        }
+
+        let nominal_fps = clamp_present_fps(nominal_fps);
+        let nominal_tick = clamp_tick_hz(nominal_tick);
+
+        let on_battery = crate::daemon::battery::is_on_battery();
+        let (present_fps, tick_hz) = apply_power_throttling(nominal_fps, nominal_tick, on_battery);
+        if on_battery {
             idle_log::info!(
                 "Battery power detected: capping physics simulation and rendering frame rate targets to 30 FPS/Hz"
             );
         }
 
-        if present_refresh > 0 {
-            present_fps = present_fps.min(present_refresh as f32);
-            tick_hz = tick_hz.min(present_refresh as f32);
-        }
-
-        // target_fps / simulation_tick_hz already floor at ≥15; clamp again so a
-        // future regression cannot pass 0/NaN into Duration::from_secs_f32.
-        let present_fps = clamp_present_fps(present_fps);
-        let tick_hz = clamp_tick_hz(tick_hz);
         let frame_duration = Duration::from_secs_f32(1.0 / present_fps);
         for s in sessions {
             s.session.set_simulation_rate(tick_hz);
         }
         Self {
+            nominal_fps,
+            nominal_tick,
+            on_battery,
             present_fps,
             tick_hz,
             frame_duration,
@@ -110,6 +123,9 @@ impl FramePacing {
             primary,
             independent_rendering,
             options,
+            self.nominal_fps,
+            self.nominal_tick,
+            self.on_battery,
             self.present_fps,
             self.tick_hz,
             self.frame_duration,

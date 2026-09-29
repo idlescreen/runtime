@@ -17,7 +17,9 @@
 //! Theme data is best-effort: when COSMIC settings are unavailable, GTK settings
 //! and sane defaults are used before plugins query [`query_current_palette`].
 
+pub mod audio;
 pub mod platform;
+pub mod portal;
 pub mod sys_info;
 pub mod theme_query;
 

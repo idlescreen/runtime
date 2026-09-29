@@ -13,6 +13,7 @@ mod m2_concurrency_stress_tests;
 pub(crate) mod pidfile;
 pub(crate) mod power;
 pub(crate) use power::battery;
+#[allow(unused_imports)]
 pub(crate) use power::thread as power_thread;
 pub(crate) use power::watcher as power_watcher;
 pub(crate) mod presentation;

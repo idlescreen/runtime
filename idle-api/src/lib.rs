@@ -34,6 +34,7 @@
 /// (legacy `trance_api_version` still accepted by the loader when present).
 pub const API_VERSION: u32 = 1;
 
+pub mod audio;
 pub mod c_abi;
 mod callbacks;
 pub mod caption;
@@ -54,6 +55,7 @@ pub use env_dual::{
 };
 mod system_info;
 
+pub use audio::{AudioBands, query_audio_bands};
 pub use c_abi::{CAbiSaver, IdleCell, IdleSaverOps, OPS_SYMBOL};
 pub use callbacks::{
     PALETTE_CALLBACK, SYSTEM_INFO_CALLBACK, get_system_info, query_current_palette,

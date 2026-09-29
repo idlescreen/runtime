@@ -4,4 +4,7 @@
 
 pub mod battery;
 pub mod thread;
+pub mod upower;
+#[cfg(test)]
+mod upower_tests;
 pub mod watcher;

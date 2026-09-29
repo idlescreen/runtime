@@ -94,6 +94,11 @@ pub fn run_ipc_runner(
                     .map_err(|e| format!("failed to send Ack: {}", e))?;
             }
             IpcCommand::TickAndDraw { dt_micros } => {
+                // SAFETY: mapping live; read audio bands from SHM header into process global.
+                unsafe {
+                    let header = shm.header_mut();
+                    idle_api::audio::global_audio_bands().set_all(&header.audio_bands);
+                }
                 // Cap pathological dt (e.g. u64::MAX micros) to 1s of sim time.
                 let dt_micros = dt_micros.min(1_000_000);
                 session.tick(Duration::from_micros(dt_micros));

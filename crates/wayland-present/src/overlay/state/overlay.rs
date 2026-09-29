@@ -162,6 +162,22 @@ impl SessionState {
             return;
         }
 
+        let prev_idx = overlay.current_buffer;
+        let damage = if let Some(ref prev_buf) = overlay.buffers[prev_idx] {
+            if prev_buf.width() == width && prev_buf.height() == height {
+                super::super::damage::compute_damage_with_threshold(
+                    prev_buf.as_slice(),
+                    pixels,
+                    width,
+                    height,
+                )
+            } else {
+                Some(super::super::damage::DamageRect::full(width, height))
+            }
+        } else {
+            Some(super::super::damage::DamageRect::full(width, height))
+        };
+
         overlay.current_buffer ^= 1;
 
         if !super::super::buffer::ensure_frame_buffer(
@@ -176,7 +192,7 @@ impl SessionState {
         }
 
         let queue = self.queue.clone();
-        if !Self::commit_frame_buffer(&queue, overlay, width, height) {
+        if !Self::commit_frame_buffer(&queue, overlay, width, height, damage) {
             idle_log::error!(
                 output_id,
                 "wayland-present: frame buffer missing after ensure; skipping frame"

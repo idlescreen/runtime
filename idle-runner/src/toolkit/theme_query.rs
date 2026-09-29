@@ -96,7 +96,16 @@ fn load_global_theme_raw() -> (Option<(u8, u8, u8)>, Option<bool>) {
                 }
             }
         }
+        if accent.is_none() || dark.is_none() {
+            let (portal_accent, portal_dark) = super::portal::query_portal_theme();
+            if accent.is_none() {
+                accent = portal_accent;
+            }
+            if dark.is_none() {
+                dark = portal_dark;
+            }
+        }
         return (accent, dark);
     }
-    (None, None)
+    super::portal::query_portal_theme()
 }

@@ -28,6 +28,10 @@ pub struct FrameLoopState<'a> {
     pub primary: OutputLayout,
     pub independent_rendering: bool,
     pub options: PresentationOptions,
+    pub nominal_fps: f32,
+    pub nominal_tick: f32,
+    pub on_battery: bool,
+    pub last_power_check: Instant,
     pub present_fps: f32,
     pub tick_hz: f32,
     pub frame_duration: Duration,
@@ -48,6 +52,9 @@ pub fn run_frame_loop(
     primary: OutputLayout,
     independent_rendering: bool,
     options: PresentationOptions,
+    nominal_fps: f32,
+    nominal_tick: f32,
+    on_battery: bool,
     present_fps: f32,
     tick_hz: f32,
     frame_duration: Duration,
@@ -89,6 +96,10 @@ pub fn run_frame_loop(
         primary,
         independent_rendering,
         options,
+        nominal_fps,
+        nominal_tick,
+        on_battery,
+        last_power_check: Instant::now(),
         present_fps,
         tick_hz,
         frame_duration,
@@ -104,6 +115,7 @@ pub fn run_frame_loop(
     while !state.stop.load(Ordering::Relaxed) && state.presenter.is_visible() {
         state.frame_counter += 1;
         let frame_index = state.frame_counter;
+        check_power_state_update(&mut state);
         prepare_frame(&mut state)?;
         present_frame(&mut state);
         update_fps_counter(&mut state, frame_index);
@@ -199,5 +211,40 @@ fn sleep_interruptible(remaining: Duration, stop: &AtomicBool) {
         }
         let slice = (deadline - now).min(SLICE);
         thread::sleep(slice);
+    }
+}
+
+fn check_power_state_update(state: &mut FrameLoopState) {
+    if state.last_power_check.elapsed() < Duration::from_millis(500) {
+        return;
+    }
+    state.last_power_check = Instant::now();
+    let current_battery = crate::daemon::battery::is_on_battery();
+    if current_battery != state.on_battery {
+        state.on_battery = current_battery;
+        let (new_fps, new_tick) = super::frame_pacing::apply_power_throttling(
+            state.nominal_fps,
+            state.nominal_tick,
+            current_battery,
+        );
+        state.present_fps = new_fps;
+        state.tick_hz = new_tick;
+        state.frame_duration = Duration::from_secs_f32(1.0 / new_fps);
+        for s in state.sessions.iter_mut() {
+            s.session.set_simulation_rate(new_tick);
+        }
+        if current_battery {
+            idle_log::info!(
+                fps = new_fps,
+                tick = new_tick,
+                "power: battery detected — clamped to 30 FPS and 15–30 Hz tick"
+            );
+        } else {
+            idle_log::info!(
+                fps = new_fps,
+                tick = new_tick,
+                "power: AC detected — restored nominal display refresh and tick rate"
+            );
+        }
     }
 }

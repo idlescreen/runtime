@@ -14,11 +14,18 @@ fn get_global_theme_path() -> Option<std::path::PathBuf> {
                 .ok()
                 .map(|home| std::path::PathBuf::from(home).join(".config"))
         })?;
-    for sub in ["idlescreen", "idle", "trance"] {
-        let p = base.join(sub).join("config.yaml");
-        if p.is_file() {
-            return Some(p);
-        }
+    let candidates = ["idlescreen", "idle", "trance"];
+    let existing: Vec<std::path::PathBuf> = candidates
+        .iter()
+        .map(|sub| base.join(sub).join("config.yaml"))
+        .filter(|p| p.is_file())
+        .collect();
+    if let Some(p) = existing.into_iter().max_by(|a, b| {
+        let m_a = a.metadata().and_then(|m| m.modified()).ok();
+        let m_b = b.metadata().and_then(|m| m.modified()).ok();
+        m_a.cmp(&m_b).then(std::cmp::Ordering::Greater)
+    }) {
+        return Some(p);
     }
     for sys in ["/etc/idlescreen/config.yaml", "/etc/idle/config.yaml"] {
         let p = std::path::PathBuf::from(sys);
@@ -27,7 +34,7 @@ fn get_global_theme_path() -> Option<std::path::PathBuf> {
         }
     }
     // Default write/read target for new installs.
-    Some(base.join("idle").join("config.yaml"))
+    Some(base.join("idlescreen").join("config.yaml"))
 }
 type ThemeSettings = (Option<(u8, u8, u8)>, Option<bool>);
 type CacheEntry = (Option<ThemeSettings>, Instant);

@@ -99,7 +99,7 @@ impl DaemonConfig {
         dirs
     }
 
-    /// Path used for **writes** and new installs (`~/.config/idle/config.yaml`).
+    /// Path used for **writes** and new installs (`~/.config/idlescreen/config.yaml`).
     pub fn get_config_path() -> Option<PathBuf> {
         if let Some(dir) = Self::config_dir_override() {
             return Some(dir.join("config.yaml"));
@@ -112,11 +112,11 @@ impl DaemonConfig {
         }
         Self::config_dir_candidates()
             .into_iter()
-            .find(|d| d.ends_with("idle") && !d.starts_with("/etc"))
+            .find(|d| (d.ends_with("idlescreen") || d.ends_with("idle")) && !d.starts_with("/etc"))
             .map(|d| d.join("config.yaml"))
     }
 
-    /// Resolve existing config for **reads**: prefer IdleScreen, fall back to legacy.
+    /// Resolve existing config for **reads**: prefer newest user edit, then IdleScreen candidate order.
     pub fn resolve_config_path() -> Option<PathBuf> {
         if let Some(dir) = Self::config_dir_override() {
             return Some(dir.join("config.yaml"));
@@ -125,11 +125,25 @@ impl DaemonConfig {
             .into_iter()
             .map(|d| d.join("config.yaml"))
             .collect();
-        candidates
+        let existing: Vec<PathBuf> = candidates.into_iter().filter(|p| p.is_file()).collect();
+        let user: Vec<PathBuf> = existing
             .iter()
-            .find(|p| p.is_file())
+            .filter(|p| !p.starts_with("/etc"))
             .cloned()
-            .or_else(|| candidates.into_iter().next())
+            .collect();
+        let pool = if user.is_empty() { existing } else { user };
+        pool.into_iter()
+            .max_by(|a, b| {
+                let m_a = a.metadata().and_then(|m| m.modified()).ok();
+                let m_b = b.metadata().and_then(|m| m.modified()).ok();
+                m_a.cmp(&m_b).then(std::cmp::Ordering::Greater)
+            })
+            .or_else(|| {
+                Self::config_dir_candidates()
+                    .into_iter()
+                    .next()
+                    .map(|d| d.join("config.yaml"))
+            })
     }
 
     pub fn load() -> Self {

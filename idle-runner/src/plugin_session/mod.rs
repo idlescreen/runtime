@@ -107,7 +107,7 @@ impl PluginSession {
     pub fn set_simulation_rate(&mut self, fps: f32) {
         // Finite, bounded Hz only — NaN/inf must not yield zero-duration busy loops.
         let hz = if fps.is_finite() {
-            fps.clamp(30.0, 240.0)
+            fps.clamp(15.0, 240.0)
         } else {
             30.0
         };

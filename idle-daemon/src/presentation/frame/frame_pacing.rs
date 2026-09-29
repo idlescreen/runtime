@@ -62,6 +62,7 @@ impl FramePacing {
 
         if present_refresh > 0 {
             present_fps = present_fps.min(present_refresh as f32);
+            tick_hz = tick_hz.min(present_refresh as f32);
         }
 
         // target_fps / simulation_tick_hz already floor at ≥15; clamp again so a

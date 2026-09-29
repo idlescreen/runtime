@@ -25,6 +25,7 @@ fn temp_plugin_path() -> PathBuf {
 
 #[test]
 fn enforce_sandbox_for_plugin_succeeds_on_modern_kernel() {
+    let _g = crate::ENV_LOCK.lock().unwrap();
     if !landlock_available() {
         eprintln!("skipping: Landlock unavailable on this kernel");
         return;
@@ -79,6 +80,7 @@ fn plugin_loaders_order_sandbox_before_library_new() {
 
 #[test]
 fn post_sandbox_denied_path_unreadable() {
+    let _g = crate::ENV_LOCK.lock().unwrap();
     if !landlock_available() {
         eprintln!("skipping: Landlock unavailable");
         return;

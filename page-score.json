@@ -1,7 +1,7 @@
 {
  "repo": "runtime",
- "rev": "4feff1c",
- "dirty": false,
+ "rev": "3bbb695",
+ "dirty": true,
  "pages": [
   {
    "path": "./crates/idle-dbus/src/client.rs",
@@ -446,7 +446,7 @@
   },
   {
    "path": "./crates/wayland-present/src/overlay/handlers/registry.rs",
-   "lines": 182,
+   "lines": 187,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
@@ -880,7 +880,7 @@
   },
   {
    "path": "./idle-daemon/src/config/mod.rs",
-   "lines": 230,
+   "lines": 244,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
@@ -894,7 +894,7 @@
   },
   {
    "path": "./idle-daemon/src/config/tests.rs",
-   "lines": 83,
+   "lines": 113,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
@@ -1349,7 +1349,7 @@
   },
   {
    "path": "./idle-daemon/src/presentation/frame/frame_pacing.rs",
-   "lines": 146,
+   "lines": 147,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
@@ -1909,7 +1909,7 @@
   },
   {
    "path": "./idle-runner/src/sandbox/tests.rs",
-   "lines": 155,
+   "lines": 157,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
@@ -2035,7 +2035,7 @@
   },
   {
    "path": "./idle-runner/src/toolkit/theme_query.rs",
-   "lines": 95,
+   "lines": 102,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 2

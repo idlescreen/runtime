@@ -118,12 +118,17 @@ impl Dispatch<wl_output::WlOutput, u32> for SessionState {
             ..
         } = event
         {
-            let refresh_hz = (refresh.max(1000) / 1000) as u32;
-            state
-                .output_refresh_hz
-                .insert(*output_id, refresh_hz.max(1));
+            let is_current = match flags {
+                WEnum::Value(wl_output::Mode::Current) => true,
+                WEnum::Unknown(val) => (val & 1) != 0,
+                WEnum::Value(_) => false,
+            };
 
-            if matches!(flags, WEnum::Value(wl_output::Mode::Current)) {
+            if is_current {
+                let refresh_hz = (refresh.max(1000) / 1000) as u32;
+                state
+                    .output_refresh_hz
+                    .insert(*output_id, refresh_hz.max(1));
                 state
                     .output_mode_size
                     .insert(*output_id, (width.max(0) as u32, height.max(0) as u32));

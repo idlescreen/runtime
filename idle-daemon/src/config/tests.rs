@@ -81,3 +81,33 @@ fn get_config_path_preserves_existing_idlescreen_file() {
     }
     let _ = std::fs::remove_dir_all(&tmp);
 }
+
+#[test]
+fn resolve_config_path_prefers_newer_modified_file_when_both_exist() {
+    let _env_guard = crate::TEST_ENV_LOCK.lock().unwrap();
+    let tmp = std::env::temp_dir().join(format!("idle-test-cfg-mtime-{}", std::process::id()));
+    let idlescreen_dir = tmp.join("idlescreen");
+    let idle_dir = tmp.join("idle");
+    std::fs::create_dir_all(&idlescreen_dir).unwrap();
+    std::fs::create_dir_all(&idle_dir).unwrap();
+    let idlescreen_file = idlescreen_dir.join("config.yaml");
+    let idle_file = idle_dir.join("config.yaml");
+
+    std::fs::write(&idlescreen_file, "idle_timeout_mins: 10\n").unwrap();
+    std::thread::sleep(std::time::Duration::from_millis(50));
+    std::fs::write(&idle_file, "idle_timeout_mins: 20\n").unwrap();
+
+    let prior_xdg = std::env::var("XDG_CONFIG_HOME").ok();
+    unsafe {
+        std::env::set_var("XDG_CONFIG_HOME", &tmp);
+    }
+
+    let resolved = DaemonConfig::resolve_config_path();
+    assert_eq!(resolved.as_ref(), Some(&idle_file));
+
+    match prior_xdg {
+        Some(v) => unsafe { std::env::set_var("XDG_CONFIG_HOME", v) },
+        None => unsafe { std::env::remove_var("XDG_CONFIG_HOME") },
+    }
+    let _ = std::fs::remove_dir_all(&tmp);
+}

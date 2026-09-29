@@ -18,6 +18,8 @@ jobs:
       run: |
         curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
         echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+    - name: Validate page-score.json
+      run: qa/page_score_check.sh
     - name: fmt check
       run: cargo fmt --all -- --check
 

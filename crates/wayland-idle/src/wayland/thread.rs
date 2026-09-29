@@ -205,10 +205,7 @@ fn epoll_add(
     // descriptor (we own it or it is the Wayland socket lifetime).
     let rc = unsafe { libc::epoll_ctl(epoll_fd, libc::EPOLL_CTL_ADD, fd, &mut event) };
     if rc < 0 {
-        return Err(format!(
-            "epoll_ctl(ADD, {fd}) failed: {}",
-            std::io::Error::last_os_error()
-        ));
+        return Err(format!("epoll_ctl(ADD, {fd}) failed: {}", std::io::Error::last_os_error()));
     }
     Ok(())
 }
@@ -235,14 +232,10 @@ fn dispatch_pending_events(
         guard
             .read()
             .map_err(|_| "failed to read Wayland events".to_string())?;
-        event_queue
-            .dispatch_pending(state)
-            .map_err(|_| "failed to dispatch Wayland events".to_string())?;
-    } else {
-        event_queue
-            .dispatch_pending(state)
-            .map_err(|_| "failed to dispatch Wayland events".to_string())?;
     }
+    event_queue
+        .dispatch_pending(state)
+        .map_err(|_| "failed to dispatch Wayland events".to_string())?;
 
     Ok(())
 }

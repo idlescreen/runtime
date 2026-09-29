@@ -1,0 +1,44 @@
+name: agents-sync
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  agents-sync:
+    name: Verify AGENTS.md Sync
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Check against canonical .github/AGENTS.md
+        run: |
+          CANONICAL_API="https://api.github.com/repos/idlescreen/.github/contents/AGENTS.md"
+          CANONICAL_RAW="https://raw.githubusercontent.com/idlescreen/.github/master/AGENTS.md"
+          _canonical=$(mktemp)
+          trap 'rm -f "$_canonical"' EXIT
+          
+          if ! curl -fsSL -H "Accept: application/vnd.github.v3.raw" "$CANONICAL_API" -o "$_canonical" 2>/dev/null; then
+            curl -fsSL "$CANONICAL_RAW" -o "$_canonical" || {
+              echo "WARNING: Could not reach upstream canonical AGENTS.md; skipping offline check."
+              exit 0
+            }
+          fi
+          
+          if ! cmp -s AGENTS.md "$_canonical"; then
+            echo "::error file=AGENTS.md::AGENTS.md has drifted from idlescreen/.github/AGENTS.md!" >&2
+            echo "=== Diff between canonical .github and this repository ===" >&2
+            diff -u "$_canonical" AGENTS.md || true
+            echo "To fix: copy from idlescreen/.github/AGENTS.md" >&2
+            exit 1
+          fi
+          echo "AGENTS.md is in sync with canonical .github repository."

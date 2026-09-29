@@ -86,6 +86,7 @@ pub(crate) struct Predicate {
 impl PowerWatcher {
     /// Construct a new watcher handle initialized with an explicit battery state.
     pub(crate) fn from_initial_state(on_battery: bool) -> Self {
+        super::battery::set_cached_on_battery(on_battery);
         Self {
             inner: Arc::new(Inner {
                 cached_on_battery: AtomicBool::new(on_battery),
@@ -98,6 +99,7 @@ impl PowerWatcher {
 
     /// Notify that the power state has updated.
     pub(crate) fn notify_update(&self, on_battery: bool) {
+        super::battery::set_cached_on_battery(on_battery);
         self.inner
             .cached_on_battery
             .store(on_battery, Ordering::Release);

@@ -19,6 +19,13 @@ pub struct ActiveSession {
     pub rows: usize,
 }
 
+impl ActiveSession {
+    /// Update the simulation tick rate on this active session.
+    pub fn set_simulation_rate(&mut self, rate_hz: f32) {
+        self.session.set_simulation_rate(rate_hz);
+    }
+}
+
 /// Per-frame loop locals: inputs + state mutated across iterations.
 pub struct FrameLoopState<'a> {
     pub presenter: &'a dyn OverlaySurface,
@@ -153,7 +160,7 @@ fn prepare_frame(state: &mut FrameLoopState) -> Result<(), String> {
                 ));
             }
             s.session.recover(s.cols, s.rows)?;
-            s.session.set_simulation_rate(state.tick_hz);
+            s.set_simulation_rate(state.tick_hz);
         }
         s.session.tick(frame_dt);
     }
@@ -194,10 +201,6 @@ fn update_fps_counter(state: &mut FrameLoopState, frame_index: u64) {
 
 /// Sleep up to `remaining`, polling `stop` every `SLICE` so a Ctrl-C
 /// or presenter-detach interrupts within a slice boundary.
-///
-/// Used as a fallback when the presenter has no frame signal (stub
-/// implementations, platform impls without vsync plumbing). Returns
-/// as soon as either `stop` flips or `remaining` elapses.
 fn sleep_interruptible(remaining: Duration, stop: &AtomicBool) {
     const SLICE: Duration = Duration::from_millis(2);
     let deadline = Instant::now() + remaining;
@@ -231,7 +234,7 @@ fn check_power_state_update(state: &mut FrameLoopState) {
         state.tick_hz = new_tick;
         state.frame_duration = Duration::from_secs_f32(1.0 / new_fps);
         for s in state.sessions.iter_mut() {
-            s.session.set_simulation_rate(new_tick);
+            s.set_simulation_rate(new_tick);
         }
         if current_battery {
             idle_log::info!(

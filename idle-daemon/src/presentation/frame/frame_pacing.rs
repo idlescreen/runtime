@@ -81,7 +81,7 @@ impl FramePacing {
 
         let frame_duration = Duration::from_secs_f32(1.0 / present_fps);
         for s in sessions {
-            s.session.set_simulation_rate(tick_hz);
+            s.set_simulation_rate(tick_hz);
         }
         Self {
             nominal_fps,

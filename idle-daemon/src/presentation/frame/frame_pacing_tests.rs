@@ -76,3 +76,35 @@ fn power_throttling_on_ac_restores_nominal() {
     assert!((fps - 144.0).abs() < 1e-3);
     assert!((tick - 60.0).abs() < 1e-3);
 }
+
+#[test]
+fn power_throttling_high_refresh_battery_and_ac() {
+    // 240Hz gaming display on battery clamps to 30 FPS / 30 Hz
+    let (fps_bat, tick_bat) = super::apply_power_throttling(240.0, 60.0, true);
+    assert!((fps_bat - 30.0).abs() < 1e-3);
+    assert!((tick_bat - 30.0).abs() < 1e-3);
+
+    // On AC, restored to full 240 FPS / 60 Hz nominal tick
+    let (fps_ac, tick_ac) = super::apply_power_throttling(240.0, 60.0, false);
+    assert!((fps_ac - 240.0).abs() < 1e-3);
+    assert!((tick_ac - 60.0).abs() < 1e-3);
+}
+
+#[test]
+fn dynamic_battery_cache_integration() {
+    crate::daemon::power::battery::set_cached_on_battery(true);
+    assert!(crate::daemon::battery::is_on_battery());
+    let (fps, tick) =
+        super::apply_power_throttling(60.0, 60.0, crate::daemon::battery::is_on_battery());
+    assert!((fps - 30.0).abs() < 1e-3);
+    assert!((tick - 30.0).abs() < 1e-3);
+
+    crate::daemon::power::battery::set_cached_on_battery(false);
+    assert!(!crate::daemon::battery::is_on_battery());
+    let (fps, tick) =
+        super::apply_power_throttling(60.0, 60.0, crate::daemon::battery::is_on_battery());
+    assert!((fps - 60.0).abs() < 1e-3);
+    assert!((tick - 60.0).abs() < 1e-3);
+
+    crate::daemon::power::battery::reset_cached_on_battery();
+}

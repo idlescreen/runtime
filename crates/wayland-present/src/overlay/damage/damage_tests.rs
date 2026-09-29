@@ -86,3 +86,48 @@ fn test_85_percent_threshold_guard() {
     // Should be clamped to full rect
     assert_eq!(res_large, Some(DamageRect::full(width, height)));
 }
+
+#[test]
+fn test_damage_zero_dimensions_or_short_buffer() {
+    let buf = vec![0u8; 64];
+    assert_eq!(compute_damage_rect(&buf, &buf, 0, 10), None);
+    assert_eq!(compute_damage_rect(&buf, &buf, 10, 0), None);
+
+    // Short buffer returns full damage fallback
+    let short_buf = vec![0u8; 10];
+    assert_eq!(
+        compute_damage_rect(&short_buf, &buf, 4, 4),
+        Some(DamageRect::full(4, 4))
+    );
+}
+
+#[test]
+fn test_damage_irregular_stride_and_boundary_pixels() {
+    // 17x11: width 17 is not a multiple of 8 (AVX2 32B) or 4 (NEON 16B)
+    let width = 17u32;
+    let height = 11u32;
+    let buf1 = fill_buffer(width, height, [0x00, 0x00, 0x00, 0xFF]);
+    let mut buf2 = buf1.clone();
+
+    // Modify top-left pixel (0, 0)
+    buf2[0] = 0xAA;
+    // Modify bottom-right pixel (16, 10)
+    let last_offset = (((10 * width) + 16) * 4) as usize;
+    buf2[last_offset] = 0xBB;
+
+    let res = compute_damage_rect(&buf1, &buf2, width, height);
+    assert_eq!(res, Some(DamageRect::new(0, 0, 17, 11)));
+}
+
+#[test]
+fn test_damage_rect_union_and_empty() {
+    let r1 = DamageRect::new(10, 10, 20, 20);
+    let r2 = DamageRect::new(15, 15, 30, 30);
+    let union = r1.union(&r2);
+    assert_eq!(union, DamageRect::new(10, 10, 35, 35));
+
+    let empty = DamageRect::new(0, 0, 0, 0);
+    assert!(empty.is_empty());
+    assert_eq!(r1.union(&empty), r1);
+    assert_eq!(empty.union(&r2), r2);
+}

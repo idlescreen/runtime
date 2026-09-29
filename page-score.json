@@ -1,6 +1,6 @@
 {
  "repo": "runtime",
- "rev": "d9599b6",
+ "rev": "87e644c",
  "dirty": true,
  "pages": [
   {
@@ -390,7 +390,7 @@
   },
   {
    "path": "./crates/wayland-present/src/overlay/damage/damage_tests.rs",
-   "lines": 88,
+   "lines": 133,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
@@ -1069,10 +1069,10 @@
   },
   {
    "path": "./idle-daemon/src/daemon/power/battery.rs",
-   "lines": 87,
+   "lines": 108,
    "bin_bytes": null,
    "heat_pct": null,
-   "reach": 8
+   "reach": 9
   },
   {
    "path": "./idle-daemon/src/daemon/power/mod.rs",
@@ -1104,7 +1104,7 @@
   },
   {
    "path": "./idle-daemon/src/daemon/power/watcher.rs",
-   "lines": 238,
+   "lines": 240,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 4
@@ -1412,7 +1412,7 @@
   },
   {
    "path": "./idle-daemon/src/presentation/frame/frame_loop.rs",
-   "lines": 250,
+   "lines": 253,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 4
@@ -1433,7 +1433,7 @@
   },
   {
    "path": "./idle-daemon/src/presentation/frame/frame_pacing_tests.rs",
-   "lines": 78,
+   "lines": 110,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 0

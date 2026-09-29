@@ -11,21 +11,40 @@ pub fn battery_should_inhibit(has_ac: bool, ac_online: bool, battery_discharging
     (has_ac && !ac_online) || battery_discharging
 }
 
-/// Read `/sys/class/power_supply` and apply [`battery_should_inhibit`].
+use std::sync::atomic::{AtomicBool, Ordering};
+
+static CACHED_ON_BATTERY: AtomicBool = AtomicBool::new(false);
+static CACHED_INITIALIZED: AtomicBool = AtomicBool::new(false);
+
+/// Update the globally cached battery state from the power watcher (UPower or sysfs inotify).
+pub fn set_cached_on_battery(on_battery: bool) {
+    CACHED_ON_BATTERY.store(on_battery, Ordering::Release);
+    CACHED_INITIALIZED.store(true, Ordering::Release);
+}
+
+/// Reset cached battery state (useful for tests).
+#[cfg(test)]
+pub fn reset_cached_on_battery() {
+    CACHED_INITIALIZED.store(false, Ordering::Release);
+}
+
+/// Read `/sys/class/power_supply` or cached state and apply [`battery_should_inhibit`].
 pub fn is_on_battery() -> bool {
+    if std::env::var("IDLE_TEST_MOCK_BATTERY").is_ok() {
+        return true;
+    }
+    if std::env::var("IDLE_TEST_MOCK_AC").is_ok() {
+        return false;
+    }
+    if CACHED_INITIALIZED.load(Ordering::Acquire) {
+        return CACHED_ON_BATTERY.load(Ordering::Acquire);
+    }
     #[cfg(test)]
     {
         false
     }
     #[cfg(not(test))]
     {
-        if std::env::var("IDLE_TEST_MOCK_BATTERY").is_ok() {
-            return true;
-        }
-        if std::env::var("IDLE_TEST_MOCK_AC").is_ok() {
-            return false;
-        }
-
         let path = std::path::Path::new("/sys/class/power_supply");
         let Ok(entries) = std::fs::read_dir(path) else {
             return false;
@@ -54,7 +73,9 @@ pub fn is_on_battery() -> bool {
             }
         }
 
-        battery_should_inhibit(has_ac, ac_online, battery_discharging)
+        let result = battery_should_inhibit(has_ac, ac_online, battery_discharging);
+        set_cached_on_battery(result);
+        result
     }
 }
 

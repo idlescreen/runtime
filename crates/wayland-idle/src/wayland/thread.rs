@@ -89,17 +89,8 @@ fn run_event_loop(
     // Handshake success: signal readiness to the constructor before entering the event loop!
     let _ = ready_tx.send(Ok(()));
 
-    // Tier-2 step 3 (perf plan §"Wayland epoll"): replace the per-iteration
-    // `libc::poll(pollfd, 1, 100ms)` with an epoll fd that watches the
-    // Wayland socket + an eventfd used as a wake channel. epoll scales to
-    // any number of fds without per-poll allocation, and the eventfd
-    // gives us a sub-millisecond shutdown signal that doesn't depend on
-    // `timeout_rx.try_recv()` happening to fire in time.
-    //
-    // The 100ms epoll_wait timeout remains as a safety net for the rare
-    // case where neither the Wayland socket nor the wake eventfd fires
-    // (e.g. compositor restart mid-poll). Without it the thread would
-    // block forever on a stale state.
+    // Epoll fd watches the Wayland socket + wake eventfd for sub-millisecond
+    // shutdown signaling with a 100ms safety net timeout.
     let wayland_fd = connection.as_fd().as_raw_fd();
 
     // Owned eventfd for shutdown signaling. `eventfd(0, EFD_CLOEXEC |
@@ -205,7 +196,10 @@ fn epoll_add(
     // descriptor (we own it or it is the Wayland socket lifetime).
     let rc = unsafe { libc::epoll_ctl(epoll_fd, libc::EPOLL_CTL_ADD, fd, &mut event) };
     if rc < 0 {
-        return Err(format!("epoll_ctl(ADD, {fd}) failed: {}", std::io::Error::last_os_error()));
+        return Err(format!(
+            "epoll_ctl(ADD, {fd}) failed: {}",
+            std::io::Error::last_os_error()
+        ));
     }
     Ok(())
 }

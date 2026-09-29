@@ -1,12 +1,12 @@
 {
  "repo": "runtime",
- "rev": "241ef2d",
- "dirty": true,
+ "rev": "1573ddb",
+ "dirty": false,
  "pages": [
   {
    "path": "./crates/idle-dbus/src/client.rs",
    "lines": 240,
-   "bin_bytes": 15336,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 8
   },
@@ -27,35 +27,35 @@
   {
    "path": "./crates/idle-dbus/src/locks.rs",
    "lines": 19,
-   "bin_bytes": 239,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
   {
    "path": "./crates/idle-dbus/src/service.rs",
    "lines": 150,
-   "bin_bytes": 5818,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
   },
   {
    "path": "./crates/idle-dbus/src/status_contract.rs",
    "lines": 109,
-   "bin_bytes": 337,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
   {
    "path": "./crates/idle-dbus/src/status.rs",
    "lines": 99,
-   "bin_bytes": 6363,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 2
   },
   {
    "path": "./crates/idle-err/src/lib.rs",
    "lines": 210,
-   "bin_bytes": 6958,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
   },
@@ -69,7 +69,7 @@
   {
    "path": "./crates/idle-ipc/src/ffi_cell.rs",
    "lines": 82,
-   "bin_bytes": 934,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 5
   },
@@ -97,28 +97,28 @@
   {
    "path": "./crates/idle-ipc/src/path_safety.rs",
    "lines": 182,
-   "bin_bytes": 651,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 3
   },
   {
    "path": "./crates/idle-ipc/src/protocol.rs",
    "lines": 138,
-   "bin_bytes": 4985,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 11
   },
   {
    "path": "./crates/idle-ipc/src/shm_cells.rs",
    "lines": 105,
-   "bin_bytes": 1907,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
   },
   {
    "path": "./crates/idle-ipc/src/shm.rs",
    "lines": 202,
-   "bin_bytes": 5422,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 2
   },
@@ -139,7 +139,7 @@
   {
    "path": "./crates/idle-log/src/lib.rs",
    "lines": 240,
-   "bin_bytes": 4402,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
   },
@@ -160,7 +160,7 @@
   {
    "path": "./crates/idle-upscaler/src/cpu/bilinear_avx2.rs",
    "lines": 181,
-   "bin_bytes": 4577,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 3
   },
@@ -188,14 +188,14 @@
   {
    "path": "./crates/idle-upscaler/src/cpu/bilinear_row.rs",
    "lines": 182,
-   "bin_bytes": 122,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 2
   },
   {
    "path": "./crates/idle-upscaler/src/cpu/letterbox.rs",
    "lines": 141,
-   "bin_bytes": 5433,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
@@ -209,14 +209,14 @@
   {
    "path": "./crates/idle-upscaler/src/cpu/sample.rs",
    "lines": 157,
-   "bin_bytes": 3124,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 3
   },
   {
    "path": "./crates/idle-upscaler/src/cpu/stretch_byte_rows.rs",
    "lines": 158,
-   "bin_bytes": 3014,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 3
   },
@@ -230,14 +230,14 @@
   {
    "path": "./crates/idle-upscaler/src/cpu/stretch_cache.rs",
    "lines": 88,
-   "bin_bytes": 453,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 5
   },
   {
    "path": "./crates/idle-upscaler/src/cpu/stretch_u32_rows.rs",
    "lines": 196,
-   "bin_bytes": 2876,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 2
   },
@@ -251,14 +251,14 @@
   {
    "path": "./crates/idle-upscaler/src/cpu/upscale_stretch_into.rs",
    "lines": 136,
-   "bin_bytes": 1787,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
   {
    "path": "./crates/idle-upscaler/src/lib.rs",
    "lines": 251,
-   "bin_bytes": 2236,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
   },
@@ -272,7 +272,7 @@
   {
    "path": "./crates/perf-test-support/src/lib.rs",
    "lines": 164,
-   "bin_bytes": 670,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
   },
@@ -286,14 +286,14 @@
   {
    "path": "./crates/wayland-idle/src/monitor.rs",
    "lines": 207,
-   "bin_bytes": 3705,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 3
   },
   {
    "path": "./crates/wayland-idle/src/wayland/handlers.rs",
    "lines": 83,
-   "bin_bytes": 2113,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
   },
@@ -307,14 +307,14 @@
   {
    "path": "./crates/wayland-idle/src/wayland/state.rs",
    "lines": 61,
-   "bin_bytes": 1792,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 2
   },
   {
    "path": "./crates/wayland-idle/src/wayland/thread.rs",
    "lines": 248,
-   "bin_bytes": 8940,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 33
   },
@@ -328,28 +328,28 @@
   {
    "path": "./crates/wayland-present/src/appearance.rs",
    "lines": 28,
-   "bin_bytes": 485,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 5
   },
   {
    "path": "./crates/wayland-present/src/drop_presenter.rs",
    "lines": 107,
-   "bin_bytes": 1357,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
   {
    "path": "./crates/wayland-present/src/frame_pool.rs",
    "lines": 126,
-   "bin_bytes": 2314,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 3
   },
   {
    "path": "./crates/wayland-present/src/frame_signal.rs",
    "lines": 190,
-   "bin_bytes": 1240,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 4
   },
@@ -363,14 +363,14 @@
   {
    "path": "./crates/wayland-present/src/output.rs",
    "lines": 50,
-   "bin_bytes": 1409,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 7
   },
   {
    "path": "./crates/wayland-present/src/overlay/buffer.rs",
    "lines": 186,
-   "bin_bytes": 3372,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 4
   },
@@ -384,21 +384,21 @@
   {
    "path": "./crates/wayland-present/src/overlay/epoll.rs",
    "lines": 128,
-   "bin_bytes": 3663,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 2
   },
   {
    "path": "./crates/wayland-present/src/overlay/error_utils.rs",
    "lines": 41,
-   "bin_bytes": 146,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
   {
    "path": "./crates/wayland-present/src/overlay/event_thread.rs",
    "lines": 245,
-   "bin_bytes": 12565,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 2
   },
@@ -412,21 +412,21 @@
   {
    "path": "./crates/wayland-present/src/overlay/handlers/buffer_objects.rs",
    "lines": 98,
-   "bin_bytes": 224,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
   },
   {
    "path": "./crates/wayland-present/src/overlay/handlers/input.rs",
    "lines": 72,
-   "bin_bytes": 590,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
   },
   {
    "path": "./crates/wayland-present/src/overlay/handlers/layer_shell.rs",
    "lines": 45,
-   "bin_bytes": 149,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 3
   },
@@ -440,7 +440,7 @@
   {
    "path": "./crates/wayland-present/src/overlay/handlers/registry.rs",
    "lines": 182,
-   "bin_bytes": 6113,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
@@ -454,28 +454,28 @@
   {
    "path": "./crates/wayland-present/src/overlay/state/mod.rs",
    "lines": 94,
-   "bin_bytes": 2691,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
   },
   {
    "path": "./crates/wayland-present/src/overlay/state/overlay_frame.rs",
    "lines": 180,
-   "bin_bytes": 7831,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
   },
   {
    "path": "./crates/wayland-present/src/overlay/state/overlay_geom.rs",
    "lines": 157,
-   "bin_bytes": 749,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
   },
   {
    "path": "./crates/wayland-present/src/overlay/state/overlay.rs",
    "lines": 209,
-   "bin_bytes": 7366,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 6
   },
@@ -489,7 +489,7 @@
   {
    "path": "./crates/wayland-present/src/presenter.rs",
    "lines": 197,
-   "bin_bytes": 5815,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
@@ -510,28 +510,28 @@
   {
    "path": "./idle-api/src/c_abi.rs",
    "lines": 85,
-   "bin_bytes": 342,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
   {
    "path": "./idle-api/src/c_abi/saver.rs",
    "lines": 187,
-   "bin_bytes": 1748,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 6
   },
   {
    "path": "./idle-api/src/callbacks.rs",
    "lines": 28,
-   "bin_bytes": 200,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
   {
    "path": "./idle-api/src/caption.rs",
    "lines": 48,
-   "bin_bytes": 1423,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 2
   },
@@ -545,7 +545,7 @@
   {
    "path": "./idle-api/src/color.rs",
    "lines": 237,
-   "bin_bytes": 2283,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 2
   },
@@ -559,21 +559,21 @@
   {
    "path": "./idle-api/src/color/theme.rs",
    "lines": 52,
-   "bin_bytes": 974,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
   },
   {
    "path": "./idle-api/src/env_dual.rs",
    "lines": 136,
-   "bin_bytes": 2607,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
   {
    "path": "./idle-api/src/idle_source.rs",
    "lines": 110,
-   "bin_bytes": 67,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
@@ -587,7 +587,7 @@
   {
    "path": "./idle-api/src/layout.rs",
    "lines": 112,
-   "bin_bytes": 2235,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
@@ -608,21 +608,21 @@
   {
    "path": "./idle-api/src/logo_block.rs",
    "lines": 89,
-   "bin_bytes": 9843,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 2
   },
   {
    "path": "./idle-api/src/monitor/bounds.rs",
    "lines": 50,
-   "bin_bytes": 312,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 2
   },
   {
    "path": "./idle-api/src/monitor/env.rs",
    "lines": 76,
-   "bin_bytes": 3249,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 74
   },
@@ -636,7 +636,7 @@
   {
    "path": "./idle-api/src/monitor/mod.rs",
    "lines": 53,
-   "bin_bytes": 402,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
   },
@@ -650,42 +650,42 @@
   {
    "path": "./idle-api/src/palette.rs",
    "lines": 125,
-   "bin_bytes": 1453,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 3
   },
   {
    "path": "./idle-api/src/plugin_manifest/host.rs",
    "lines": 163,
-   "bin_bytes": 2548,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 3
   },
   {
    "path": "./idle-api/src/plugin_manifest/mod.rs",
    "lines": 185,
-   "bin_bytes": 8447,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
   },
   {
    "path": "./idle-api/src/plugin_manifest/schema/fields.rs",
    "lines": 98,
-   "bin_bytes": 2758,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 2
   },
   {
    "path": "./idle-api/src/plugin_manifest/schema.rs",
    "lines": 221,
-   "bin_bytes": 12477,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
   {
    "path": "./idle-api/src/plugin_manifest/signature.rs",
    "lines": 117,
-   "bin_bytes": 4820,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 2
   },
@@ -706,7 +706,7 @@
   {
    "path": "./idle-api/src/rng.rs",
    "lines": 100,
-   "bin_bytes": 1573,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
@@ -727,21 +727,21 @@
   {
    "path": "./idle-api/src/screensaver.rs",
    "lines": 52,
-   "bin_bytes": 504,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
   {
    "path": "./idle-api/src/stress.rs",
    "lines": 91,
-   "bin_bytes": 1968,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
   },
   {
    "path": "./idle-api/src/surface.rs",
    "lines": 185,
-   "bin_bytes": 231,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 5
   },
@@ -755,42 +755,42 @@
   {
    "path": "./idle-api/src/system_info.rs",
    "lines": 109,
-   "bin_bytes": 6778,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 2
   },
   {
    "path": "./idle-api/src/terminal_cell.rs",
    "lines": 27,
-   "bin_bytes": 223,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 2
   },
   {
    "path": "./idle-api/src/toml/parser.rs",
    "lines": 162,
-   "bin_bytes": 7406,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 3
   },
   {
    "path": "./idle-api/src/toml/parser_str.rs",
    "lines": 84,
-   "bin_bytes": 5295,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
   },
   {
    "path": "./idle-api/src/toml/parser_value.rs",
    "lines": 77,
-   "bin_bytes": 2955,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
   {
    "path": "./idle-api/src/toml.rs",
    "lines": 114,
-   "bin_bytes": 1139,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 2
   },
@@ -804,7 +804,7 @@
   {
    "path": "./idle-api/src/wayland_overlay.rs",
    "lines": 123,
-   "bin_bytes": 826,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
@@ -839,7 +839,7 @@
   {
    "path": "./idle-daemon/src/cli_main.rs",
    "lines": 122,
-   "bin_bytes": 4124,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 2
   },
@@ -860,28 +860,28 @@
   {
    "path": "./idle-daemon/src/config_parse.rs",
    "lines": 182,
-   "bin_bytes": 7316,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 3
   },
   {
    "path": "./idle-daemon/src/config.rs",
    "lines": 255,
-   "bin_bytes": 12703,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 21
   },
   {
    "path": "./idle-daemon/src/config_watcher.rs",
    "lines": 86,
-   "bin_bytes": 3685,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
   {
    "path": "./idle-daemon/src/controller/commands.rs",
    "lines": 139,
-   "bin_bytes": 10916,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
   },
@@ -902,14 +902,14 @@
   {
    "path": "./idle-daemon/src/controller/mod.rs",
    "lines": 175,
-   "bin_bytes": 6392,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
   },
   {
    "path": "./idle-daemon/src/controller/status.rs",
    "lines": 145,
-   "bin_bytes": 3019,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
@@ -923,14 +923,14 @@
   {
    "path": "./idle-daemon/src/daemon/battery.rs",
    "lines": 87,
-   "bin_bytes": 2909,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 5
   },
   {
    "path": "./idle-daemon/src/daemon/consume_events.rs",
    "lines": 81,
-   "bin_bytes": 1029,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 2
   },
@@ -944,7 +944,7 @@
   {
    "path": "./idle-daemon/src/daemon/idle_decision.rs",
    "lines": 117,
-   "bin_bytes": 810,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 5
   },
@@ -972,14 +972,14 @@
   {
    "path": "./idle-daemon/src/daemon/mod.rs",
    "lines": 223,
-   "bin_bytes": 6383,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
   },
   {
    "path": "./idle-daemon/src/daemon/pidfile.rs",
    "lines": 173,
-   "bin_bytes": 10882,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 2
   },
@@ -993,56 +993,56 @@
   {
    "path": "./idle-daemon/src/daemon/power_thread.rs",
    "lines": 174,
-   "bin_bytes": 3499,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
   {
    "path": "./idle-daemon/src/daemon/power_watcher.rs",
    "lines": 243,
-   "bin_bytes": 922,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 3
   },
   {
    "path": "./idle-daemon/src/daemon/presentation.rs",
    "lines": 137,
-   "bin_bytes": 4772,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 14
   },
   {
    "path": "./idle-daemon/src/daemon/preview_queue.rs",
    "lines": 230,
-   "bin_bytes": 500,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
   {
    "path": "./idle-daemon/src/daemon/recovery.rs",
    "lines": 195,
-   "bin_bytes": 373,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
   {
    "path": "./idle-daemon/src/daemon/runtime.rs",
    "lines": 128,
-   "bin_bytes": 5916,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 10
   },
   {
    "path": "./idle-daemon/src/daemon/tick_loop.rs",
    "lines": 146,
-   "bin_bytes": 5804,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
   {
    "path": "./idle-daemon/src/daemon/watchdog.rs",
    "lines": 120,
-   "bin_bytes": 2296,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 3
   },
@@ -1056,14 +1056,14 @@
   {
    "path": "./idle-daemon/src/dbus_server/auth_peer.rs",
    "lines": 171,
-   "bin_bytes": 7251,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 2
   },
   {
    "path": "./idle-daemon/src/dbus_server/auth.rs",
    "lines": 151,
-   "bin_bytes": 8945,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
@@ -1084,7 +1084,7 @@
   {
    "path": "./idle-daemon/src/dbus_server/mod.rs",
    "lines": 148,
-   "bin_bytes": 12998,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
   },
@@ -1098,56 +1098,56 @@
   {
    "path": "./idle-daemon/src/dbus_server/screensaver.rs",
    "lines": 195,
-   "bin_bytes": 43924,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 3
   },
   {
    "path": "./idle-daemon/src/dbus_server/service_helpers.rs",
    "lines": 70,
-   "bin_bytes": 4148,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 4
   },
   {
    "path": "./idle-daemon/src/dbus_server/service.rs",
    "lines": 233,
-   "bin_bytes": 128449,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
   {
    "path": "./idle-daemon/src/dbus_server/sniff_policy.rs",
    "lines": 62,
-   "bin_bytes": 71,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
   {
    "path": "./idle-daemon/src/dbus_server/watchers.rs",
    "lines": 171,
-   "bin_bytes": 13665,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
   {
    "path": "./idle-daemon/src/futures_util.rs",
    "lines": 92,
-   "bin_bytes": 2028,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 3
   },
   {
    "path": "./idle-daemon/src/inhibit/external.rs",
    "lines": 215,
-   "bin_bytes": 7215,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 4
   },
   {
    "path": "./idle-daemon/src/inhibit/merge.rs",
    "lines": 18,
-   "bin_bytes": 912,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 2
   },
@@ -1161,7 +1161,7 @@
   {
    "path": "./idle-daemon/src/inhibit/state.rs",
    "lines": 248,
-   "bin_bytes": 8494,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
@@ -1189,14 +1189,14 @@
   {
    "path": "./idle-daemon/src/inhibit/zbus_helper.rs",
    "lines": 118,
-   "bin_bytes": 3430,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 2
   },
   {
    "path": "./idle-daemon/src/ipc_runner.rs",
    "lines": 193,
-   "bin_bytes": 11248,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
@@ -1210,14 +1210,14 @@
   {
    "path": "./idle-daemon/src/lock_monitor.rs",
    "lines": 51,
-   "bin_bytes": 9252,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
   {
    "path": "./idle-daemon/src/locks.rs",
    "lines": 30,
-   "bin_bytes": 11241,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 11
   },
@@ -1231,56 +1231,56 @@
   {
    "path": "./idle-daemon/src/ooda/act/mod.rs",
    "lines": 205,
-   "bin_bytes": 2113,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
   },
   {
    "path": "./idle-daemon/src/ooda/decide/mod.rs",
    "lines": 231,
-   "bin_bytes": 672,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
   },
   {
    "path": "./idle-daemon/src/ooda/mod.rs",
    "lines": 146,
-   "bin_bytes": 2244,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
   },
   {
    "path": "./idle-daemon/src/ooda/observe/mod.rs",
    "lines": 59,
-   "bin_bytes": 801,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
   },
   {
    "path": "./idle-daemon/src/ooda/orient/mod.rs",
    "lines": 158,
-   "bin_bytes": 6462,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
   },
   {
    "path": "./idle-daemon/src/ooda/state/mod.rs",
    "lines": 35,
-   "bin_bytes": 166,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
   },
   {
    "path": "./idle-daemon/src/presentation/apply_fade_in.rs",
    "lines": 183,
-   "bin_bytes": 1972,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 2
   },
   {
    "path": "./idle-daemon/src/presentation/frame_loop.rs",
    "lines": 216,
-   "bin_bytes": 5456,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 4
   },
@@ -1294,7 +1294,7 @@
   {
    "path": "./idle-daemon/src/presentation/frame_pacing.rs",
    "lines": 142,
-   "bin_bytes": 2853,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
@@ -1308,14 +1308,14 @@
   {
    "path": "./idle-daemon/src/presentation/hw_scaling.rs",
    "lines": 59,
-   "bin_bytes": 205,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
   {
    "path": "./idle-daemon/src/presentation/ipc_init.rs",
    "lines": 194,
-   "bin_bytes": 12952,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 2
   },
@@ -1329,35 +1329,35 @@
   {
    "path": "./idle-daemon/src/presentation/ipc_lifecycle.rs",
    "lines": 113,
-   "bin_bytes": 4198,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
   },
   {
    "path": "./idle-daemon/src/presentation/ipc_peer.rs",
    "lines": 89,
-   "bin_bytes": 2540,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
   {
    "path": "./idle-daemon/src/presentation/ipc_raster.rs",
    "lines": 47,
-   "bin_bytes": 604,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
   {
    "path": "./idle-daemon/src/presentation/ipc_session_methods.rs",
    "lines": 100,
-   "bin_bytes": 4311,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
   },
   {
    "path": "./idle-daemon/src/presentation/ipc_session.rs",
    "lines": 208,
-   "bin_bytes": 9436,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 7
   },
@@ -1371,7 +1371,7 @@
   {
    "path": "./idle-daemon/src/presentation/layout.rs",
    "lines": 163,
-   "bin_bytes": 4768,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 2
   },
@@ -1385,56 +1385,56 @@
   {
    "path": "./idle-daemon/src/presentation/mod.rs",
    "lines": 249,
-   "bin_bytes": 2512,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
   },
   {
    "path": "./idle-daemon/src/presentation/overlays.rs",
    "lines": 34,
-   "bin_bytes": 922,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
   {
    "path": "./idle-daemon/src/presentation/plugin_loop.rs",
    "lines": 177,
-   "bin_bytes": 8095,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
   {
    "path": "./idle-daemon/src/presentation/present_frame.rs",
    "lines": 163,
-   "bin_bytes": 3177,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
   {
    "path": "./idle-daemon/src/presentation/refresh.rs",
    "lines": 138,
-   "bin_bytes": 1865,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 3
   },
   {
    "path": "./idle-daemon/src/presentation/timeout.rs",
    "lines": 33,
-   "bin_bytes": 331,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 5
   },
   {
    "path": "./idle-daemon/src/presentation/topology.rs",
    "lines": 179,
-   "bin_bytes": 3659,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
   {
    "path": "./idle-daemon/src/sleep_monitor.rs",
    "lines": 75,
-   "bin_bytes": 9405,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
@@ -1462,28 +1462,28 @@
   {
    "path": "./idle-runner/src/apps/mod.rs",
    "lines": 54,
-   "bin_bytes": 1653,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
   },
   {
    "path": "./idle-runner/src/args.rs",
    "lines": 142,
-   "bin_bytes": 2167,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
   {
    "path": "./idle-runner/src/budget/cgroup.rs",
    "lines": 69,
-   "bin_bytes": 5304,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
   {
    "path": "./idle-runner/src/budget.rs",
    "lines": 224,
-   "bin_bytes": 4937,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 2
   },
@@ -1511,49 +1511,49 @@
   {
    "path": "./idle-runner/src/caption_overlay.rs",
    "lines": 215,
-   "bin_bytes": 6086,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 2
   },
   {
    "path": "./idle-runner/src/cell_renderer/atlas.rs",
    "lines": 106,
-   "bin_bytes": 3329,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
   },
   {
    "path": "./idle-runner/src/cell_renderer/font.rs",
    "lines": 66,
-   "bin_bytes": 737,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 2
   },
   {
    "path": "./idle-runner/src/cell_renderer/geom.rs",
    "lines": 106,
-   "bin_bytes": 1941,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
   },
   {
    "path": "./idle-runner/src/cell_renderer/gpu_cells.rs",
    "lines": 127,
-   "bin_bytes": 3315,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
   {
    "path": "./idle-runner/src/cell_renderer/gpu_init/block_on.rs",
    "lines": 47,
-   "bin_bytes": 2197,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
   {
    "path": "./idle-runner/src/cell_renderer/gpu_init.rs",
    "lines": 251,
-   "bin_bytes": 6238,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 4
   },
@@ -1567,70 +1567,70 @@
   {
    "path": "./idle-runner/src/cell_renderer/gpu_render.rs",
    "lines": 193,
-   "bin_bytes": 3633,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
   },
   {
    "path": "./idle-runner/src/cell_renderer/gpu_render_setup.rs",
    "lines": 159,
-   "bin_bytes": 2726,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
   },
   {
    "path": "./idle-runner/src/cell_renderer/mod.rs",
    "lines": 251,
-   "bin_bytes": 8381,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
   },
   {
    "path": "./idle-runner/src/cell_renderer/pixels.rs",
    "lines": 155,
-   "bin_bytes": 6257,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 2
   },
   {
    "path": "./idle-runner/src/core/logo_block/mod.rs",
    "lines": 70,
-   "bin_bytes": 2758,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
   },
   {
    "path": "./idle-runner/src/core/logo_block/patterns/alpha_am.rs",
    "lines": 98,
-   "bin_bytes": 2164,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
   {
    "path": "./idle-runner/src/core/logo_block/patterns/alpha_nz.rs",
    "lines": 98,
-   "bin_bytes": 2164,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
   {
    "path": "./idle-runner/src/core/logo_block/patterns/digits.rs",
    "lines": 77,
-   "bin_bytes": 1675,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
   {
    "path": "./idle-runner/src/core/logo_block/patterns/mod.rs",
    "lines": 26,
-   "bin_bytes": 231,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
   },
   {
    "path": "./idle-runner/src/core/logo_block/patterns/symbols.rs",
    "lines": 36,
-   "bin_bytes": 1043,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
@@ -1651,7 +1651,7 @@
   {
    "path": "./idle-runner/src/discovery.rs",
    "lines": 148,
-   "bin_bytes": 9776,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 3
   },
@@ -1665,14 +1665,14 @@
   {
    "path": "./idle-runner/src/dylib.rs",
    "lines": 129,
-   "bin_bytes": 9774,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 6
   },
   {
    "path": "./idle-runner/src/filewatch.rs",
    "lines": 139,
-   "bin_bytes": 7228,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 3
   },
@@ -1686,7 +1686,7 @@
   {
    "path": "./idle-runner/src/fps_overlay.rs",
    "lines": 93,
-   "bin_bytes": 3199,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
@@ -1700,14 +1700,14 @@
   {
    "path": "./idle-runner/src/gpu_budget/backends.rs",
    "lines": 105,
-   "bin_bytes": 5186,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
   {
    "path": "./idle-runner/src/gpu_budget.rs",
    "lines": 228,
-   "bin_bytes": 3405,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 2
   },
@@ -1721,14 +1721,14 @@
   {
    "path": "./idle-runner/src/idle_runner_fullscreen.rs",
    "lines": 239,
-   "bin_bytes": 3787,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
   {
    "path": "./idle-runner/src/idle_runner.rs",
    "lines": 130,
-   "bin_bytes": 1423,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 23
   },
@@ -1742,14 +1742,14 @@
   {
    "path": "./idle-runner/src/launcher_resolve.rs",
    "lines": 139,
-   "bin_bytes": 8715,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 2
   },
   {
    "path": "./idle-runner/src/launcher.rs",
    "lines": 157,
-   "bin_bytes": 5799,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 23
   },
@@ -1763,7 +1763,7 @@
   {
    "path": "./idle-runner/src/launcher_trust.rs",
    "lines": 62,
-   "bin_bytes": 3633,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 2
   },
@@ -1777,7 +1777,7 @@
   {
    "path": "./idle-runner/src/platform_helpers.rs",
    "lines": 135,
-   "bin_bytes": 356,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
@@ -1798,63 +1798,63 @@
   {
    "path": "./idle-runner/src/plugin_session/entry.rs",
    "lines": 129,
-   "bin_bytes": 4961,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 5
   },
   {
    "path": "./idle-runner/src/plugin_session/loading.rs",
    "lines": 177,
-   "bin_bytes": 10383,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
   {
    "path": "./idle-runner/src/plugin_session/manifest_gate.rs",
    "lines": 72,
-   "bin_bytes": 7129,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 4
   },
   {
    "path": "./idle-runner/src/plugin_session/mod.rs",
    "lines": 233,
-   "bin_bytes": 11775,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
   },
   {
    "path": "./idle-runner/src/plugin_session/reloading.rs",
    "lines": 131,
-   "bin_bytes": 6637,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
   },
   {
    "path": "./idle-runner/src/plugin_session/viewport.rs",
    "lines": 90,
-   "bin_bytes": 904,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
   },
   {
    "path": "./idle-runner/src/renderer.rs",
    "lines": 108,
-   "bin_bytes": 3243,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
   {
    "path": "./idle-runner/src/sandbox/ll.rs",
    "lines": 118,
-   "bin_bytes": 2558,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 19
   },
   {
    "path": "./idle-runner/src/sandbox_profiles.rs",
    "lines": 148,
-   "bin_bytes": 3510,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
@@ -1868,7 +1868,7 @@
   {
    "path": "./idle-runner/src/sandbox.rs",
    "lines": 155,
-   "bin_bytes": 9169,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 3
   },
@@ -1882,7 +1882,7 @@
   {
    "path": "./idle-runner/src/terminal_guard.rs",
    "lines": 44,
-   "bin_bytes": 545,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
@@ -1924,42 +1924,42 @@
   {
    "path": "./idle-runner/src/toolkit/platform.rs",
    "lines": 52,
-   "bin_bytes": 20,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 3
   },
   {
    "path": "./idle-runner/src/toolkit/sys_info/mod.rs",
    "lines": 190,
-   "bin_bytes": 8114,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
   },
   {
    "path": "./idle-runner/src/toolkit/sys_info/monitors.rs",
    "lines": 185,
-   "bin_bytes": 10252,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
   {
    "path": "./idle-runner/src/toolkit/sys_info/theme.rs",
    "lines": 69,
-   "bin_bytes": 2279,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
   {
    "path": "./idle-runner/src/toolkit/theme_query.rs",
    "lines": 91,
-   "bin_bytes": 5242,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 2
   },
   {
    "path": "./idle-runner/src/watchdog.rs",
    "lines": 64,
-   "bin_bytes": 423,
+   "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
   },
@@ -1978,5 +1978,5 @@
    "reach": 0
   }
  ],
- "notes": "reach counts referencing files (shared file names qualified by ancestor dir); bin_bytes from newest workspace dev rlib per crate via nm (inlining approx, bins re-link the same code; shims excluded, foreign paths never attributed);"
+ "notes": "reach counts referencing files (shared file names qualified by ancestor dir);"
 }

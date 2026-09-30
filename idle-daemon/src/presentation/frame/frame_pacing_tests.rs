@@ -126,13 +126,13 @@ fn adaptive_pacing_transitions_stages() {
     assert_eq!(tick_a, 60.0);
 
     // Stage 3: Deep Ambient (elapsed >= 45s)
-    let (fps_d, tick_d, stage_d) = resolve_adaptive_pacing(60.0, Duration::from_secs(60), false);
+    let (fps_d, tick_d, stage_d) = resolve_adaptive_pacing(60.0, Duration::from_mins(1), false);
     assert_eq!(stage_d, AdaptivePacingStage::DeepAmbient);
     assert_eq!(fps_d, 30.0);
     assert_eq!(tick_d, 30.0);
 
     // Stage 3: Deep Ambient on 24Hz-aligned display
-    let (fps_24, tick_24, stage_24) = resolve_adaptive_pacing(48.0, Duration::from_secs(60), false);
+    let (fps_24, tick_24, stage_24) = resolve_adaptive_pacing(48.0, Duration::from_mins(1), false);
     assert_eq!(stage_24, AdaptivePacingStage::DeepAmbient);
     assert_eq!(fps_24, 24.0);
     assert_eq!(tick_24, 30.0);

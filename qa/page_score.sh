@@ -9,7 +9,7 @@
 # Writes page-score.json. Best-effort fields are null with notes when
 # their tools are missing. Only stock Linux tools are used.
 set -u
-ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OUT="page-score.json"
 WANT_BIN=0
 WANT_HEAT=0

@@ -1,7 +1,7 @@
 {
  "repo": "runtime",
- "rev": "1cd57de",
- "dirty": false,
+ "rev": "7e0d8fd",
+ "dirty": true,
  "pages": [
   {
    "path": "./crates/idle-dbus/src/client.rs",
@@ -1776,14 +1776,14 @@
   },
   {
    "path": "./idle-runner/src/budget/mod.rs",
-   "lines": 225,
+   "lines": 227,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
   },
   {
    "path": "./idle-runner/src/budget/tests.rs",
-   "lines": 74,
+   "lines": 93,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 0

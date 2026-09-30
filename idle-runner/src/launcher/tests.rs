@@ -41,22 +41,15 @@ fn allowlist_blocks_unknown_savers() {
 #[test]
 fn allowlist_is_complete() {
     assert_eq!(ALLOWED_SAVERS.len(), 11);
-    assert!(ALLOWED_SAVERS.contains(&"aurora"));
-    assert!(ALLOWED_SAVERS.contains(&"beams"));
-    assert!(ALLOWED_SAVERS.contains(&"storm"));
-    assert!(ALLOWED_SAVERS.contains(&"hearth"));
-    assert!(ALLOWED_SAVERS.contains(&"ripple"));
+    for name in ["aurora", "beams", "storm", "hearth", "ripple"] {
+        assert!(ALLOWED_SAVERS.contains(&name));
+    }
 }
 
 #[test]
 fn is_trusted_plugin_path_rejects_nonexistent() {
     let p = std::path::Path::new("/nonexistent/foo.so");
     assert!(!is_trusted_plugin_path(p, &[]));
-}
-
-#[test]
-fn is_trusted_plugin_path_rejects_when_not_in_trusted_dirs() {
-    let p = std::path::Path::new("/nonexistent/foo.so");
     let trusted = vec![std::path::PathBuf::from("/also/nonexistent")];
     assert!(!is_trusted_plugin_path(p, &trusted));
 }
@@ -89,16 +82,23 @@ fn is_trusted_plugin_path_rejects_sibling_outside_trust_root() {
 
 #[cfg(unix)]
 #[test]
-fn is_trusted_plugin_path_rejects_world_writable() {
+fn is_trusted_plugin_path_permissions_modes() {
     use std::os::unix::fs::PermissionsExt;
     let dir = crate::test_util::tempdir().expect("tempdir");
     let plugin = dir.path().join("libscreensaver_beams.so");
     std::fs::write(&plugin, b"fake").expect("write");
-    let mut perms = std::fs::metadata(&plugin).expect("meta").permissions();
-    perms.set_mode(0o666); // world-writable
-    std::fs::set_permissions(&plugin, perms).expect("chmod");
     let trusted = vec![dir.path().to_path_buf()];
+    let set_mode = |m| {
+        let mut p = std::fs::metadata(&plugin).expect("meta").permissions();
+        p.set_mode(m);
+        std::fs::set_permissions(&plugin, p).expect("chmod");
+    };
+    set_mode(0o664); // group-writable -> rejected
     assert!(!is_trusted_plugin_path(&plugin, &trusted));
+    set_mode(0o666); // world-writable -> rejected
+    assert!(!is_trusted_plugin_path(&plugin, &trusted));
+    set_mode(0o644); // owner-writable only -> accepted
+    assert!(is_trusted_plugin_path(&plugin, &trusted));
 }
 
 #[test]

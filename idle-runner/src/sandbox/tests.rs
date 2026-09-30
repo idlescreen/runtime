@@ -155,3 +155,43 @@ fn landlock_available() -> bool {
 fn landlock_available() -> bool {
     false
 }
+
+#[test]
+fn test_is_blanket_dir_detection() {
+    let _g = crate::ENV_LOCK.lock().unwrap();
+    assert!(is_blanket_dir(Path::new("/")));
+    assert!(is_blanket_dir(Path::new("/tmp")));
+    assert!(is_blanket_dir(Path::new("/var/tmp")));
+    assert!(is_blanket_dir(Path::new("/home")));
+    if let Ok(home) = std::env::var("HOME") {
+        assert!(is_blanket_dir(Path::new(&home)));
+    }
+    assert!(!is_blanket_dir(Path::new("/usr/lib/idlescreen")));
+    assert!(!is_blanket_dir(Path::new("/etc")));
+}
+
+#[test]
+fn test_enforce_sandbox_direct_temp_plugin_succeeds() {
+    let _g = crate::ENV_LOCK.lock().unwrap();
+    if !landlock_available() {
+        return;
+    }
+    let p = std::env::temp_dir().join(format!("idle-direct-{}.so", std::process::id()));
+    let _ = fs::write(&p, b"not-a-real-elf");
+    // SAFETY: fork child so sandbox policy does not poison parent test process.
+    let pid = unsafe { libc::fork() };
+    assert!(pid >= 0, "fork failed");
+    if pid == 0 {
+        let code = match enforce_sandbox_for_plugin(&p) {
+            Ok(()) => 0,
+            Err(_) => 1,
+        };
+        unsafe { libc::_exit(code) };
+    }
+    let mut status: libc::c_int = 0;
+    // SAFETY: wait on child pid.
+    let w = unsafe { libc::waitpid(pid, &mut status, 0) };
+    assert_eq!(w, pid);
+    assert_eq!(libc::WEXITSTATUS(status), 0);
+    let _ = fs::remove_file(&p);
+}

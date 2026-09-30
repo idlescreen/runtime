@@ -38,7 +38,7 @@ pub fn clear_sandbox_escape_env() {
     }
 }
 
-fn is_blanket_dir(dir: &Path) -> bool {
+pub(crate) fn is_blanket_dir(dir: &Path) -> bool {
     if dir.parent().is_none()
         || dir == Path::new("/home")
         || dir == Path::new("/tmp")
@@ -120,11 +120,13 @@ fn enforce_with_rules(
             ll::ACCESS_FS_READ_FILE | ll::ACCESS_FS_EXECUTE,
             plugin_file_fd,
         );
+        // SAFETY: close plugin file descriptor after rule attachment.
         unsafe { libc::close(plugin_file_fd) };
         r.map_err(|e| format!("add_rule plugin file: {e}"))?;
     } else {
         let plugin_dir_fd = ll_path_fd(parent)?;
         let add_result = ll_add_rule(ruleset_fd.0, ll::READ_EXEC, plugin_dir_fd);
+        // SAFETY: close plugin directory descriptor after rule attachment.
         unsafe { libc::close(plugin_dir_fd) };
         add_result.map_err(|e| format!("add_rule plugin dir: {e}"))?;
     }

@@ -7,12 +7,24 @@
 //! - Fallback clone3 to ENOSYS (forcing pthread_create to clone).
 //! - Permit clone with CLONE_THREAD for multithreaded plugins.
 
+pub const AUDIT_ARCH_X86_64: u32 = 0xc000_003e;
+pub const AUDIT_ARCH_AARCH64: u32 = 0xc000_00b7;
+
 #[cfg(target_arch = "x86_64")]
-pub const CURRENT_ARCH: u32 = 0xc000_003e; // AUDIT_ARCH_X86_64
+pub const CURRENT_ARCH: u32 = AUDIT_ARCH_X86_64;
 #[cfg(target_arch = "aarch64")]
-pub const CURRENT_ARCH: u32 = 0xc000_00b7; // AUDIT_ARCH_AARCH64
+pub const CURRENT_ARCH: u32 = AUDIT_ARCH_AARCH64;
 #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
 pub const CURRENT_ARCH: u32 = 0;
+
+#[cfg(target_arch = "aarch64")]
+const SYS_FORK: u32 = 1079;
+#[cfg(target_arch = "aarch64")]
+const SYS_VFORK: u32 = 1080;
+#[cfg(not(target_arch = "aarch64"))]
+const SYS_FORK: u32 = libc::SYS_fork as u32;
+#[cfg(not(target_arch = "aarch64"))]
+const SYS_VFORK: u32 = libc::SYS_vfork as u32;
 
 const BPF_LD: u16 = 0x00;
 const BPF_ALU: u16 = 0x04;
@@ -57,8 +69,8 @@ pub fn build_filter() -> [libc::sock_filter; 24] {
         // [4..9] Disallowed syscalls: execve, execveat, fork, vfork, ptrace, bpf -> [10]
         bpf_jump(BPF_JMP | BPF_JEQ | BPF_K, libc::SYS_execve as u32, 5, 0),
         bpf_jump(BPF_JMP | BPF_JEQ | BPF_K, libc::SYS_execveat as u32, 4, 0),
-        bpf_jump(BPF_JMP | BPF_JEQ | BPF_K, libc::SYS_fork as u32, 3, 0),
-        bpf_jump(BPF_JMP | BPF_JEQ | BPF_K, libc::SYS_vfork as u32, 2, 0),
+        bpf_jump(BPF_JMP | BPF_JEQ | BPF_K, SYS_FORK, 3, 0),
+        bpf_jump(BPF_JMP | BPF_JEQ | BPF_K, SYS_VFORK, 2, 0),
         bpf_jump(BPF_JMP | BPF_JEQ | BPF_K, libc::SYS_ptrace as u32, 1, 0),
         bpf_jump(BPF_JMP | BPF_JEQ | BPF_K, libc::SYS_bpf as u32, 0, 1),
         // [10] Return EPERM for banned syscalls
@@ -93,33 +105,49 @@ pub fn build_filter() -> [libc::sock_filter; 24] {
 
 /// Applies the seccomp-BPF sandbox filter.
 pub fn apply_seccomp() -> Result<(), String> {
-    let mut filter = build_filter();
-    let prog = libc::sock_fprog {
-        len: filter.len() as u16,
-        filter: filter.as_mut_ptr(),
-    };
-
-    // Ensure PR_SET_NO_NEW_PRIVS is active before seccomp filter installation.
-    // SAFETY: PR_SET_NO_NEW_PRIVS is a pure state transition with no invalid inputs.
-    if unsafe { libc::prctl(libc::PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) } != 0 {
-        return Err(format!(
-            "prctl(NO_NEW_PRIVS): {}",
-            std::io::Error::last_os_error()
-        ));
-    }
-
-    // SAFETY: prog points to valid array of 24 sock_filter instructions.
-    let ret = unsafe { libc::prctl(libc::PR_SET_SECCOMP, libc::SECCOMP_MODE_FILTER, &prog) };
-    if ret != 0 {
-        let err = std::io::Error::last_os_error();
+    #[cfg(not(target_arch = "x86_64"))]
+    {
         if std::env::var_os("IDLE_REQUIRE_SECCOMP").is_some() {
-            return Err(format!(
-                "seccomp required by IDLE_REQUIRE_SECCOMP but unavailable: {err}"
-            ));
+            return Err(
+                "seccomp required by IDLE_REQUIRE_SECCOMP but unsupported architecture".to_string(),
+            );
         }
         idle_log::warn!(
-            "seccomp filter unavailable ({err}); continuing under Landlock-only enforcement"
+            "seccomp filter currently supported only on x86_64; continuing under Landlock-only enforcement"
         );
+        return Ok(());
     }
-    Ok(())
+
+    #[cfg(target_arch = "x86_64")]
+    {
+        let mut filter = build_filter();
+        let prog = libc::sock_fprog {
+            len: filter.len() as u16,
+            filter: filter.as_mut_ptr(),
+        };
+
+        // Ensure PR_SET_NO_NEW_PRIVS is active before seccomp filter installation.
+        // SAFETY: PR_SET_NO_NEW_PRIVS is a pure state transition with no invalid inputs.
+        if unsafe { libc::prctl(libc::PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) } != 0 {
+            return Err(format!(
+                "prctl(NO_NEW_PRIVS): {}",
+                std::io::Error::last_os_error()
+            ));
+        }
+
+        // SAFETY: prog points to valid array of 24 sock_filter instructions.
+        let ret = unsafe { libc::prctl(libc::PR_SET_SECCOMP, libc::SECCOMP_MODE_FILTER, &prog) };
+        if ret != 0 {
+            let err = std::io::Error::last_os_error();
+            if std::env::var_os("IDLE_REQUIRE_SECCOMP").is_some() {
+                return Err(format!(
+                    "seccomp required by IDLE_REQUIRE_SECCOMP but unavailable: {err}"
+                ));
+            }
+            idle_log::warn!(
+                "seccomp filter unavailable ({err}); continuing under Landlock-only enforcement"
+            );
+        }
+        Ok(())
+    }
 }

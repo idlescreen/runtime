@@ -58,11 +58,10 @@ impl SharedMemory {
         };
         if ptr == libc::MAP_FAILED {
             let err = std::io::Error::last_os_error();
+            // SAFETY: fd is owned; unlink named object if we are owner.
             unsafe {
                 libc::close(fd);
-            }
-            if is_owner && let Ok(c) = CString::new(name.as_str()) {
-                unsafe {
+                if is_owner && let Ok(c) = CString::new(name.as_str()) {
                     libc::shm_unlink(c.as_ptr());
                 }
             }
@@ -161,9 +160,8 @@ impl SharedMemory {
         // SAFETY: fd is valid and open.
         if unsafe { libc::ftruncate(fd, size as libc::off_t) } < 0 {
             let err = std::io::Error::last_os_error();
-            unsafe {
-                libc::close(fd);
-            }
+            // SAFETY: clean up fd on truncation failure.
+            unsafe { libc::close(fd) };
             return Err(format!("ftruncate failed: {err}"));
         }
         // Apply seals: prevent shrinking, growing, and further sealing.
@@ -171,34 +169,42 @@ impl SharedMemory {
         let seals = F_SEAL_SHRINK | F_SEAL_GROW | F_SEAL_SEAL;
         if unsafe { libc::fcntl(fd, F_ADD_SEALS, seals) } < 0 {
             let err = std::io::Error::last_os_error();
-            unsafe {
-                libc::close(fd);
-            }
+            // SAFETY: clean up fd on sealing failure.
+            unsafe { libc::close(fd) };
             return Err(format!("fcntl F_ADD_SEALS failed: {err}"));
         }
+        // SAFETY: fd is sealed memfd ready for mapping.
         unsafe { Self::map_and_build(name.to_string(), fd, size, false) }
     }
 
     /// Map a pre-sealed shared memory fd (e.g. received via IPC / inheritance).
+    ///
+    /// Consumes ownership of `fd` on both success and failure.
     pub fn from_sealed_fd(fd: libc::c_int, size: usize) -> Result<Self, String> {
-        Self::validate_size(size)?;
+        let close_on_err = |e: String| {
+            if fd >= 0 {
+                // SAFETY: caller transferred fd ownership to from_sealed_fd.
+                unsafe { libc::close(fd) };
+            }
+            e
+        };
+        Self::validate_size(size).map_err(close_on_err)?;
         if fd < 0 {
             return Err("invalid sealed fd".to_string());
         }
         // SAFETY: query active seals on fd.
         let seals = unsafe { libc::fcntl(fd, F_GET_SEALS) };
         if seals < 0 {
-            return Err(format!(
-                "fcntl F_GET_SEALS failed: {}",
-                std::io::Error::last_os_error()
-            ));
+            let err = std::io::Error::last_os_error();
+            return Err(close_on_err(format!("fcntl F_GET_SEALS failed: {err}")));
         }
         let required = F_SEAL_SHRINK | F_SEAL_GROW | F_SEAL_SEAL;
         if (seals & required) != required {
-            return Err(format!(
+            return Err(close_on_err(format!(
                 "fd missing required seals (got {seals:#x}, required {required:#x})"
-            ));
+            )));
         }
+        // SAFETY: map_and_build handles mmap and closes fd on map failure.
         unsafe { Self::map_and_build(String::new(), fd, size, false) }
     }
 

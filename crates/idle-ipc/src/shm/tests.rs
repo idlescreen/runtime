@@ -231,8 +231,22 @@ fn test_sealed_shm_create_and_verify_seals() {
     let shm = SharedMemory::create_sealed("test-sealed", sz).expect("create_sealed");
     assert!(shm.fd() > 0);
     assert!(!shm.ptr().is_null());
+    let trunc = unsafe { libc::ftruncate(shm.fd(), (sz * 2) as libc::off_t) };
+    assert_eq!(trunc, -1);
+    assert_eq!(
+        std::io::Error::last_os_error().raw_os_error(),
+        Some(libc::EPERM)
+    );
+
     let dup_fd = unsafe { libc::dup(shm.fd()) };
     assert!(dup_fd > 0);
     let peer = SharedMemory::from_sealed_fd(dup_fd, sz).expect("from_sealed_fd");
     assert_eq!(peer.size(), sz);
+
+    let unsealed = unsafe { libc::memfd_create(c"unsealed".as_ptr(), libc::MFD_CLOEXEC) };
+    assert!(unsealed >= 0);
+    match SharedMemory::from_sealed_fd(unsealed, sz) {
+        Err(e) => assert!(e.contains("seals")),
+        Ok(_) => panic!("unsealed memfd must be rejected"),
+    }
 }

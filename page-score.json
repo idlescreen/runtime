@@ -1,7 +1,7 @@
 {
  "repo": "runtime",
- "rev": "110c9b2",
- "dirty": false,
+ "rev": "15c5b58",
+ "dirty": true,
  "pages": [
   {
    "path": "./crates/idle-dbus/src/client.rs",
@@ -1328,7 +1328,7 @@
   },
   {
    "path": "./idle-daemon/src/monitors/lock.rs",
-   "lines": 93,
+   "lines": 136,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 6
@@ -1349,7 +1349,7 @@
   },
   {
    "path": "./idle-daemon/src/monitors/media.rs",
-   "lines": 229,
+   "lines": 248,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 2

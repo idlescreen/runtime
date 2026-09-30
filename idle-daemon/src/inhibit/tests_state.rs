@@ -208,12 +208,20 @@ fn test_immune_rail_dbus_global_inhibitor_limit_256() {
     for c in 0..8 {
         let cl = client(&format!(":1.{c}"));
         for i in 0..32 {
-            assert!(state.add(format!("app_{c}"), format!("reason_{i}"), cl.clone()).is_ok());
+            assert!(
+                state
+                    .add(format!("app_{c}"), format!("reason_{i}"), cl.clone())
+                    .is_ok()
+            );
         }
     }
     assert_eq!(state.len(), MAX_GLOBAL_INHIBITORS);
     let overflow_client = client(":1.999");
-    let res = state.add("overflow_app".into(), "overflow_reason".into(), overflow_client);
+    let res = state.add(
+        "overflow_app".into(),
+        "overflow_reason".into(),
+        overflow_client,
+    );
     assert!(res.is_err());
     assert_eq!(res.unwrap_err(), "maximum global inhibitor limit reached");
 }

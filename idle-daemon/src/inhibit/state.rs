@@ -38,7 +38,9 @@ impl InhibitorState {
     #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         #[cfg(not(test))]
-        let past = Instant::now().checked_sub(Duration::from_secs(5)).unwrap_or_else(Instant::now);
+        let past = Instant::now()
+            .checked_sub(Duration::from_secs(5))
+            .unwrap_or_else(Instant::now);
         Self {
             inhibitors: Mutex::new(Vec::new()),
             last_cookie: AtomicU32::new(0),
@@ -50,7 +52,10 @@ impl InhibitorState {
     }
 
     pub fn len(&self) -> usize {
-        self.inhibitors.lock().unwrap_or_else(|p| crate::locks::poison_or_exit("lock", p)).len()
+        self.inhibitors
+            .lock()
+            .unwrap_or_else(|p| crate::locks::poison_or_exit("lock", p))
+            .len()
     }
 
     pub fn is_empty(&self) -> bool {
@@ -112,12 +117,20 @@ impl InhibitorState {
         if inhibitors.len() >= MAX_GLOBAL_INHIBITORS {
             return Err("maximum global inhibitor limit reached");
         }
-        let count = inhibitors.iter().filter(|entry| entry.client == client).count();
+        let count = inhibitors
+            .iter()
+            .filter(|entry| entry.client == client)
+            .count();
         if count >= MAX_CLIENT_INHIBITORS {
             return Err("too many concurrent inhibitors for this client");
         }
         let cookie = self.last_cookie.fetch_add(1, Ordering::Relaxed) + 1;
-        inhibitors.push(Inhibitor { cookie, application_name, reason, client });
+        inhibitors.push(Inhibitor {
+            cookie,
+            application_name,
+            reason,
+            client,
+        });
         Ok(cookie)
     }
 

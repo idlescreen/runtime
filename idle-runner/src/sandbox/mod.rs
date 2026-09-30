@@ -48,7 +48,9 @@ fn is_blanket_dir(dir: &Path) -> bool {
     }
     if let Ok(home) = std::env::var("HOME")
         && (dir == Path::new(&home)
-            || std::fs::canonicalize(&home).map(|h| h == dir).unwrap_or(false))
+            || std::fs::canonicalize(&home)
+                .map(|h| h == dir)
+                .unwrap_or(false))
     {
         return true;
     }

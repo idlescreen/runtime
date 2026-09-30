@@ -58,13 +58,23 @@ impl SharedMemory {
         };
         if ptr == libc::MAP_FAILED {
             let err = std::io::Error::last_os_error();
-            unsafe { libc::close(fd); }
+            unsafe {
+                libc::close(fd);
+            }
             if is_owner && let Ok(c) = CString::new(name.as_str()) {
-                unsafe { libc::shm_unlink(c.as_ptr()); }
+                unsafe {
+                    libc::shm_unlink(c.as_ptr());
+                }
             }
             Err(format!("mmap failed: {err}"))
         } else {
-            Ok(Self { name, fd, ptr, size, is_owner })
+            Ok(Self {
+                name,
+                fd,
+                ptr,
+                size,
+                is_owner,
+            })
         }
     }
 
@@ -77,22 +87,38 @@ impl SharedMemory {
 
         // SAFETY: c_name is valid CString; name validated above.
         let mut fd = unsafe {
-            libc::shm_open(c_name.as_ptr(), libc::O_CREAT | libc::O_RDWR | libc::O_EXCL, 0o600)
+            libc::shm_open(
+                c_name.as_ptr(),
+                libc::O_CREAT | libc::O_RDWR | libc::O_EXCL,
+                0o600,
+            )
         };
         if fd < 0 && std::io::Error::last_os_error().raw_os_error() == Some(libc::EEXIST) {
-            unsafe { libc::shm_unlink(c_name.as_ptr()); }
+            unsafe {
+                libc::shm_unlink(c_name.as_ptr());
+            }
             fd = unsafe {
-                libc::shm_open(c_name.as_ptr(), libc::O_CREAT | libc::O_RDWR | libc::O_EXCL, 0o600)
+                libc::shm_open(
+                    c_name.as_ptr(),
+                    libc::O_CREAT | libc::O_RDWR | libc::O_EXCL,
+                    0o600,
+                )
             };
         }
         if fd < 0 {
-            return Err(format!("shm_open (create) failed: {}", std::io::Error::last_os_error()));
+            return Err(format!(
+                "shm_open (create) failed: {}",
+                std::io::Error::last_os_error()
+            ));
         }
 
         // SAFETY: fd is open; size fits in off_t (capped at 64 MiB above).
         if unsafe { libc::ftruncate(fd, size as libc::off_t) } < 0 {
             let err = std::io::Error::last_os_error();
-            unsafe { libc::close(fd); libc::shm_unlink(c_name.as_ptr()); }
+            unsafe {
+                libc::close(fd);
+                libc::shm_unlink(c_name.as_ptr());
+            }
             return Err(format!("ftruncate failed: {err}"));
         }
 
@@ -109,7 +135,10 @@ impl SharedMemory {
         // SAFETY: open existing named object; name validated above.
         let fd = unsafe { libc::shm_open(c_name.as_ptr(), libc::O_RDWR, 0) };
         if fd < 0 {
-            return Err(format!("shm_open (open) failed: {}", std::io::Error::last_os_error()));
+            return Err(format!(
+                "shm_open (open) failed: {}",
+                std::io::Error::last_os_error()
+            ));
         }
 
         unsafe { Self::map_and_build(name.to_string(), fd, size, false) }
@@ -124,12 +153,17 @@ impl SharedMemory {
             libc::memfd_create(c_name.as_ptr(), libc::MFD_ALLOW_SEALING | libc::MFD_CLOEXEC)
         };
         if fd < 0 {
-            return Err(format!("memfd_create failed: {}", std::io::Error::last_os_error()));
+            return Err(format!(
+                "memfd_create failed: {}",
+                std::io::Error::last_os_error()
+            ));
         }
         // SAFETY: fd is valid and open.
         if unsafe { libc::ftruncate(fd, size as libc::off_t) } < 0 {
             let err = std::io::Error::last_os_error();
-            unsafe { libc::close(fd); }
+            unsafe {
+                libc::close(fd);
+            }
             return Err(format!("ftruncate failed: {err}"));
         }
         // Apply seals: prevent shrinking, growing, and further sealing.
@@ -137,7 +171,9 @@ impl SharedMemory {
         let seals = F_SEAL_SHRINK | F_SEAL_GROW | F_SEAL_SEAL;
         if unsafe { libc::fcntl(fd, F_ADD_SEALS, seals) } < 0 {
             let err = std::io::Error::last_os_error();
-            unsafe { libc::close(fd); }
+            unsafe {
+                libc::close(fd);
+            }
             return Err(format!("fcntl F_ADD_SEALS failed: {err}"));
         }
         unsafe { Self::map_and_build(name.to_string(), fd, size, false) }
@@ -152,7 +188,10 @@ impl SharedMemory {
         // SAFETY: query active seals on fd.
         let seals = unsafe { libc::fcntl(fd, F_GET_SEALS) };
         if seals < 0 {
-            return Err(format!("fcntl F_GET_SEALS failed: {}", std::io::Error::last_os_error()));
+            return Err(format!(
+                "fcntl F_GET_SEALS failed: {}",
+                std::io::Error::last_os_error()
+            ));
         }
         let required = F_SEAL_SHRINK | F_SEAL_GROW | F_SEAL_SEAL;
         if (seals & required) != required {
@@ -163,10 +202,18 @@ impl SharedMemory {
         unsafe { Self::map_and_build(String::new(), fd, size, false) }
     }
 
-    pub fn fd(&self) -> libc::c_int { self.fd }
-    pub fn ptr(&self) -> *mut libc::c_void { self.ptr }
-    pub fn size(&self) -> usize { self.size }
-    pub fn name(&self) -> &str { &self.name }
+    pub fn fd(&self) -> libc::c_int {
+        self.fd
+    }
+    pub fn ptr(&self) -> *mut libc::c_void {
+        self.ptr
+    }
+    pub fn size(&self) -> usize {
+        self.size
+    }
+    pub fn name(&self) -> &str {
+        &self.name
+    }
 }
 
 impl Drop for SharedMemory {

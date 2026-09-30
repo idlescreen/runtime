@@ -31,7 +31,12 @@ const SECCOMP_RET_ERRNO: u32 = 0x0005_0000;
 const SECCOMP_RET_ALLOW: u32 = 0x7fff_0000;
 
 const fn bpf_stmt(code: u16, k: u32) -> libc::sock_filter {
-    libc::sock_filter { code, jt: 0, jf: 0, k }
+    libc::sock_filter {
+        code,
+        jt: 0,
+        jf: 0,
+        k,
+    }
 }
 
 const fn bpf_jump(code: u16, k: u32, jt: u8, jf: u8) -> libc::sock_filter {
@@ -112,7 +117,9 @@ pub fn apply_seccomp() -> Result<(), String> {
                 "seccomp required by IDLE_REQUIRE_SECCOMP but unavailable: {err}"
             ));
         }
-        idle_log::warn!("seccomp filter unavailable ({err}); continuing under Landlock-only enforcement");
+        idle_log::warn!(
+            "seccomp filter unavailable ({err}); continuing under Landlock-only enforcement"
+        );
     }
     Ok(())
 }

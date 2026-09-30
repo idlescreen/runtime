@@ -76,7 +76,10 @@ fn test_seccomp_require_env_var() {
     let _g = crate::ENV_LOCK.lock().unwrap();
     // SAFETY: test-only environment variable mutation under ENV_LOCK.
     unsafe { std::env::set_var("IDLE_REQUIRE_SECCOMP", "1") };
-    assert_eq!(std::env::var("IDLE_REQUIRE_SECCOMP").ok().as_deref(), Some("1"));
+    assert_eq!(
+        std::env::var("IDLE_REQUIRE_SECCOMP").ok().as_deref(),
+        Some("1")
+    );
     // SAFETY: test cleanup under ENV_LOCK.
     unsafe { std::env::remove_var("IDLE_REQUIRE_SECCOMP") };
 }

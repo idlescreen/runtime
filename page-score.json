@@ -1,7 +1,7 @@
 {
  "repo": "runtime",
- "rev": "70f0776",
- "dirty": true,
+ "rev": "9c4db26",
+ "dirty": false,
  "pages": [
   {
    "path": "./crates/idle-dbus/src/client.rs",

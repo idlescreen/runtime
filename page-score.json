@@ -1,6 +1,6 @@
 {
  "repo": "runtime",
- "rev": "cd673ac",
+ "rev": "4787487",
  "dirty": false,
  "pages": [
   {
@@ -117,7 +117,7 @@
   },
   {
    "path": "./crates/idle-ipc/src/shm/mod.rs",
-   "lines": 200,
+   "lines": 247,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
@@ -1083,7 +1083,7 @@
   },
   {
    "path": "./idle-daemon/src/config/mod.rs",
-   "lines": 247,
+   "lines": 251,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
@@ -1419,7 +1419,7 @@
   },
   {
    "path": "./idle-daemon/src/inhibit/state.rs",
-   "lines": 230,
+   "lines": 243,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
@@ -1440,7 +1440,7 @@
   },
   {
    "path": "./idle-daemon/src/inhibit/tests_state.rs",
-   "lines": 219,
+   "lines": 227,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
@@ -2147,7 +2147,7 @@
   },
   {
    "path": "./idle-runner/src/sandbox/mod.rs",
-   "lines": 190,
+   "lines": 192,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
@@ -2168,14 +2168,14 @@
   },
   {
    "path": "./idle-runner/src/sandbox/seccomp.rs",
-   "lines": 118,
+   "lines": 125,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 2
   },
   {
    "path": "./idle-runner/src/sandbox/seccomp_tests.rs",
-   "lines": 82,
+   "lines": 85,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 0

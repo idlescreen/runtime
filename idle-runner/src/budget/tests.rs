@@ -45,6 +45,25 @@ fn hard_limit_window_constant() {
 }
 
 #[test]
+fn hard_limit_scales_with_elapsed_time() {
+    let mut b = CpuBudget::attach("budget-test-elapsed").expect("attach");
+    b.started = Instant::now() - std::time::Duration::from_secs(20);
+    b.last_sample_micros.set(5_500_000);
+    b.last_sample_at.set(Some(Instant::now()));
+    assert!(
+        !b.exceeded_hard_limit(),
+        "25% CPU over 20s must not trip hard limit"
+    );
+
+    b.last_sample_micros.set(25_000_000);
+    b.last_sample_at.set(Some(Instant::now()));
+    assert!(
+        b.exceeded_hard_limit(),
+        "excessive CPU usage must trip hard limit"
+    );
+}
+
+#[test]
 fn quota_overrides_env_var() {
     let _g = crate::ENV_LOCK.lock().unwrap();
     unsafe { std::env::set_var("IDLE_CPU_QUOTA_PCT", "75") };

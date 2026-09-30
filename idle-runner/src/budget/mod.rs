@@ -38,7 +38,7 @@ pub enum BudgetStatus {
 #[derive(Debug)]
 pub struct CpuBudget {
     cgroup_dir: Option<PathBuf>,
-    started: Instant,
+    pub(crate) started: Instant,
     start_proc_cpu_micros: u64,
     /// Soft quota (`cpu.max` quota field).
     quota_us: u64,
@@ -52,8 +52,8 @@ pub struct CpuBudget {
     // --- Sample cache (closes M-A19: per-tick open+read+parse of /proc). ---
     // Interior mutability so `usage_micros(&self)` can update without
     // disturbing the public API. Sample period: SAMPLE_CACHE_MS.
-    last_sample_micros: std::cell::Cell<u64>,
-    last_sample_at: std::cell::Cell<Option<Instant>>,
+    pub(crate) last_sample_micros: std::cell::Cell<u64>,
+    pub(crate) last_sample_at: std::cell::Cell<Option<Instant>>,
 }
 
 const SAMPLE_CACHE_MS: u64 = 250;
@@ -142,7 +142,9 @@ impl CpuBudget {
         if elapsed < self.hard_window_secs {
             return false;
         }
-        self.usage_micros() > self.hard_limit_us
+        let periods = (elapsed as u128 * 1_000_000) / self.period_us as u128;
+        let allowed_us = periods * self.quota_us as u128 * DEFAULT_HARD_LIMIT_MULTIPLIER as u128;
+        self.usage_micros() as u128 > allowed_us
     }
 
     /// Hard limit in microseconds (the ceiling against which `usage_micros` is

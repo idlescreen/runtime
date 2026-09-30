@@ -65,6 +65,12 @@ idlescreen update         # upgrade packages
 idlescreen tui            # runtime configuration
 ```
 
+## Features & Architecture
+
+- **Wayland Presentation Lifecycle**: Clean layer-surface dismissal via explicit `hide()` and teardown/recreation of stale overlays on monitor hotplug/reconfiguration.
+- **CPU & GPU Resource Budgets**: Sandboxed plugin cgroup v2 throttle enforcement with evaluation window period scaling to prevent false trips during long sessions.
+- **Configuration Hierarchy**: Discovers configurations in `~/.config/idlescreen/config.yaml`, `~/.config/idle/config.yaml`, and system defaults in `/etc/xdg/idlescreen/config.yaml`.
+
 ## License
 
 Apache-2.0 · © 2026 IdleScreen

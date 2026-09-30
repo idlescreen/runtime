@@ -28,6 +28,20 @@ impl PluginSession {
 
         self.plugin = None;
 
+        if let Some(old_budget) = self.cpu_budget.take() {
+            old_budget.release();
+        }
+        self.cpu_budget = match crate::budget::attach_for_path(&self.plugin_path) {
+            Ok(
+                crate::budget::AttachOutcome::Enforced(b)
+                | crate::budget::AttachOutcome::Unenforced(b),
+            ) => Some(b),
+            Err(err) => {
+                idle_log::warn!("failed to re-attach CPU budget on reload: {err}");
+                None
+            }
+        };
+
         // Re-read the manifest: the file on disk changed, so the capability
         // claims we admitted the old library under may no longer hold. Falling
         // back to the cached manifest would let a swapped .so inherit trust.

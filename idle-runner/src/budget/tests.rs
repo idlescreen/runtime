@@ -37,9 +37,10 @@ fn hard_limit_not_exceeded_before_window() {
 fn hard_limit_window_constant() {
     let b = CpuBudget::attach("budget-test-no-cgroup").expect("attach");
     assert_eq!(b.hard_window_secs, DEFAULT_HARD_LIMIT_WINDOW_SECS);
+    let periods = (DEFAULT_HARD_LIMIT_WINDOW_SECS * 1_000_000) / b.period_us;
     assert_eq!(
         b.hard_limit_us,
-        b.quota_us * DEFAULT_HARD_LIMIT_MULTIPLIER as u64
+        periods * b.quota_us * DEFAULT_HARD_LIMIT_MULTIPLIER as u64
     );
 }
 

@@ -8,7 +8,7 @@ use super::types::SessionState;
 impl SessionState {
     pub fn create_overlay(&mut self, output_id: u32) {
         if self.overlays.contains_key(&output_id) {
-            return;
+            self.remove_overlay(output_id);
         }
 
         let (Some(compositor), Some(layer_shell)) = (&self.compositor, &self.layer_shell) else {

@@ -79,13 +79,16 @@ impl CpuBudget {
 
         let start_proc_cpu_micros = read_proc_cpu_micros().unwrap_or(0);
 
+        let periods_in_window = (DEFAULT_HARD_LIMIT_WINDOW_SECS * 1_000_000) / period_us;
+        let hard_limit_us = periods_in_window * quota_us * DEFAULT_HARD_LIMIT_MULTIPLIER as u64;
+
         Ok(Self {
             cgroup_dir: dir,
             started: Instant::now(),
             start_proc_cpu_micros,
             quota_us,
             period_us,
-            hard_limit_us: quota_us * DEFAULT_HARD_LIMIT_MULTIPLIER as u64,
+            hard_limit_us,
             hard_window_secs: DEFAULT_HARD_LIMIT_WINDOW_SECS,
             status,
             last_sample_micros: std::cell::Cell::new(0),

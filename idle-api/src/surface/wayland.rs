@@ -84,9 +84,7 @@ impl OverlaySurface for WaylandOverlay {
     }
 
     fn hide(&self) {
-        // The presenter's "hide" is implicit (presentation ends); we
-        // accept that semantically here without re-exposing the surface.
-        // A future trait addition would formalize it.
+        self.presenter.hide();
     }
 
     fn supports_scaling(&self) -> bool {

@@ -1,3 +1,13 @@
+idle-daemon (3.5.29-1) unstable; urgency=medium
+
+  * Fix Wayland presentation lifecycle freeze: hide presenter on stop and
+    destroy existing overlays on output reconfiguration.
+  * Correct CPU budget hard limit calculation over the evaluation window
+    and reset budget upon plugin reload.
+  * Support /etc/xdg/idlescreen/config.yaml for system config discovery.
+
+ -- IdleScreen Maintainers <maintainers@idlescreen.dev>  Wed, 30 Sep 2026 12:00:00 +0000
+
 idle-daemon (3.5.20-1) unstable; urgency=medium
 
   * Tiered perf promise: 17 inline `mod benches` blocks deleted and their

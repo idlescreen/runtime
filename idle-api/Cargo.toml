@@ -2,7 +2,7 @@
 authors = ["idlescreen developers"]
 repository = "https://github.com/idlescreen/idlescreen"
 name = "idle-api"
-version = "3.5.0"
+version = "3.5.1"
 edition = "2024"
 description = "Lightweight shared API definitions, traits, and math utilities for Wayland GPU screensaver plugins."
 license = "Apache-2.0"

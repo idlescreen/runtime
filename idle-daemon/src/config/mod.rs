@@ -96,6 +96,7 @@ impl DaemonConfig {
             dirs.push(base.join("idle"));
             dirs.push(base.join("trance"));
         }
+        dirs.push(PathBuf::from("/etc/xdg/idlescreen"));
         dirs.push(PathBuf::from("/etc/idlescreen"));
         dirs.push(PathBuf::from("/etc/idle"));
         dirs

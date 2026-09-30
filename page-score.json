@@ -1,7 +1,7 @@
 {
  "repo": "runtime",
- "rev": "7929719",
- "dirty": false,
+ "rev": "80fe9b8",
+ "dirty": true,
  "pages": [
   {
    "path": "./crates/idle-dbus/src/client.rs",
@@ -950,7 +950,7 @@
   },
   {
    "path": "./idle-api/src/surface/wayland.rs",
-   "lines": 123,
+   "lines": 121,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 2
@@ -1083,7 +1083,7 @@
   },
   {
    "path": "./idle-daemon/src/config/mod.rs",
-   "lines": 251,
+   "lines": 252,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
@@ -1251,7 +1251,7 @@
   },
   {
    "path": "./idle-daemon/src/daemon/presentation.rs",
-   "lines": 137,
+   "lines": 140,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 20
@@ -1776,14 +1776,14 @@
   },
   {
    "path": "./idle-runner/src/budget/mod.rs",
-   "lines": 222,
+   "lines": 225,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
   },
   {
    "path": "./idle-runner/src/budget/tests.rs",
-   "lines": 73,
+   "lines": 74,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
@@ -2119,7 +2119,7 @@
   },
   {
    "path": "./idle-runner/src/plugin_session/reloading.rs",
-   "lines": 131,
+   "lines": 145,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 0

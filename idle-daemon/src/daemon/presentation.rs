@@ -98,6 +98,9 @@ pub fn stop_presentation(
         }
         *presentation = ActivePresentation::None;
     }
+    if let Some(presenter) = overlay_presenter {
+        presenter.hide();
+    }
 }
 
 pub fn current_time_micros() -> u64 {

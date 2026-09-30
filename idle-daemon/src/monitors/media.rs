@@ -57,17 +57,15 @@ pub(crate) fn sync_media_inhibit(
         .map(|c| c.inhibit_on_media)
         .unwrap_or(true);
 
+    controller.inhibitors.remove_client(&unique);
     if playing && inhibit_enabled {
         let _ = controller.inhibitors.add(
             player_name.to_string(),
             "PlaybackStatus=Playing".into(),
             unique,
         );
-        controller.mark_dirty();
-    } else {
-        controller.inhibitors.remove_client(&unique);
-        controller.mark_dirty();
     }
+    controller.mark_dirty();
 }
 
 pub async fn watch_media_players(connection: zbus::Connection, controller: Arc<DaemonController>) {
@@ -166,6 +164,14 @@ pub async fn watch_media_players(connection: zbus::Connection, controller: Arc<D
                         .cloned()
                         .unwrap_or_else(|| "mpris".to_string());
                     sync_media_inhibit(&controller, sender_str, &app_name, is_playing);
+                } else if _inv.iter().any(|p| p == "PlaybackStatus")
+                    && let Some(status) = query_playback_status(&connection, sender_str).await
+                {
+                    let app_name = player_names
+                        .get(sender_str)
+                        .cloned()
+                        .unwrap_or_else(|| "mpris".to_string());
+                    sync_media_inhibit(&controller, sender_str, &app_name, status == "Playing");
                 }
             }
             else => break,
@@ -225,5 +231,18 @@ mod tests {
         sync_media_inhibit(&controller, owner, "vlc", true);
         assert!(!controller.inhibitors.is_inhibited());
         assert_eq!(controller.inhibitors.list().len(), 0);
+    }
+
+    #[test]
+    fn test_sync_media_inhibit_replaces_existing_hold_without_duplicates() {
+        let config = crate::config::DaemonConfig::default();
+        let controller = DaemonController::new(config);
+        let owner = ":1.4242";
+
+        sync_media_inhibit(&controller, owner, "mpris", true);
+        sync_media_inhibit(&controller, owner, "spotify", true);
+        let list = controller.inhibitors.list();
+        assert_eq!(list.len(), 1);
+        assert_eq!(list[0].1, "spotify");
     }
 }

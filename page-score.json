@@ -1,14 +1,14 @@
 {
  "repo": "runtime",
- "rev": "370d684",
- "dirty": false,
+ "rev": "70f0776",
+ "dirty": true,
  "pages": [
   {
    "path": "./crates/idle-dbus/src/client.rs",
    "lines": 240,
    "bin_bytes": null,
    "heat_pct": null,
-   "reach": 12
+   "reach": 13
   },
   {
    "path": "./crates/idle-dbus/src/client_tests.rs",
@@ -586,7 +586,7 @@
   },
   {
    "path": "./crates/wayland-present/src/overlay/state/overlay_frame.rs",
-   "lines": 188,
+   "lines": 195,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
@@ -600,7 +600,7 @@
   },
   {
    "path": "./crates/wayland-present/src/overlay/state/overlay.rs",
-   "lines": 245,
+   "lines": 252,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 12
@@ -614,7 +614,7 @@
   },
   {
    "path": "./crates/wayland-present/src/overlay/vrr/feedback.rs",
-   "lines": 103,
+   "lines": 102,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 2
@@ -1027,14 +1027,14 @@
   },
   {
    "path": "./idle-daemon/src/affinity/tests.rs",
-   "lines": 174,
+   "lines": 207,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
   },
   {
    "path": "./idle-daemon/src/affinity/tiers.rs",
-   "lines": 190,
+   "lines": 196,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
@@ -1559,7 +1559,7 @@
   },
   {
    "path": "./idle-daemon/src/presentation/frame/frame_loop.rs",
-   "lines": 253,
+   "lines": 250,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 4
@@ -1573,14 +1573,14 @@
   },
   {
    "path": "./idle-daemon/src/presentation/frame/frame_pacing.rs",
-   "lines": 201,
+   "lines": 219,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 2
   },
   {
    "path": "./idle-daemon/src/presentation/frame/frame_pacing_tests.rs",
-   "lines": 145,
+   "lines": 164,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 0

@@ -78,6 +78,23 @@ pub fn resolve_adaptive_pacing(
     }
 }
 
+/// Check if the adaptive pacing stage has changed based on session elapsed time or power source.
+pub(crate) fn check_adaptive_transition(
+    nominal_fps: f32,
+    session_start: Instant,
+    on_battery: bool,
+    current_fps: f32,
+    current_tick: f32,
+) -> Option<(f32, f32, AdaptivePacingStage)> {
+    let elapsed = session_start.elapsed();
+    let (new_fps, new_tick, stage) = resolve_adaptive_pacing(nominal_fps, elapsed, on_battery);
+    if (new_fps - current_fps).abs() > 0.01 || (new_tick - current_tick).abs() > 0.01 {
+        Some((new_fps, new_tick, stage))
+    } else {
+        None
+    }
+}
+
 pub(crate) struct FramePacing {
     nominal_fps: f32,
     nominal_tick: f32,
@@ -110,7 +127,8 @@ impl FramePacing {
         let nominal_tick = clamp_tick_hz(nominal_tick);
 
         let on_battery = crate::daemon::battery::is_on_battery();
-        let (present_fps, tick_hz) = apply_power_throttling(nominal_fps, nominal_tick, on_battery);
+        let (present_fps, tick_hz, _stage) =
+            resolve_adaptive_pacing(nominal_fps, Duration::ZERO, on_battery);
         if on_battery {
             idle_log::info!(
                 "Battery power detected: capping physics simulation and rendering frame rate targets to 30 FPS/Hz"

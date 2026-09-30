@@ -93,6 +93,9 @@ impl SessionState {
         width: u32,
         height: u32,
         damage: Option<super::super::damage::DamageRect>,
+        presentation: Option<
+            &wayland_protocols::wp::presentation_time::client::wp_presentation::WpPresentation,
+        >,
     ) -> bool {
         let Some(buffer) = overlay.buffers[overlay.current_buffer].as_ref() else {
             return false;
@@ -150,6 +153,10 @@ impl SessionState {
 
         // Request frame callback to wake up `poll()` on VSync, enabling backpressure.
         let _ = overlay.surface.frame(queue, ());
+
+        if let Some(pres) = presentation {
+            super::super::vrr::request_presentation_feedback(pres, &overlay.surface, queue);
+        }
 
         overlay.surface.commit();
         true

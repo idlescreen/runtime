@@ -211,7 +211,14 @@ impl SessionState {
         }
 
         let queue = self.queue.clone();
-        if !Self::commit_frame_buffer(&queue, overlay, width, height, damage) {
+        if !Self::commit_frame_buffer(
+            &queue,
+            overlay,
+            width,
+            height,
+            damage,
+            self.presentation.as_ref(),
+        ) {
             idle_log::error!(
                 output_id,
                 "wayland-present: frame buffer missing after ensure; skipping frame"

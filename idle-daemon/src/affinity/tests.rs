@@ -50,6 +50,22 @@ mod unit_tests {
         fs::write(root.join("online"), "0-7\n").expect("write");
         let atom_dir = root.join("types/intel_atom_0");
         fs::create_dir_all(&atom_dir).expect("create_dir");
+        fs::write(atom_dir.join("cpulist"), "4-7\n").expect("write");
+
+        let plan = discover_cpu_topology_at(root);
+        assert_eq!(plan.tier, CoreDiscoveryTier::IntelCoreType);
+        assert_eq!(plan.efficient_cores, vec![4, 5, 6, 7]);
+        assert_eq!(plan.performance_cores, vec![0, 1, 2, 3]);
+        assert!(plan.is_heterogeneous());
+    }
+
+    #[test]
+    fn detect_intel_atom_via_types_dir_legacy_cpus() {
+        let dir = TestDir::new();
+        let root = dir.path();
+        fs::write(root.join("online"), "0-7\n").expect("write");
+        let atom_dir = root.join("types/intel_atom_0");
+        fs::create_dir_all(&atom_dir).expect("create_dir");
         fs::write(atom_dir.join("cpus"), "4-7\n").expect("write");
 
         let plan = discover_cpu_topology_at(root);
@@ -167,8 +183,25 @@ mod unit_tests {
 
     #[test]
     fn apply_affinity_valid_succeeds() {
+        #[cfg(target_os = "linux")]
+        let orig = unsafe {
+            let mut set: libc::cpu_set_t = std::mem::zeroed();
+            if libc::sched_getaffinity(0, std::mem::size_of::<libc::cpu_set_t>(), &mut set) == 0 {
+                Some(set)
+            } else {
+                None
+            }
+        };
+
         let plan = discover_cpu_topology();
         let res = apply_affinity(&plan.efficient_cores);
         assert!(res.is_ok());
+
+        #[cfg(target_os = "linux")]
+        if let Some(set) = orig {
+            unsafe {
+                libc::sched_setaffinity(0, std::mem::size_of::<libc::cpu_set_t>(), &set);
+            }
+        }
     }
 }

@@ -15,26 +15,28 @@ pub(super) fn detect_intel_atom(root: &Path, online_cpus: &[usize]) -> Option<Cp
     {
         for entry in entries.flatten() {
             let name = entry.file_name().to_string_lossy().to_ascii_lowercase();
-            if name.contains("atom")
-                && let Ok(cpus_str) = fs::read_to_string(entry.path().join("cpus"))
-            {
-                let e_cores = parse_cpu_list(&cpus_str);
-                let e_set: BTreeSet<usize> = e_cores
-                    .into_iter()
-                    .filter(|c| online_cpus.contains(c))
-                    .collect();
-                if !e_set.is_empty() && e_set.len() < online_cpus.len() {
-                    let p_cores = online_cpus
-                        .iter()
-                        .copied()
-                        .filter(|c| !e_set.contains(c))
+            if name.contains("atom") {
+                let cpus_str = fs::read_to_string(entry.path().join("cpulist"))
+                    .or_else(|_| fs::read_to_string(entry.path().join("cpus")));
+                if let Ok(cpus_str) = cpus_str {
+                    let e_cores = parse_cpu_list(&cpus_str);
+                    let e_set: BTreeSet<usize> = e_cores
+                        .into_iter()
+                        .filter(|c| online_cpus.contains(c))
                         .collect();
-                    return Some(CpuAffinityPlan {
-                        efficient_cores: e_set.into_iter().collect(),
-                        performance_cores: p_cores,
-                        total_cores: online_cpus.len(),
-                        tier: CoreDiscoveryTier::IntelCoreType,
-                    });
+                    if !e_set.is_empty() && e_set.len() < online_cpus.len() {
+                        let p_cores = online_cpus
+                            .iter()
+                            .copied()
+                            .filter(|c| !e_set.contains(c))
+                            .collect();
+                        return Some(CpuAffinityPlan {
+                            efficient_cores: e_set.into_iter().collect(),
+                            performance_cores: p_cores,
+                            total_cores: online_cpus.len(),
+                            tier: CoreDiscoveryTier::IntelCoreType,
+                        });
+                    }
                 }
             }
         }
@@ -48,7 +50,11 @@ pub(super) fn detect_intel_atom(root: &Path, online_cpus: &[usize]) -> Option<Cp
         if let Ok(val) = fs::read_to_string(path) {
             has_core_type = true;
             let val_lower = val.trim().to_ascii_lowercase();
-            if val_lower.contains("atom") || val_lower == "0x20" || val_lower.contains("efficient")
+            if val_lower.contains("atom")
+                || val_lower == "0x20"
+                || val_lower == "20"
+                || val_lower == "32"
+                || val_lower.contains("efficient")
             {
                 e_cores.push(cpu);
             } else {

@@ -225,29 +225,26 @@ fn check_power_state_update(state: &mut FrameLoopState) {
     let current_battery = crate::daemon::battery::is_on_battery();
     if current_battery != state.on_battery {
         state.on_battery = current_battery;
-        let (new_fps, new_tick) = super::frame_pacing::apply_power_throttling(
-            state.nominal_fps,
-            state.nominal_tick,
-            current_battery,
-        );
+        idle_log::info!(battery = current_battery, "power: source changed");
+    }
+    if let Some((new_fps, new_tick, stage)) = super::frame_pacing::check_adaptive_transition(
+        state.nominal_fps,
+        state.session_start,
+        state.on_battery,
+        state.present_fps,
+        state.tick_hz,
+    ) {
         state.present_fps = new_fps;
         state.tick_hz = new_tick;
         state.frame_duration = Duration::from_secs_f32(1.0 / new_fps);
         for s in state.sessions.iter_mut() {
             s.set_simulation_rate(new_tick);
         }
-        if current_battery {
-            idle_log::info!(
-                fps = new_fps,
-                tick = new_tick,
-                "power: battery detected — clamped to 30 FPS and 15–30 Hz tick"
-            );
-        } else {
-            idle_log::info!(
-                fps = new_fps,
-                tick = new_tick,
-                "power: AC detected — restored nominal display refresh and tick rate"
-            );
-        }
+        idle_log::info!(
+            ?stage,
+            new_fps,
+            new_tick,
+            "adaptive frame pacing transition"
+        );
     }
 }

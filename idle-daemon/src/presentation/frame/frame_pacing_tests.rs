@@ -143,3 +143,22 @@ fn adaptive_pacing_transitions_stages() {
     assert_eq!(fps_b, 30.0);
     assert_eq!(tick_b, 30.0);
 }
+
+#[test]
+fn check_adaptive_transition_detects_phase_change() {
+    use super::{AdaptivePacingStage, check_adaptive_transition};
+    use std::time::Instant;
+
+    let start = Instant::now() - Duration::from_secs(10);
+    // At 10s on AC, pacing is Active (60 FPS / 60 Hz). If currently at 144, it transitions.
+    let transition = check_adaptive_transition(144.0, start, false, 144.0, 60.0);
+    assert!(transition.is_some());
+    let (fps, tick, stage) = transition.unwrap();
+    assert_eq!(stage, AdaptivePacingStage::Active);
+    assert_eq!(fps, 60.0);
+    assert_eq!(tick, 60.0);
+
+    // If already at 60 FPS / 60 Hz, no transition is detected.
+    let no_transition = check_adaptive_transition(144.0, start, false, 60.0, 60.0);
+    assert!(no_transition.is_none());
+}

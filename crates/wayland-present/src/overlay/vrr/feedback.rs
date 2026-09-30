@@ -45,7 +45,6 @@ impl VrrFeedbackState {
     }
 }
 
-#[allow(dead_code)]
 pub fn request_presentation_feedback(
     presentation: &wp_presentation::WpPresentation,
     surface: &wl_surface::WlSurface,

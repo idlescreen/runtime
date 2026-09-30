@@ -8,7 +8,9 @@ mod atlas;
 mod font;
 mod geom;
 mod gpu;
+pub mod gpu_init;
 mod pixels;
+pub mod scanout;
 
 use std::collections::HashMap;
 use std::sync::Arc;

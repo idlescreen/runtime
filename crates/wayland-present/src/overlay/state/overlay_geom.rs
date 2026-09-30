@@ -37,6 +37,35 @@ pub fn configure_is_panel_inset(
     configured_w < native_w || configured_h < native_h
 }
 
+/// DRM fourcc format codes for KMS hardware overlay planes.
+#[allow(dead_code)]
+pub const DRM_FORMAT_XRGB8888: u32 = 0x3432_5258;
+#[allow(dead_code)]
+pub const DRM_FORMAT_XBGR2101010: u32 = 0x3033_4258;
+
+/// Align pitch stride to 256 bytes for hardware KMS overlay plane scanout.
+#[allow(dead_code)]
+pub fn align_scanout_stride_256(width: u32, bpp: u32) -> u32 {
+    let unaligned = width.saturating_mul(bpp);
+    (unaligned + 255) & !255
+}
+
+/// Verify 1:1 match between frame buffer dimensions and target surface size.
+#[allow(dead_code)]
+pub fn is_1to1_scanout_geometry(buf_w: u32, buf_h: u32, surf_w: u32, surf_h: u32) -> bool {
+    buf_w == surf_w && buf_h == surf_h && buf_w > 0 && buf_h > 0
+}
+
+/// Select DRM overlay plane format: 10-bit XBGR2101010 or 8-bit XRGB8888.
+#[allow(dead_code)]
+pub fn select_kms_overlay_format(prefer_10bit: bool) -> u32 {
+    if prefer_10bit {
+        DRM_FORMAT_XBGR2101010
+    } else {
+        DRM_FORMAT_XRGB8888
+    }
+}
+
 impl SessionState {
     /// Buffer / layout size for presentation.
     ///
@@ -83,6 +112,26 @@ impl SessionState {
         let (top, right, bottom, left) =
             panel_expand_margins(native_w, native_h, configured_w, configured_h);
         layer_surface.set_margin(top, right, bottom, left);
+    }
+
+    /// Apply an opaque region covering `(0, 0, width, height)` to allow direct KMS plane scanout.
+    pub(crate) fn apply_opaque_region(
+        compositor: Option<&wayland_client::protocol::wl_compositor::WlCompositor>,
+        surface: &wl_surface::WlSurface,
+        queue: &wayland_client::QueueHandle<SessionState>,
+        width: i32,
+        height: i32,
+    ) {
+        if width <= 0 || height <= 0 {
+            surface.set_opaque_region(None);
+            return;
+        }
+        if let Some(comp) = compositor {
+            let region = comp.create_region(queue, ());
+            region.add(0, 0, width, height);
+            surface.set_opaque_region(Some(&region));
+            region.destroy();
+        }
     }
 
     /// Exclusive zone for layer-shell: `-1` = surface wants full exclusive area
@@ -152,6 +201,34 @@ mod geom_tests {
         assert_eq!(
             SessionState::render_dimensions(99, 1280, 720, &modes, true),
             (1280, 720)
+        );
+    }
+
+    #[test]
+    fn test_kms_stride_256_alignment() {
+        for width in [640, 800, 1024, 1280, 1920, 2560, 3840] {
+            let stride = super::align_scanout_stride_256(width, 4);
+            assert_eq!(stride % 256, 0);
+            assert!(stride >= width * 4);
+        }
+    }
+
+    #[test]
+    fn test_1to1_geometry_match() {
+        assert!(super::is_1to1_scanout_geometry(1920, 1080, 1920, 1080));
+        assert!(!super::is_1to1_scanout_geometry(1920, 1080, 1280, 720));
+        assert!(!super::is_1to1_scanout_geometry(0, 0, 0, 0));
+    }
+
+    #[test]
+    fn test_kms_format_selection() {
+        assert_eq!(
+            super::select_kms_overlay_format(false),
+            super::DRM_FORMAT_XRGB8888
+        );
+        assert_eq!(
+            super::select_kms_overlay_format(true),
+            super::DRM_FORMAT_XBGR2101010
         );
     }
 }

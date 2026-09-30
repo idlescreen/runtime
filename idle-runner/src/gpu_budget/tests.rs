@@ -24,6 +24,7 @@ fn backend_string_round_trip() {
 
 #[test]
 fn new_active_applies_quota_defaults() {
+    let _g = crate::ENV_LOCK.lock().unwrap();
     let b = GpuBudget::new_active(GpuBackend::Nvidia);
     assert_eq!(b.quota_pct(), DEFAULT_GPU_QUOTA_PCT);
     assert!(b.hard_ceiling() >= b.quota_pct());

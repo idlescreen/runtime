@@ -14,7 +14,7 @@ workspace = true
 libc = { workspace = true }
 idle-log.workspace = true
 wayland-client = "0.31"
-wayland-protocols = { version = "0.32", features = ["client"] }
+wayland-protocols = { version = "0.32", features = ["client", "staging"] }
 wayland-protocols-wlr = { version = "0.3.12", features = ["client"] }
 # FrameSignal — wait_for/wait_while_for with closure predicate
 parking_lot = { workspace = true }

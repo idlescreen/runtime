@@ -10,7 +10,7 @@ pub struct Uniforms {
     pub atlas_cols: u32,
     pub atlas_rows: u32,
     pub scanlines: u32,
-    pub padding: u32,
+    pub fade_multiplier: f32,
 }
 
 #[repr(C)]

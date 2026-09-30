@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Apache-2.0
+#![allow(clippy::float_cmp)]
 
 use super::{clamp_present_fps, clamp_tick_hz};
 use std::time::Duration;
@@ -107,4 +107,39 @@ fn dynamic_battery_cache_integration() {
     assert!((tick - 60.0).abs() < 1e-3);
 
     crate::daemon::power::battery::reset_cached_on_battery();
+}
+
+#[test]
+fn adaptive_pacing_transitions_stages() {
+    use super::{AdaptivePacingStage, resolve_adaptive_pacing};
+
+    // Stage 1: Interactive (elapsed < 5s)
+    let (fps_i, tick_i, stage_i) = resolve_adaptive_pacing(144.0, Duration::from_secs(2), false);
+    assert_eq!(stage_i, AdaptivePacingStage::Interactive);
+    assert_eq!(fps_i, 144.0);
+    assert_eq!(tick_i, 60.0);
+
+    // Stage 2: Active (5s <= elapsed < 45s)
+    let (fps_a, tick_a, stage_a) = resolve_adaptive_pacing(144.0, Duration::from_secs(15), false);
+    assert_eq!(stage_a, AdaptivePacingStage::Active);
+    assert_eq!(fps_a, 60.0);
+    assert_eq!(tick_a, 60.0);
+
+    // Stage 3: Deep Ambient (elapsed >= 45s)
+    let (fps_d, tick_d, stage_d) = resolve_adaptive_pacing(60.0, Duration::from_secs(60), false);
+    assert_eq!(stage_d, AdaptivePacingStage::DeepAmbient);
+    assert_eq!(fps_d, 30.0);
+    assert_eq!(tick_d, 30.0);
+
+    // Stage 3: Deep Ambient on 24Hz-aligned display
+    let (fps_24, tick_24, stage_24) = resolve_adaptive_pacing(48.0, Duration::from_secs(60), false);
+    assert_eq!(stage_24, AdaptivePacingStage::DeepAmbient);
+    assert_eq!(fps_24, 24.0);
+    assert_eq!(tick_24, 30.0);
+
+    // Stage 4: Battery (immediate cap regardless of elapsed)
+    let (fps_b, tick_b, stage_b) = resolve_adaptive_pacing(144.0, Duration::from_secs(2), true);
+    assert_eq!(stage_b, AdaptivePacingStage::Battery);
+    assert_eq!(fps_b, 30.0);
+    assert_eq!(tick_b, 30.0);
 }

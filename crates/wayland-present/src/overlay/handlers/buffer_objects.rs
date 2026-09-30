@@ -2,10 +2,22 @@
 
 use wayland_client::{
     Connection, Dispatch, QueueHandle,
-    protocol::{wl_buffer, wl_callback, wl_compositor, wl_shm, wl_shm_pool, wl_surface},
+    protocol::{wl_buffer, wl_callback, wl_compositor, wl_region, wl_shm, wl_shm_pool, wl_surface},
 };
 
 use super::super::state::SessionState;
+
+impl Dispatch<wl_region::WlRegion, ()> for SessionState {
+    fn event(
+        _: &mut Self,
+        _: &wl_region::WlRegion,
+        _: wl_region::Event,
+        _: &(),
+        _: &Connection,
+        _: &QueueHandle<Self>,
+    ) {
+    }
+}
 
 impl Dispatch<wl_compositor::WlCompositor, ()> for SessionState {
     fn event(
@@ -45,13 +57,16 @@ impl Dispatch<wl_shm_pool::WlShmPool, ()> for SessionState {
 
 impl Dispatch<wl_buffer::WlBuffer, ()> for SessionState {
     fn event(
-        _: &mut Self,
-        _: &wl_buffer::WlBuffer,
-        _: wl_buffer::Event,
+        state: &mut Self,
+        buffer: &wl_buffer::WlBuffer,
+        event: wl_buffer::Event,
         _: &(),
         _: &Connection,
         _: &QueueHandle<Self>,
     ) {
+        if let wl_buffer::Event::Release = event {
+            state.dmabuf_pool.release_slot_by_buffer(buffer);
+        }
     }
 }
 

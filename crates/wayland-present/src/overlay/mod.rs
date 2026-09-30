@@ -13,13 +13,16 @@
 //! so accidental motion during fade-in does not immediately hide the screensaver.
 
 pub(crate) mod buffer;
+pub mod color;
 pub(crate) mod command;
 pub mod damage;
+pub mod dmabuf;
 pub(crate) mod epoll;
 pub(crate) mod error_utils;
 pub(crate) mod event_thread;
 pub(crate) mod handlers;
 mod state;
+pub mod vrr;
 
 pub use command::PresenterCommand;
 pub use event_thread::spawn_event_thread;

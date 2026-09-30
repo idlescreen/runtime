@@ -82,6 +82,12 @@ fn run_event_loop(
         shm: None,
         layer_shell: None,
         viewporter: None,
+        presentation: None,
+        vrr_feedback: crate::overlay::vrr::VrrFeedbackState::new(),
+        linux_dmabuf: None,
+        dmabuf_pool: crate::overlay::dmabuf::DmaBufPool::new(3),
+        color_manager: None,
+        color_state: crate::overlay::color::ColorManagementState::new(),
         seat: None,
         pointer: None,
         pointer_serial: 0,
@@ -123,11 +129,7 @@ fn run_event_loop(
     let wayland_fd = connection.as_fd().as_raw_fd();
     let wake_fd = wake_rx.as_raw_fd();
 
-    // Tier-2 step 3 (perf plan §"Wayland epoll"): replace the per-iteration
-    // `libc::poll(2, 100ms)` with an epoll fd. The Wayland socket and the
-    // self-wake eventfd (`wake_rx`, written by `submit_frame` et al.) are
-    // registered once. The 100 ms epoll_wait timeout is a safety net for
-    // the rare case where neither fd fires (e.g. compositor restart).
+    // Epoll fd: Wayland socket and wake_rx are registered once.
     let epoll_fd = make_epoll()?;
     epoll_ctl_add(epoll_fd, wayland_fd, libc::EPOLLIN, 1)?;
     epoll_ctl_add(epoll_fd, wake_fd, libc::EPOLLIN, 2)?;

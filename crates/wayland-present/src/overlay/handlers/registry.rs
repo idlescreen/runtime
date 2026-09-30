@@ -54,6 +54,15 @@ impl SessionState {
             "wp_viewporter" => {
                 self.viewporter = Some(registry.bind(name, version.min(1), queue, ()));
             }
+            "wp_presentation" => {
+                self.presentation = Some(registry.bind(name, version.min(1), queue, ()));
+            }
+            "zwp_linux_dmabuf_v1" => {
+                self.linux_dmabuf = Some(registry.bind(name, version.min(4), queue, ()));
+            }
+            "wp_color_manager_v1" => {
+                self.color_manager = Some(registry.bind(name, version.min(1), queue, ()));
+            }
             "wl_output" => {
                 let output =
                     registry.bind::<wl_output::WlOutput, _, _>(name, version.min(4), queue, name);

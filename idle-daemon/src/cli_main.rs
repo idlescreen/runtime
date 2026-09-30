@@ -21,6 +21,9 @@ pub fn run() -> idle_err::Result<()> {
         idle_log::enable_journald("idle-daemon");
     }
 
+    // Pin daemon and child plugin processes to efficient cores on heterogeneous CPUs.
+    crate::affinity::init_process_affinity();
+
     // Register visual theme and system query callbacks for dynamically loaded screensaver plugins
     let _ = idle_api::SYSTEM_INFO_CALLBACK.set(idle_runner::toolkit::sys_info::get_system_info);
     let _ = idle_api::PALETTE_CALLBACK.set(idle_runner::toolkit::sys_info::query_current_palette);

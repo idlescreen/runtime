@@ -1,3 +1,5 @@
+#![allow(clippy::float_cmp)]
+
 use super::*;
 
 /// Serializes tests that mutate process env vars — parallel test threads
@@ -170,4 +172,37 @@ fn frame_upscaler_never_uses_gpu() {
     let upscaler = FrameUpscaler::new(FilterMode::Linear);
     assert!(!upscaler.using_gpu());
     assert_eq!(upscaler.adapter_name(), None);
+}
+
+#[test]
+fn resolve_render_scale_rejects_nan_from_env() {
+    let _u = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    unsafe { std::env::set_var("IDLE_RENDER_SCALE", "nan") };
+    let s = resolve_render_scale(None);
+    unsafe { std::env::remove_var("IDLE_RENDER_SCALE") };
+    assert!(
+        s.is_finite() && (0.25..=1.0).contains(&s),
+        "IDLE_RENDER_SCALE=nan must not produce {s}"
+    );
+    assert_eq!(s, 0.5, "non-finite env falls back to the default");
+}
+
+#[test]
+fn resolve_render_scale_rejects_nan_from_config() {
+    let s = resolve_render_scale(Some(f32::NAN));
+    assert!(s.is_finite(), "configured NaN must not survive the clamp");
+    assert_eq!(s, 0.5);
+}
+
+#[test]
+fn simulation_tick_hz_rejects_nan() {
+    let s = clamp_finite(f32::NAN, 15.0, 240.0, 60.0);
+    assert_eq!(s, 60.0);
+}
+
+#[test]
+fn clamp_finite_keeps_ordinary_values() {
+    assert_eq!(clamp_finite(0.5, 0.25, 1.0, 0.5), 0.5);
+    assert_eq!(clamp_finite(0.1, 0.25, 1.0, 0.5), 0.25);
+    assert_eq!(clamp_finite(9.0, 0.25, 1.0, 0.5), 1.0);
 }

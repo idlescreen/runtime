@@ -179,6 +179,7 @@ fn vm_peak_kb() -> u64 {
 
 #[test]
 fn cell_renderer_init_memory() {
+    let _g = crate::ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     // CPU constructor must never probe wgpu — the ~400MB driver-mapping
     // transient is what made daemon MemoryPeak spike at presentation start.
     let before = vm_peak_kb();

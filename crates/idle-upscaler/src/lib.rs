@@ -24,6 +24,7 @@
 //! not currently planned.
 
 mod cpu;
+pub mod gpu;
 
 /// Re-exports for `benches/stretch.rs`.
 ///
@@ -137,6 +138,7 @@ pub struct GpuCell {
 pub struct FrameUpscaler {
     filter: FilterMode,
     stretch_cache: cpu::StretchCache,
+    pub gpu_stretch: Option<gpu::GpuComputeStretch>,
 }
 
 impl FrameUpscaler {
@@ -144,15 +146,26 @@ impl FrameUpscaler {
         Self {
             filter,
             stretch_cache: cpu::StretchCache::new(),
+            gpu_stretch: None,
+        }
+    }
+
+    pub fn with_gpu(filter: FilterMode) -> Self {
+        Self {
+            filter,
+            stretch_cache: cpu::StretchCache::new(),
+            gpu_stretch: Some(gpu::GpuComputeStretch::probe()),
         }
     }
 
     pub fn using_gpu(&self) -> bool {
-        false
+        self.gpu_stretch.as_ref().is_some_and(|g| g.is_available)
     }
 
     pub fn adapter_name(&self) -> Option<&str> {
-        None
+        self.gpu_stretch
+            .as_ref()
+            .and_then(|g| g.adapter_name.as_deref())
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -174,6 +187,7 @@ impl FrameUpscaler {
     }
 
     /// Stretch source to fill the destination (fullscreen presentation path).
+    /// Uses GPU compute stretch pass when available, gracefully falling back to CPU.
     #[allow(clippy::too_many_arguments)]
     pub fn upscale_stretch_into(
         &mut self,
@@ -189,6 +203,15 @@ impl FrameUpscaler {
             .and_then(|p| p.checked_mul(4))
             .unwrap_or(0);
         out.resize(needed, 0);
+
+        if let Some(ref gpu) = self.gpu_stretch
+            && gpu
+                .upscale_stretch_pass(src, src_w, src_h, dst_w, dst_h, self.filter, out)
+                .is_ok()
+        {
+            return;
+        }
+
         cpu::upscale_stretch_into(
             out,
             src,
@@ -204,45 +227,3 @@ impl FrameUpscaler {
 #[cfg(test)]
 #[path = "lib_tests.rs"]
 mod tests;
-
-#[cfg(test)]
-#[allow(clippy::float_cmp)]
-mod nan_guard_tests {
-    use super::*;
-
-    /// Env is process-global; these tests set and remove it.
-    static ENV_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
-
-    #[test]
-    fn resolve_render_scale_rejects_nan_from_env() {
-        let _u = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
-        unsafe { std::env::set_var("IDLE_RENDER_SCALE", "nan") };
-        let s = resolve_render_scale(None);
-        unsafe { std::env::remove_var("IDLE_RENDER_SCALE") };
-        assert!(
-            s.is_finite() && (0.25..=1.0).contains(&s),
-            "IDLE_RENDER_SCALE=nan must not produce {s}"
-        );
-        assert_eq!(s, 0.5, "non-finite env falls back to the default");
-    }
-
-    #[test]
-    fn resolve_render_scale_rejects_nan_from_config() {
-        let s = resolve_render_scale(Some(f32::NAN));
-        assert!(s.is_finite(), "configured NaN must not survive the clamp");
-        assert_eq!(s, 0.5);
-    }
-
-    #[test]
-    fn simulation_tick_hz_rejects_nan() {
-        let s = clamp_finite(f32::NAN, 15.0, 240.0, 60.0);
-        assert_eq!(s, 60.0);
-    }
-
-    #[test]
-    fn clamp_finite_keeps_ordinary_values() {
-        assert_eq!(clamp_finite(0.5, 0.25, 1.0, 0.5), 0.5);
-        assert_eq!(clamp_finite(0.1, 0.25, 1.0, 0.5), 0.25);
-        assert_eq!(clamp_finite(9.0, 0.25, 1.0, 0.5), 1.0);
-    }
-}

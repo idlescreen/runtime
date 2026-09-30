@@ -16,7 +16,7 @@ struct Uniforms {
     atlas_cols: u32,
     atlas_rows: u32,
     scanlines: u32,
-    padding: u32,
+    fade_multiplier: f32,
 }
 
 struct Cell {
@@ -122,5 +122,5 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
         color = vec4<f32>(color.rgb * 0.5, color.a);
     }
     
-    return color;
+    return vec4<f32>(color.rgb * uniforms.fade_multiplier, color.a);
 }

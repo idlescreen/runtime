@@ -66,7 +66,7 @@ impl SessionState {
         self.overlays.insert(
             output_id,
             super::types::MonitorOverlay {
-                surface,
+                surface: surface.clone(),
                 layer_surface,
                 width: 0,
                 height: 0,
@@ -75,6 +75,17 @@ impl SessionState {
                 viewport,
             },
         );
+
+        if let Some(color_mgr) = &self.color_manager {
+            crate::overlay::color::configure_hdr_overlay(
+                &mut self.color_state,
+                color_mgr,
+                &surface,
+                output_id,
+                &self.queue,
+                &crate::overlay::color::HdrConfig::default(),
+            );
+        }
     }
 
     #[allow(clippy::cast_possible_wrap)]
@@ -109,6 +120,14 @@ impl SessionState {
             );
             overlay.width = render_w;
             overlay.height = render_h;
+
+            Self::apply_opaque_region(
+                self.compositor.as_ref(),
+                &overlay.surface,
+                &self.queue,
+                render_w as i32,
+                render_h as i32,
+            );
 
             if let Some(viewport) = &overlay.viewport
                 && render_w > 0
@@ -214,6 +233,7 @@ impl SessionState {
     }
 
     pub fn remove_overlay(&mut self, output_id: u32) {
+        self.color_state.handle_description_failed(output_id);
         if let Some(overlay) = self.overlays.remove(&output_id) {
             if let Some(viewport) = overlay.viewport {
                 viewport.destroy();

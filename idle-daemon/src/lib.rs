@@ -9,6 +9,7 @@
 pub mod config;
 pub mod futures_util;
 
+pub mod affinity;
 pub mod cli_main;
 pub mod controller;
 pub mod daemon;

@@ -37,6 +37,17 @@ pub struct SessionState {
     pub shm: Option<wl_shm::WlShm>,
     pub layer_shell: Option<zwlr_layer_shell_v1::ZwlrLayerShellV1>,
     pub viewporter: Option<wp_viewporter::WpViewporter>,
+    pub presentation:
+        Option<wayland_protocols::wp::presentation_time::client::wp_presentation::WpPresentation>,
+    pub vrr_feedback: super::super::vrr::VrrFeedbackState,
+    pub linux_dmabuf: Option<
+        wayland_protocols::wp::linux_dmabuf::zv1::client::zwp_linux_dmabuf_v1::ZwpLinuxDmabufV1,
+    >,
+    pub dmabuf_pool: super::super::dmabuf::DmaBufPool,
+    pub color_manager: Option<
+        wayland_protocols::wp::color_management::v1::client::wp_color_manager_v1::WpColorManagerV1,
+    >,
+    pub color_state: super::super::color::ColorManagementState,
     pub seat: Option<wl_seat::WlSeat>,
     pub pointer: Option<wl_pointer::WlPointer>,
     pub pointer_serial: u32,

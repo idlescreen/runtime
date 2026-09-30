@@ -78,7 +78,7 @@ impl GpuCellRenderer {
             atlas_cols: atlas_cols as u32,
             atlas_rows: atlas_rows as u32,
             scanlines: u32::from(scanlines),
-            padding: 0,
+            fade_multiplier: 1.0,
         };
         self.queue.write_buffer(&uni_buf, 0, as_u8_bytes(&uniforms));
 

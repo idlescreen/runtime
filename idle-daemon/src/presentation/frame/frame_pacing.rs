@@ -31,12 +31,50 @@ pub(super) fn clamp_tick_hz(tick_hz: f32) -> f32 {
     }
 }
 
+/// Adaptive refresh rate pacing stage.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AdaptivePacingStage {
+    /// Initial high-responsiveness or preview phase (60 or 144 Hz).
+    Interactive,
+    /// Standard presentation phase (60 Hz).
+    Active,
+    /// Extended idle energy-saving phase (24 or 30 Hz).
+    DeepAmbient,
+    /// Battery conservation phase (capped at 30 Hz).
+    Battery,
+}
+
 /// Compute throttled (or nominal) presentation FPS and simulation tick Hz.
 pub fn apply_power_throttling(nominal_fps: f32, nominal_tick: f32, on_battery: bool) -> (f32, f32) {
     if on_battery {
         (nominal_fps.min(30.0), nominal_tick.clamp(15.0, 30.0))
     } else {
         (nominal_fps, nominal_tick)
+    }
+}
+
+/// Dynamic adaptive pacing: Interactive (60/144 Hz) -> Active (60 Hz) -> Deep Ambient (24/30 Hz) -> Battery (30 Hz).
+pub fn resolve_adaptive_pacing(
+    nominal_refresh_hz: f32,
+    elapsed: Duration,
+    on_battery: bool,
+) -> (f32, f32, AdaptivePacingStage) {
+    if on_battery {
+        return (30.0, 30.0, AdaptivePacingStage::Battery);
+    }
+    if elapsed < Duration::from_secs(5) {
+        let fps = nominal_refresh_hz.clamp(60.0, 144.0);
+        (fps, 60.0, AdaptivePacingStage::Interactive)
+    } else if elapsed < Duration::from_secs(45) {
+        let fps = 60.0f32.min(nominal_refresh_hz.max(30.0));
+        (fps, 60.0, AdaptivePacingStage::Active)
+    } else {
+        let fps = if (nominal_refresh_hz % 24.0).abs() < 1.0 {
+            24.0
+        } else {
+            30.0
+        };
+        (fps, 30.0, AdaptivePacingStage::DeepAmbient)
     }
 }
 

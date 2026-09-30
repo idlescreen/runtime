@@ -19,7 +19,7 @@ use idle_err::Context;
 use zbus::fdo::RequestNameFlags;
 
 use crate::controller::DaemonController;
-use crate::monitors::{lock as lock_monitor, sleep as sleep_monitor};
+use crate::monitors::{lock as lock_monitor, media as media_monitor, sleep as sleep_monitor};
 
 use service::TranceService;
 
@@ -78,9 +78,11 @@ async fn serve(controller: Arc<DaemonController>) -> idle_err::Result<()> {
 
     idle_log::info!("exporting D-Bus service {SERVICE_NAME}");
 
-    tokio::spawn(lock_monitor::watch_session_lock(
-        controller.session_locked.clone(),
-        controller.shutdown.clone(),
+    tokio::spawn(lock_monitor::watch_session_lock(controller.clone()));
+
+    tokio::spawn(media_monitor::watch_media_players(
+        connection.clone(),
+        controller.clone(),
     ));
 
     tokio::spawn(sleep_monitor::watch_prepare_for_sleep(

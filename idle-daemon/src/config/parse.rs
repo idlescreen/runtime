@@ -33,6 +33,11 @@ pub(crate) fn apply_config_key(config: &mut DaemonConfig, key: &str, val: &str) 
                 config.strict_control = b;
             }
         }
+        "inhibit_on_media" => {
+            if let Ok(b) = val.parse::<bool>() {
+                config.inhibit_on_media = b;
+            }
+        }
         _ => {}
     }
 }

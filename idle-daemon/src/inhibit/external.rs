@@ -79,77 +79,8 @@ pub fn list_logind_idle() -> Vec<ExternalInhibitor> {
     .unwrap_or_default()
 }
 
-#[cfg(all(target_os = "linux", not(test)))]
-pub fn list_mpris_playing() -> Vec<ExternalInhibitor> {
-    use super::zbus_helper::safe_zbus_blocking;
-    safe_zbus_blocking(|| {
-        let Ok(conn) = zbus::blocking::Connection::session() else {
-            return Vec::new();
-        };
-        let Ok(names_reply) = conn.call_method(
-            Some("org.freedesktop.DBus"),
-            "/org/freedesktop/DBus",
-            Some("org.freedesktop.DBus"),
-            "ListNames",
-            &(),
-        ) else {
-            return Vec::new();
-        };
-        let Ok(names): Result<Vec<String>, _> = names_reply.body().deserialize() else {
-            return Vec::new();
-        };
-        let mut out = Vec::new();
-        for name in names {
-            if !name.starts_with("org.mpris.MediaPlayer2.") {
-                continue;
-            }
-            // Prefer Player path used by most apps.
-            let playing = mpris_status_playing(&conn, &name, "/org/mpris/MediaPlayer2/Player")
-                || mpris_status_playing(&conn, &name, "/org/mpris/MediaPlayer2");
-            if playing {
-                let short = name
-                    .strip_prefix("org.mpris.MediaPlayer2.")
-                    .unwrap_or(name.as_str());
-                out.push(ExternalInhibitor {
-                    source: "mpris".into(),
-                    who: short.to_string(),
-                    why: "PlaybackStatus=Playing".into(),
-                });
-            }
-        }
-        out
-    })
-    .unwrap_or_default()
-}
-
-#[cfg(all(target_os = "linux", not(test)))]
-fn mpris_status_playing(conn: &zbus::blocking::Connection, name: &str, path: &str) -> bool {
-    let Ok(prop_reply) = conn.call_method(
-        Some(name),
-        path,
-        Some("org.freedesktop.DBus.Properties"),
-        "Get",
-        &("org.mpris.MediaPlayer2.Player", "PlaybackStatus"),
-    ) else {
-        return false;
-    };
-    let body = prop_reply.body();
-    let Ok(val) = body.deserialize::<zbus::zvariant::Value>() else {
-        return false;
-    };
-    match val.downcast::<String>() {
-        Ok(s) => s == "Playing",
-        Err(_) => false,
-    }
-}
-
 #[cfg(any(not(target_os = "linux"), test))]
 pub fn list_logind_idle() -> Vec<ExternalInhibitor> {
-    Vec::new()
-}
-
-#[cfg(any(not(target_os = "linux"), test))]
-pub fn list_mpris_playing() -> Vec<ExternalInhibitor> {
     Vec::new()
 }
 
@@ -160,9 +91,7 @@ pub fn list_external() -> Vec<ExternalInhibitor> {
     {
         return Vec::new();
     }
-    let mut out = list_logind_idle();
-    out.extend(list_mpris_playing());
-    out
+    list_logind_idle()
 }
 
 #[cfg(test)]

@@ -101,3 +101,52 @@ fn hold_when_not_idle_and_inactive() {
     let i = base();
     assert_eq!(decide_presentation(i, "beams"), PresentationDecision::Hold);
 }
+
+#[test]
+fn lock_signal_handoff_stops_active_saver_for_lockscreen() {
+    let mut i = base();
+    i.is_active = true;
+    i.current_saver = "beams";
+    i.session_locked = true;
+    assert_eq!(
+        decide_presentation(i, "beams"),
+        PresentationDecision::Stop {
+            clear_preview: true,
+        }
+    );
+}
+
+#[test]
+fn session_locked_prevents_idle_start() {
+    let mut i = base();
+    i.system_idle = true;
+    i.session_locked = true;
+    assert_eq!(decide_presentation(i, "beams"), PresentationDecision::Hold);
+}
+
+#[test]
+fn unlock_signal_restores_idle_presentation() {
+    let mut i = base();
+    i.system_idle = true;
+    i.session_locked = false;
+    assert_eq!(
+        decide_presentation(i, "beams"),
+        PresentationDecision::Start {
+            name: "beams".into(),
+            reason: "idle",
+        }
+    );
+}
+
+#[test]
+fn session_locked_stops_preview() {
+    let mut i = base();
+    i.preview_name = Some("beams");
+    i.session_locked = true;
+    assert_eq!(
+        decide_presentation(i, "beams"),
+        PresentationDecision::Stop {
+            clear_preview: true,
+        }
+    );
+}

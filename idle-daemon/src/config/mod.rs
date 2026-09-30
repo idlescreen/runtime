@@ -35,6 +35,7 @@ pub struct DaemonConfig {
     /// (exe must resolve to a trusted basename). Env `IDLE_STRICT_CONTROL=1`
     /// also enables this at process start.
     pub strict_control: bool,
+    pub inhibit_on_media: bool,
 }
 
 impl Default for DaemonConfig {
@@ -48,6 +49,7 @@ impl Default for DaemonConfig {
             saver_params: std::collections::BTreeMap::new(),
             theme: idle_api::Theme::default(),
             strict_control: false,
+            inhibit_on_media: true,
         }
     }
 }
@@ -194,6 +196,7 @@ impl DaemonConfig {
             ),
             ("theme", format!("\"{}\"", self.theme)),
             ("strict_control", self.strict_control.to_string()),
+            ("inhibit_on_media", self.inhibit_on_media.to_string()),
         ]
     }
 

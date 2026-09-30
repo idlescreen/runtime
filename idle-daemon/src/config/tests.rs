@@ -111,3 +111,36 @@ fn resolve_config_path_prefers_newer_modified_file_when_both_exist() {
     }
     let _ = std::fs::remove_dir_all(&tmp);
 }
+
+#[test]
+fn default_inhibit_on_media_is_true() {
+    let c = DaemonConfig::default();
+    assert!(c.inhibit_on_media);
+}
+
+#[test]
+fn inhibit_on_media_round_trip_persistence() {
+    let mut config = DaemonConfig::default();
+    assert!(config.inhibit_on_media);
+
+    let mut section = String::new();
+    apply_config_line(&mut config, &mut section, "inhibit_on_media: false");
+    assert!(!config.inhibit_on_media);
+
+    let rendered = config.rendered_fields();
+    assert!(
+        rendered
+            .iter()
+            .any(|(k, v)| *k == "inhibit_on_media" && v == "false")
+    );
+
+    let merged = parse::merge_config_body("", &mut config.rendered_fields(), &config.saver_params);
+    assert!(merged.contains("inhibit_on_media: false"));
+
+    let mut restored = DaemonConfig::default();
+    let mut current_sec = String::new();
+    for line in merged.lines() {
+        apply_config_line(&mut restored, &mut current_sec, line);
+    }
+    assert_eq!(restored.inhibit_on_media, config.inhibit_on_media);
+}

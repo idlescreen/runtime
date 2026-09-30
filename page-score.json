@@ -1,6 +1,6 @@
 {
  "repo": "runtime",
- "rev": "4787487",
+ "rev": "7929719",
  "dirty": false,
  "pages": [
   {
@@ -117,7 +117,7 @@
   },
   {
    "path": "./crates/idle-ipc/src/shm/mod.rs",
-   "lines": 247,
+   "lines": 253,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
@@ -131,7 +131,7 @@
   },
   {
    "path": "./crates/idle-ipc/src/shm/tests.rs",
-   "lines": 238,
+   "lines": 252,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
@@ -2147,7 +2147,7 @@
   },
   {
    "path": "./idle-runner/src/sandbox/mod.rs",
-   "lines": 192,
+   "lines": 194,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
@@ -2168,21 +2168,21 @@
   },
   {
    "path": "./idle-runner/src/sandbox/seccomp.rs",
-   "lines": 125,
+   "lines": 153,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 2
   },
   {
    "path": "./idle-runner/src/sandbox/seccomp_tests.rs",
-   "lines": 85,
+   "lines": 106,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
   },
   {
    "path": "./idle-runner/src/sandbox/tests.rs",
-   "lines": 157,
+   "lines": 197,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 0

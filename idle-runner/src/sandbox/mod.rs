@@ -7,6 +7,7 @@
 //! that would deny-all and break `dlopen`, or force operators into escape hatches.
 
 pub mod profiles;
+pub mod seccomp;
 use idle_api::plugin_manifest::Manifest;
 pub use profiles::{AccessRule, profile_rules_for};
 use std::path::Path;
@@ -35,6 +36,23 @@ pub fn clear_sandbox_escape_env() {
         // Do not clear IDLE_RENDER_PIPELINE here — render host may set it intentionally
         // only on the offline binary, never on daemon IPC children (those should not set it).
     }
+}
+
+fn is_blanket_dir(dir: &Path) -> bool {
+    if dir.parent().is_none()
+        || dir == Path::new("/home")
+        || dir == Path::new("/tmp")
+        || dir == Path::new("/var/tmp")
+    {
+        return true;
+    }
+    if let Ok(home) = std::env::var("HOME")
+        && (dir == Path::new(&home)
+            || std::fs::canonicalize(&home).map(|h| h == dir).unwrap_or(false))
+    {
+        return true;
+    }
+    false
 }
 
 /// Enforce Landlock with read access to `plugin_path`'s directory (and parents as needed).
@@ -91,11 +109,23 @@ fn enforce_with_rules(
 
     let ruleset_fd = FdGuard(ll_create_ruleset()?);
 
-    // Plugin dir: ReadFile|ReadDir|Execute so `dlopen` of the .so works.
-    let plugin_dir_fd = ll_path_fd(parent)?;
-    let add_result = ll_add_rule(ruleset_fd.0, ll::READ_EXEC, plugin_dir_fd);
-    unsafe { libc::close(plugin_dir_fd) };
-    add_result.map_err(|e| format!("add_rule plugin dir: {e}"))?;
+    // If plugin sits directly under a blanket directory ($HOME, /home, /tmp),
+    // attach Landlock rule directly to the plugin .so file instead of parent.
+    if is_blanket_dir(parent) {
+        let plugin_file_fd = ll_path_fd(&plugin_path)?;
+        let r = ll_add_rule(
+            ruleset_fd.0,
+            ll::ACCESS_FS_READ_FILE | ll::ACCESS_FS_EXECUTE,
+            plugin_file_fd,
+        );
+        unsafe { libc::close(plugin_file_fd) };
+        r.map_err(|e| format!("add_rule plugin file: {e}"))?;
+    } else {
+        let plugin_dir_fd = ll_path_fd(parent)?;
+        let add_result = ll_add_rule(ruleset_fd.0, ll::READ_EXEC, plugin_dir_fd);
+        unsafe { libc::close(plugin_dir_fd) };
+        add_result.map_err(|e| format!("add_rule plugin dir: {e}"))?;
+    }
 
     // Profile + capability trees. Absent paths are skipped: Landlock cannot
     // pin a path that does not exist, and refusing here would make an
@@ -121,6 +151,8 @@ fn enforce_with_rules(
     }
 
     let fully_enforced = ll_restrict_self(ruleset_fd.0)?;
+
+    seccomp::apply_seccomp()?;
 
     idle_log::info!(
         plugin = %plugin_path.display(),
@@ -153,3 +185,6 @@ pub fn enforce_sandbox_or_skip_for_render() -> Result<(), String> {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod seccomp_tests;

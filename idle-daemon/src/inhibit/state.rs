@@ -11,6 +11,9 @@ use zbus::names::UniqueName;
 use super::external::list_external;
 use super::merge::merge_inhibitor_rows;
 
+pub const MAX_GLOBAL_INHIBITORS: usize = 256;
+pub const MAX_CLIENT_INHIBITORS: usize = 32;
+
 #[derive(Debug, Clone)]
 pub struct Inhibitor {
     pub cookie: u32,
@@ -34,30 +37,20 @@ pub struct InhibitorState {
 impl InhibitorState {
     #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
+        #[cfg(not(test))]
+        let past = Instant::now().checked_sub(Duration::from_secs(5)).unwrap_or_else(Instant::now);
         Self {
             inhibitors: Mutex::new(Vec::new()),
             last_cookie: AtomicU32::new(0),
             #[cfg(not(test))]
-            logind_cache: Mutex::new((
-                false,
-                Instant::now()
-                    .checked_sub(Duration::from_secs(5))
-                    .unwrap_or_else(Instant::now),
-            )),
+            logind_cache: Mutex::new((false, past)),
             #[cfg(not(test))]
-            prune_cache: Mutex::new(
-                Instant::now()
-                    .checked_sub(Duration::from_secs(5))
-                    .unwrap_or_else(Instant::now),
-            ),
+            prune_cache: Mutex::new(past),
         }
     }
 
     pub fn len(&self) -> usize {
-        self.inhibitors
-            .lock()
-            .unwrap_or_else(|p| crate::locks::poison_or_exit("lock", p))
-            .len()
+        self.inhibitors.lock().unwrap_or_else(|p| crate::locks::poison_or_exit("lock", p)).len()
     }
 
     pub fn is_empty(&self) -> bool {
@@ -116,20 +109,15 @@ impl InhibitorState {
         }) {
             return Ok(existing.cookie);
         }
-        let count = inhibitors
-            .iter()
-            .filter(|entry| entry.client == client)
-            .count();
-        if count >= 32 {
+        if inhibitors.len() >= MAX_GLOBAL_INHIBITORS {
+            return Err("maximum global inhibitor limit reached");
+        }
+        let count = inhibitors.iter().filter(|entry| entry.client == client).count();
+        if count >= MAX_CLIENT_INHIBITORS {
             return Err("too many concurrent inhibitors for this client");
         }
         let cookie = self.last_cookie.fetch_add(1, Ordering::Relaxed) + 1;
-        inhibitors.push(Inhibitor {
-            cookie,
-            application_name,
-            reason,
-            client,
-        });
+        inhibitors.push(Inhibitor { cookie, application_name, reason, client });
         Ok(cookie)
     }
 
@@ -203,13 +191,7 @@ impl InhibitorState {
             .unwrap_or_else(|p| crate::locks::poison_or_exit("lock", p));
         inhibitors
             .iter()
-            .map(|entry| {
-                (
-                    entry.cookie,
-                    entry.application_name.clone(),
-                    entry.reason.clone(),
-                )
-            })
+            .map(|e| (e.cookie, e.application_name.clone(), e.reason.clone()))
             .collect()
     }
 

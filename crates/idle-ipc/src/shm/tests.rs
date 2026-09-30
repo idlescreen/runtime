@@ -224,3 +224,15 @@ fn test_immune_rail_shm_security_and_bounds() {
         assert!(err.contains("need") || err.contains("map"));
     }
 }
+
+#[test]
+fn test_sealed_shm_create_and_verify_seals() {
+    let sz = crate::compute_shm_size(4, 4).expect("size");
+    let shm = SharedMemory::create_sealed("test-sealed", sz).expect("create_sealed");
+    assert!(shm.fd() > 0);
+    assert!(!shm.ptr().is_null());
+    let dup_fd = unsafe { libc::dup(shm.fd()) };
+    assert!(dup_fd > 0);
+    let peer = SharedMemory::from_sealed_fd(dup_fd, sz).expect("from_sealed_fd");
+    assert_eq!(peer.size(), sz);
+}

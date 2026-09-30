@@ -188,12 +188,7 @@ impl DaemonConfig {
             ("active_saver", format!("\"{active_str}\"")),
             ("idle_enabled", self.idle_enabled.to_string()),
             ("show_fps_overlay", self.show_fps_overlay.to_string()),
-            (
-                "render_scale",
-                self.render_scale
-                    .map(|s| s.to_string())
-                    .unwrap_or_else(|| "null".to_string()),
-            ),
+            ("render_scale", self.render_scale.map_or_else(|| "null".into(), |s| s.to_string())),
             ("theme", format!("\"{}\"", self.theme)),
             ("strict_control", self.strict_control.to_string()),
             ("inhibit_on_media", self.inhibit_on_media.to_string()),
@@ -236,6 +231,11 @@ impl DaemonConfig {
         let count = TMP_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         let tmp_path = parent.join(format!("config.tmp.{}.{}", std::process::id(), count));
         fs::write(&tmp_path, &content)?;
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let _ = fs::set_permissions(&tmp_path, fs::Permissions::from_mode(0o600));
+        }
         match fs::rename(&tmp_path, path) {
             Ok(()) => Ok(()),
             Err(e) => {

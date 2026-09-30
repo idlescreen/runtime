@@ -26,23 +26,31 @@ impl SharedMemory {
         unsafe { &mut *(ptr as *mut SharedMemoryHeader) }
     }
 
-    /// Bounds-checked cell view. Rejects bad magic / dims that would exceed the map.
+    /// Snapshot header dimensions using volatile reads and return the dimensions
+    /// along with a validated bounds-checked slice into the cell buffer.
     ///
     /// # Safety
-    /// Region must be mapped; length is validated against `self.size`. Concurrent
-    /// mutation of header dims while this slice is live is undefined.
+    /// Region must be mapped and live for caller's use.
     #[allow(clippy::mut_from_ref)]
-    pub unsafe fn cells_mut(&self) -> Result<&mut [FfiTerminalCell], String> {
-        // SAFETY: same mapping invariants as `header_mut`.
-        let header = unsafe { self.header_mut() };
-        if header.magic != 0 && header.magic != SHM_MAGIC {
+    pub unsafe fn snapshot_frame_cells(
+        &self,
+    ) -> Result<(usize, usize, &mut [FfiTerminalCell]), String> {
+        let header_ptr = self.ptr() as *const SharedMemoryHeader;
+        // SAFETY: read_volatile prevents TOCTOU compiler reordering or caching.
+        let magic = unsafe { std::ptr::read_volatile(std::ptr::addr_of!((*header_ptr).magic)) };
+        if magic != 0 && magic != SHM_MAGIC {
             return Err(format!(
                 "shm header magic {:#x} != expected {:#x}",
-                header.magic, SHM_MAGIC
+                magic, SHM_MAGIC
             ));
         }
-        let cols = header.cols as usize;
-        let rows = header.rows as usize;
+        // SAFETY: snapshot cols and rows into local registers.
+        let (cols, rows) = unsafe {
+            (
+                std::ptr::read_volatile(std::ptr::addr_of!((*header_ptr).cols)) as usize,
+                std::ptr::read_volatile(std::ptr::addr_of!((*header_ptr).rows)) as usize,
+            )
+        };
         let count = cols
             .checked_mul(rows)
             .ok_or_else(|| "shm header cell count overflow".to_string())?;
@@ -63,7 +71,19 @@ impl SharedMemory {
         }
         // SAFETY: `needed <= self.size`; cells begin immediately after the header.
         let cells_ptr = unsafe { (self.ptr() as *mut u8).add(header_sz) as *mut FfiTerminalCell };
-        Ok(unsafe { std::slice::from_raw_parts_mut(cells_ptr, count) })
+        let slice = unsafe { std::slice::from_raw_parts_mut(cells_ptr, count) };
+        Ok((cols, rows, slice))
+    }
+
+    /// Bounds-checked cell view. Rejects bad magic / dims that would exceed the map.
+    ///
+    /// # Safety
+    /// Region must be mapped; length is validated against `self.size`. Concurrent
+    /// mutation of header dims while this slice is live is undefined.
+    #[allow(clippy::mut_from_ref)]
+    pub unsafe fn cells_mut(&self) -> Result<&mut [FfiTerminalCell], String> {
+        // SAFETY: delegates to snapshot_frame_cells with identical safety invariants.
+        unsafe { self.snapshot_frame_cells().map(|(_, _, slice)| slice) }
     }
 }
 
@@ -102,5 +122,25 @@ mod tests {
             "oversized header must be rejected, got {:?}",
             res.map(|s| s.len())
         );
+    }
+
+    #[test]
+    fn snapshot_frame_cells_returns_dimensions_and_cells() {
+        let name = format!("/idle-shm-snap-test-{}", std::process::id());
+        let hdr = std::mem::size_of::<SharedMemoryHeader>();
+        let cell_sz = std::mem::size_of::<FfiTerminalCell>();
+        let shm = SharedMemory::create(&name, hdr + cell_sz * 10).expect("create failed");
+        // SAFETY: test single writer
+        let header = unsafe { shm.header_mut() };
+        header.magic = SHM_MAGIC;
+        header.cols = 2;
+        header.rows = 5;
+        // SAFETY: shm mapping is valid
+        let res = unsafe { shm.snapshot_frame_cells() };
+        assert!(res.is_ok());
+        let (cols, rows, slice) = res.unwrap();
+        assert_eq!(cols, 2);
+        assert_eq!(rows, 5);
+        assert_eq!(slice.len(), 10);
     }
 }

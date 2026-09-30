@@ -7,11 +7,16 @@ use std::ptr;
 use crate::ffi_cell::SharedMemoryHeader;
 use crate::path_safety::is_valid_shm_name;
 
-/// POSIX shared-memory region used for terminal-cell IPC.
+pub const F_SEAL_SEAL: libc::c_int = 0x0001;
+pub const F_SEAL_SHRINK: libc::c_int = 0x0002;
+pub const F_SEAL_GROW: libc::c_int = 0x0004;
+pub const F_ADD_SEALS: libc::c_int = 1033;
+pub const F_GET_SEALS: libc::c_int = 1034;
+
+/// POSIX or sealed shared-memory region used for terminal-cell IPC.
 ///
 /// Ownership: exclusive over `fd` + `mmap` mapping. `Drop` always `munmap`s,
-/// `close`s, and (when `is_owner`) `shm_unlink`s. Named SHM only — memfd is not
-/// used because the OOP runner re-opens by name.
+/// `close`s, and (when `is_owner`) `shm_unlink`s.
 pub struct SharedMemory {
     name: String,
     fd: libc::c_int,
@@ -26,61 +31,20 @@ pub struct SharedMemory {
 unsafe impl Send for SharedMemory {}
 
 impl SharedMemory {
-    pub fn create(name: &str, size: usize) -> Result<Self, String> {
-        if !is_valid_shm_name(name) {
-            return Err(format!("invalid shm name: {name}"));
-        }
+    fn validate_size(size: usize) -> Result<(), String> {
         if size < std::mem::size_of::<SharedMemoryHeader>() || size > 64 * 1024 * 1024 {
-            return Err(format!("shm size out of range: {size}"));
+            Err(format!("shm size out of range: {size}"))
+        } else {
+            Ok(())
         }
-        let c_name = CString::new(name).map_err(|e| e.to_string())?;
+    }
 
-        // Named POSIX SHM only: the IPC child re-opens by name (`SharedMemory::open`).
-        // O_EXCL + 0600: keep the object owner-private. Do NOT unlink before
-        // the first open — an unconditional unlink could drop a live peer's
-        // object from under its mapping. Only on EEXIST (stale object left by
-        // a dead daemon; names are pid-scoped) do we unlink and retry once.
-        // SAFETY: `c_name` is a valid CString; name validated above.
-        let mut fd = unsafe {
-            libc::shm_open(
-                c_name.as_ptr(),
-                libc::O_CREAT | libc::O_RDWR | libc::O_EXCL,
-                0o600,
-            )
-        };
-        if fd < 0 && std::io::Error::last_os_error().raw_os_error() == Some(libc::EEXIST) {
-            // SAFETY: unlink only the colliding stale name, then a single
-            // bounded retry. A second EEXIST means a racing peer legitimately
-            // owns the name — fail closed below.
-            unsafe {
-                libc::shm_unlink(c_name.as_ptr());
-            }
-            fd = unsafe {
-                libc::shm_open(
-                    c_name.as_ptr(),
-                    libc::O_CREAT | libc::O_RDWR | libc::O_EXCL,
-                    0o600,
-                )
-            };
-        }
-        if fd < 0 {
-            return Err(format!(
-                "shm_open (create) failed: {}",
-                std::io::Error::last_os_error()
-            ));
-        }
-
-        // SAFETY: `fd` is open; size fits in off_t (capped at 64 MiB above).
-        if unsafe { libc::ftruncate(fd, size as libc::off_t) } < 0 {
-            let err = std::io::Error::last_os_error();
-            // SAFETY: clean up partially created object on size failure.
-            unsafe {
-                libc::close(fd);
-                libc::shm_unlink(c_name.as_ptr());
-            }
-            return Err(format!("ftruncate failed: {err}"));
-        }
-
+    unsafe fn map_and_build(
+        name: String,
+        fd: libc::c_int,
+        size: usize,
+        is_owner: bool,
+    ) -> Result<Self, String> {
         // SAFETY: MAP_SHARED over the full sized object; fail closed on MAP_FAILED.
         let ptr = unsafe {
             libc::mmap(
@@ -94,85 +58,115 @@ impl SharedMemory {
         };
         if ptr == libc::MAP_FAILED {
             let err = std::io::Error::last_os_error();
-            // SAFETY: release fd + name if mapping failed.
-            unsafe {
-                libc::close(fd);
-                libc::shm_unlink(c_name.as_ptr());
+            unsafe { libc::close(fd); }
+            if is_owner && let Ok(c) = CString::new(name.as_str()) {
+                unsafe { libc::shm_unlink(c.as_ptr()); }
             }
-            return Err(format!("mmap failed: {err}"));
+            Err(format!("mmap failed: {err}"))
+        } else {
+            Ok(Self { name, fd, ptr, size, is_owner })
+        }
+    }
+
+    pub fn create(name: &str, size: usize) -> Result<Self, String> {
+        if !is_valid_shm_name(name) {
+            return Err(format!("invalid shm name: {name}"));
+        }
+        Self::validate_size(size)?;
+        let c_name = CString::new(name).map_err(|e| e.to_string())?;
+
+        // SAFETY: c_name is valid CString; name validated above.
+        let mut fd = unsafe {
+            libc::shm_open(c_name.as_ptr(), libc::O_CREAT | libc::O_RDWR | libc::O_EXCL, 0o600)
+        };
+        if fd < 0 && std::io::Error::last_os_error().raw_os_error() == Some(libc::EEXIST) {
+            unsafe { libc::shm_unlink(c_name.as_ptr()); }
+            fd = unsafe {
+                libc::shm_open(c_name.as_ptr(), libc::O_CREAT | libc::O_RDWR | libc::O_EXCL, 0o600)
+            };
+        }
+        if fd < 0 {
+            return Err(format!("shm_open (create) failed: {}", std::io::Error::last_os_error()));
         }
 
-        Ok(Self {
-            name: name.to_string(),
-            fd,
-            ptr,
-            size,
-            is_owner: true,
-        })
+        // SAFETY: fd is open; size fits in off_t (capped at 64 MiB above).
+        if unsafe { libc::ftruncate(fd, size as libc::off_t) } < 0 {
+            let err = std::io::Error::last_os_error();
+            unsafe { libc::close(fd); libc::shm_unlink(c_name.as_ptr()); }
+            return Err(format!("ftruncate failed: {err}"));
+        }
+
+        unsafe { Self::map_and_build(name.to_string(), fd, size, true) }
     }
 
     pub fn open(name: &str, size: usize) -> Result<Self, String> {
         if !is_valid_shm_name(name) {
             return Err(format!("invalid shm name: {name}"));
         }
-        if size < std::mem::size_of::<SharedMemoryHeader>() || size > 64 * 1024 * 1024 {
-            return Err(format!("shm size out of range: {size}"));
-        }
+        Self::validate_size(size)?;
         let c_name = CString::new(name).map_err(|e| e.to_string())?;
 
         // SAFETY: open existing named object; name validated above.
         let fd = unsafe { libc::shm_open(c_name.as_ptr(), libc::O_RDWR, 0) };
         if fd < 0 {
+            return Err(format!("shm_open (open) failed: {}", std::io::Error::last_os_error()));
+        }
+
+        unsafe { Self::map_and_build(name.to_string(), fd, size, false) }
+    }
+
+    /// Create an anonymous shared memory object backed by memfd with sealing.
+    pub fn create_sealed(name: &str, size: usize) -> Result<Self, String> {
+        Self::validate_size(size)?;
+        let c_name = CString::new(name).map_err(|e| e.to_string())?;
+        // SAFETY: memfd_create with MFD_ALLOW_SEALING | MFD_CLOEXEC.
+        let fd = unsafe {
+            libc::memfd_create(c_name.as_ptr(), libc::MFD_ALLOW_SEALING | libc::MFD_CLOEXEC)
+        };
+        if fd < 0 {
+            return Err(format!("memfd_create failed: {}", std::io::Error::last_os_error()));
+        }
+        // SAFETY: fd is valid and open.
+        if unsafe { libc::ftruncate(fd, size as libc::off_t) } < 0 {
+            let err = std::io::Error::last_os_error();
+            unsafe { libc::close(fd); }
+            return Err(format!("ftruncate failed: {err}"));
+        }
+        // Apply seals: prevent shrinking, growing, and further sealing.
+        // SAFETY: fd is an open memfd created with MFD_ALLOW_SEALING.
+        let seals = F_SEAL_SHRINK | F_SEAL_GROW | F_SEAL_SEAL;
+        if unsafe { libc::fcntl(fd, F_ADD_SEALS, seals) } < 0 {
+            let err = std::io::Error::last_os_error();
+            unsafe { libc::close(fd); }
+            return Err(format!("fcntl F_ADD_SEALS failed: {err}"));
+        }
+        unsafe { Self::map_and_build(name.to_string(), fd, size, false) }
+    }
+
+    /// Map a pre-sealed shared memory fd (e.g. received via IPC / inheritance).
+    pub fn from_sealed_fd(fd: libc::c_int, size: usize) -> Result<Self, String> {
+        Self::validate_size(size)?;
+        if fd < 0 {
+            return Err("invalid sealed fd".to_string());
+        }
+        // SAFETY: query active seals on fd.
+        let seals = unsafe { libc::fcntl(fd, F_GET_SEALS) };
+        if seals < 0 {
+            return Err(format!("fcntl F_GET_SEALS failed: {}", std::io::Error::last_os_error()));
+        }
+        let required = F_SEAL_SHRINK | F_SEAL_GROW | F_SEAL_SEAL;
+        if (seals & required) != required {
             return Err(format!(
-                "shm_open (open) failed: {}",
-                std::io::Error::last_os_error()
+                "fd missing required seals (got {seals:#x}, required {required:#x})"
             ));
         }
-
-        // SAFETY: MAP_SHARED; close fd on MAP_FAILED (non-owner does not unlink).
-        let ptr = unsafe {
-            libc::mmap(
-                ptr::null_mut(),
-                size,
-                libc::PROT_READ | libc::PROT_WRITE,
-                libc::MAP_SHARED,
-                fd,
-                0,
-            )
-        };
-        if ptr == libc::MAP_FAILED {
-            let err = std::io::Error::last_os_error();
-            // SAFETY: fd is open and owned by this path only.
-            unsafe {
-                libc::close(fd);
-            }
-            return Err(format!("mmap failed: {err}"));
-        }
-
-        Ok(Self {
-            name: name.to_string(),
-            fd,
-            ptr,
-            size,
-            is_owner: false,
-        })
+        unsafe { Self::map_and_build(String::new(), fd, size, false) }
     }
 
-    pub fn fd(&self) -> libc::c_int {
-        self.fd
-    }
-
-    pub fn ptr(&self) -> *mut libc::c_void {
-        self.ptr
-    }
-
-    pub fn size(&self) -> usize {
-        self.size
-    }
-
-    pub fn name(&self) -> &str {
-        &self.name
-    }
+    pub fn fd(&self) -> libc::c_int { self.fd }
+    pub fn ptr(&self) -> *mut libc::c_void { self.ptr }
+    pub fn size(&self) -> usize { self.size }
+    pub fn name(&self) -> &str { &self.name }
 }
 
 impl Drop for SharedMemory {

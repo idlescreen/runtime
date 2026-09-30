@@ -9,7 +9,7 @@ mod zbus_helper;
 
 pub use external::list_external;
 pub use merge::merge_inhibitor_rows;
-pub use state::{Inhibitor, InhibitorState};
+pub use state::{Inhibitor, InhibitorState, MAX_GLOBAL_INHIBITORS};
 
 #[cfg(test)]
 mod tests_firefox;

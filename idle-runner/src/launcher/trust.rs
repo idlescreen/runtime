@@ -34,27 +34,35 @@ pub(crate) fn is_trusted_plugin_path_cached(
     #[cfg(unix)]
     {
         use std::os::unix::fs::{MetadataExt, PermissionsExt};
-        if let Ok(meta) = std::fs::metadata(&canonical) {
-            // Reject world-writable plugins.
-            if meta.permissions().mode() & 0o002 != 0 {
-                idle_log::warn!(
-                    target: "plugin",
-                    path = %canonical.display(),
-                    "refusing world-writable plugin library"
-                );
+        let meta = match std::fs::metadata(&canonical) {
+            Ok(m) => m,
+            Err(e) => {
+                idle_log::warn!(path = %canonical.display(), "failed to stat plugin file: {e}");
                 return false;
             }
-            // System packages live under /usr; require root or overflow (65534) ownership
-            // since root is mapped to overflow UID inside user namespaces.
-            if canonical.starts_with("/usr") && meta.uid() != 0 && meta.uid() != 65534 {
-                idle_log::warn!(
-                    target: "plugin",
-                    path = %canonical.display(),
-                    uid = meta.uid(),
-                    "refusing non-root-owned system plugin library"
-                );
-                return false;
-            }
+        };
+        // Reject group/world-writable plugins (mode & 0o022 != 0).
+        if meta.permissions().mode() & 0o022 != 0 {
+            idle_log::warn!(
+                target: "plugin",
+                path = %canonical.display(),
+                "refusing group- or world-writable plugin library"
+            );
+            return false;
+        }
+        // Enforce root (0), current user, or user-namespace overflow (65534) ownership.
+        let uid = meta.uid();
+        // SAFETY: getuid() is a pure query syscall with no pointer side effects.
+        let current_uid = unsafe { libc::getuid() };
+        if uid != 0 && uid != current_uid && uid != 65534 {
+            idle_log::warn!(
+                target: "plugin",
+                path = %canonical.display(),
+                uid,
+                current_uid,
+                "refusing untrusted plugin ownership"
+            );
+            return false;
         }
     }
 

@@ -1,6 +1,6 @@
 {
  "repo": "runtime",
- "rev": "965db3a",
+ "rev": "110c9b2",
  "dirty": false,
  "pages": [
   {
@@ -943,21 +943,21 @@
   },
   {
    "path": "./idle-daemon/src/config/mod.rs",
-   "lines": 244,
+   "lines": 247,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
   },
   {
    "path": "./idle-daemon/src/config/parse.rs",
-   "lines": 182,
+   "lines": 187,
    "bin_bytes": null,
    "heat_pct": null,
-   "reach": 22
+   "reach": 23
   },
   {
    "path": "./idle-daemon/src/config/tests.rs",
-   "lines": 113,
+   "lines": 146,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
@@ -1034,7 +1034,7 @@
   },
   {
    "path": "./idle-daemon/src/daemon/decision/tests.rs",
-   "lines": 103,
+   "lines": 152,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
@@ -1188,7 +1188,7 @@
   },
   {
    "path": "./idle-daemon/src/dbus_server/mod.rs",
-   "lines": 147,
+   "lines": 149,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
@@ -1254,11 +1254,11 @@
    "lines": 92,
    "bin_bytes": null,
    "heat_pct": null,
-   "reach": 3
+   "reach": 4
   },
   {
    "path": "./idle-daemon/src/inhibit/external.rs",
-   "lines": 215,
+   "lines": 144,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 4
@@ -1328,7 +1328,7 @@
   },
   {
    "path": "./idle-daemon/src/monitors/lock.rs",
-   "lines": 51,
+   "lines": 93,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 6
@@ -1348,8 +1348,15 @@
    "reach": 0
   },
   {
+   "path": "./idle-daemon/src/monitors/media.rs",
+   "lines": 229,
+   "bin_bytes": null,
+   "heat_pct": null,
+   "reach": 2
+  },
+  {
    "path": "./idle-daemon/src/monitors/mod.rs",
-   "lines": 11,
+   "lines": 13,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 0

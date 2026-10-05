@@ -1,300 +1,300 @@
 {
   "benches": {
     "apply_fade_in/mult_0_clears": {
-      "median_abs_dev_ns": 20280.390986812614,
-      "median_ns": 430381.2256822183
+      "median_abs_dev_ns": 3222.4388980100784,
+      "median_ns": 355029.2860824742
     },
     "apply_fade_in/mult_128": {
-      "median_abs_dev_ns": 3503.708869375687,
-      "median_ns": 739432.1286516853
+      "median_abs_dev_ns": 7711.899814632427,
+      "median_ns": 730124.9828869047
     },
     "apply_fade_in/mult_255": {
-      "median_abs_dev_ns": 4398.530163918578,
-      "median_ns": 737291.9016393443
+      "median_abs_dev_ns": 9657.169957879352,
+      "median_ns": 730391.5826816552
     },
     "apply_fade_in/past_500ms_noop": {
-      "median_abs_dev_ns": 0.0006546543064176588,
-      "median_ns": 0.622015302914412
+      "median_abs_dev_ns": 0.0005428763607503657,
+      "median_ns": 0.7028100718175254
     },
     "bilinear_avx2/4px_128_fractional": {
-      "median_abs_dev_ns": 0.026423467771031692,
-      "median_ns": 35.16429141108137
+      "median_abs_dev_ns": 0.07091178405648746,
+      "median_ns": 45.190948270258616
     },
     "bilinear_row/4px_128_fractional": {
-      "median_abs_dev_ns": 0.0362138008461107,
-      "median_ns": 34.85057121806139
+      "median_abs_dev_ns": 0.13263209193258732,
+      "median_ns": 41.64714511101353
     },
     "consume_events/64_records": {
-      "median_abs_dev_ns": 0.008721457688625645,
-      "median_ns": 5.425128441381344
+      "median_abs_dev_ns": 0.00858304916077711,
+      "median_ns": 6.2068513209228175
     },
     "letterbox/linear_1280x720_to_1920x1080": {
-      "median_abs_dev_ns": 51042.95189380646,
-      "median_ns": 24734347.25
+      "median_abs_dev_ns": 135543.3667436242,
+      "median_ns": 26177990.5
     },
     "letterbox/linear_1280x720_to_2560x1440": {
-      "median_abs_dev_ns": 124229.27569448948,
-      "median_ns": 43931442.0
+      "median_abs_dev_ns": 188024.81126189232,
+      "median_ns": 46432238.0
     },
     "letterbox/linear_1280x720_to_3840x2160": {
-      "median_abs_dev_ns": 192918.87377500534,
-      "median_ns": 98826206.5
+      "median_abs_dev_ns": 343327.89980471134,
+      "median_ns": 104534372.0
     },
     "letterbox/linear_320x180_to_1920x1080": {
-      "median_abs_dev_ns": 31442.980241775513,
-      "median_ns": 24691221.25
+      "median_abs_dev_ns": 107054.46694940329,
+      "median_ns": 26101756.5
     },
     "letterbox/linear_320x180_to_2560x1440": {
-      "median_abs_dev_ns": 53443.28125119209,
-      "median_ns": 43898291.0
+      "median_abs_dev_ns": 229147.68673181534,
+      "median_ns": 46367445.5
     },
     "letterbox/linear_320x180_to_3840x2160": {
-      "median_abs_dev_ns": 167377.38272845745,
-      "median_ns": 98839707.0
+      "median_abs_dev_ns": 391808.9189440012,
+      "median_ns": 104442706.0
     },
     "letterbox/linear_640x360_to_1920x1080": {
-      "median_abs_dev_ns": 27634.922209382057,
-      "median_ns": 24676239.25
+      "median_abs_dev_ns": 106544.45255845785,
+      "median_ns": 26103753.0
     },
     "letterbox/linear_640x360_to_2560x1440": {
-      "median_abs_dev_ns": 69142.53237247467,
-      "median_ns": 43890669.0
+      "median_abs_dev_ns": 187847.64056503773,
+      "median_ns": 46369707.0
     },
     "letterbox/linear_640x360_to_3840x2160": {
-      "median_abs_dev_ns": 122469.429525733,
-      "median_ns": 98789133.0
+      "median_abs_dev_ns": 350259.05468165874,
+      "median_ns": 104519000.5
     },
     "letterbox/linear_960x540_to_1920x1080": {
-      "median_abs_dev_ns": 36145.787358284,
-      "median_ns": 24718225.25
+      "median_abs_dev_ns": 115242.49595403671,
+      "median_ns": 26119045.0
     },
     "letterbox/linear_960x540_to_2560x1440": {
-      "median_abs_dev_ns": 63454.537573456764,
-      "median_ns": 43901673.5
+      "median_abs_dev_ns": 196503.05921137333,
+      "median_ns": 46445845.5
     },
     "letterbox/linear_960x540_to_3840x2160": {
-      "median_abs_dev_ns": 153492.83397495747,
-      "median_ns": 98827601.5
+      "median_abs_dev_ns": 745308.1958681345,
+      "median_ns": 104898180.5
     },
     "letterbox/nearest_1280x720_to_1920x1080": {
-      "median_abs_dev_ns": 11440.186176895819,
-      "median_ns": 7409611.0
+      "median_abs_dev_ns": 12507.954677939415,
+      "median_ns": 8365496.5
     },
     "letterbox/nearest_1280x720_to_2560x1440": {
-      "median_abs_dev_ns": 22513.033500313297,
-      "median_ns": 13167058.5
+      "median_abs_dev_ns": 28457.023894786835,
+      "median_ns": 14875086.5
     },
     "letterbox/nearest_1280x720_to_3840x2160": {
-      "median_abs_dev_ns": 33715.06470143795,
-      "median_ns": 29587166.75
+      "median_abs_dev_ns": 48598.144537210464,
+      "median_ns": 33440446.0
     },
     "letterbox/nearest_320x180_to_1920x1080": {
-      "median_abs_dev_ns": 15865.30231833458,
-      "median_ns": 7411141.1
+      "median_abs_dev_ns": 11189.92330133915,
+      "median_ns": 8357485.625
     },
     "letterbox/nearest_320x180_to_2560x1440": {
-      "median_abs_dev_ns": 20007.933744788632,
-      "median_ns": 13168374.166666668
+      "median_abs_dev_ns": 19154.69745993384,
+      "median_ns": 14858979.666666668
     },
     "letterbox/nearest_320x180_to_3840x2160": {
-      "median_abs_dev_ns": 31121.9973474741,
-      "median_ns": 29624149.5
+      "median_abs_dev_ns": 41738.154458999634,
+      "median_ns": 33399802.5
     },
     "letterbox/nearest_640x360_to_1920x1080": {
-      "median_abs_dev_ns": 7838.357800841193,
-      "median_ns": 7403584.0
+      "median_abs_dev_ns": 12053.167136013508,
+      "median_ns": 8356956.125
     },
     "letterbox/nearest_640x360_to_2560x1440": {
-      "median_abs_dev_ns": 20020.04164457275,
-      "median_ns": 13154926.666666668
+      "median_abs_dev_ns": 16991.089898348775,
+      "median_ns": 14858186.833333334
     },
     "letterbox/nearest_640x360_to_3840x2160": {
-      "median_abs_dev_ns": 57799.901273846626,
-      "median_ns": 29625487.75
+      "median_abs_dev_ns": 57627.91967689991,
+      "median_ns": 33424242.0
     },
     "letterbox/nearest_960x540_to_1920x1080": {
-      "median_abs_dev_ns": 12395.277079939842,
-      "median_ns": 7409949.4
+      "median_abs_dev_ns": 12745.541323721409,
+      "median_ns": 8365478.0
     },
     "letterbox/nearest_960x540_to_2560x1440": {
-      "median_abs_dev_ns": 21629.65101599555,
-      "median_ns": 13164263.666666666
+      "median_abs_dev_ns": 18698.056668042216,
+      "median_ns": 14861929.666666666
     },
     "letterbox/nearest_960x540_to_3840x2160": {
-      "median_abs_dev_ns": 42885.31618863344,
-      "median_ns": 29606921.0
+      "median_abs_dev_ns": 36592.79125034809,
+      "median_ns": 33418960.0
     },
     "power_watcher/cached_is_on_battery_atomic_load": {
-      "median_abs_dev_ns": 0.005671925409103514,
-      "median_ns": 0.9043902877992447
+      "median_abs_dev_ns": 0.001072530581741015,
+      "median_ns": 0.8690320648184753
     },
     "power_watcher/wait_for_heartbeat_1ms_timeout": {
-      "median_abs_dev_ns": 442.58350155425654,
-      "median_ns": 1067416.5007246376
+      "median_abs_dev_ns": 523.0072113873188,
+      "median_ns": 1063085.475
     },
     "render_content_viewport/160x48_density_0.30": {
-      "median_abs_dev_ns": 2516.572255322043,
-      "median_ns": 1442681.9285714286
+      "median_abs_dev_ns": 3066.943370550698,
+      "median_ns": 1507202.95
     },
     "render_content_viewport/160x48_density_0.70": {
-      "median_abs_dev_ns": 3864.32944048541,
-      "median_ns": 2744495.0454545454
+      "median_abs_dev_ns": 4957.147141993115,
+      "median_ns": 3002171.45
     },
     "render_content_viewport/160x48_density_0.95": {
-      "median_abs_dev_ns": 5230.942173798918,
-      "median_ns": 3573765.388888889
+      "median_abs_dev_ns": 10683.337422832847,
+      "median_ns": 3942059.25
     },
     "render_content_viewport/240x68_density_0.30": {
-      "median_abs_dev_ns": 5720.167218446662,
-      "median_ns": 3073481.2
+      "median_abs_dev_ns": 6329.219287633896,
+      "median_ns": 3209038.5
     },
     "render_content_viewport/240x68_density_0.70": {
-      "median_abs_dev_ns": 14445.836393535368,
-      "median_ns": 5869540.75
+      "median_abs_dev_ns": 23640.50136029831,
+      "median_ns": 6428821.1
     },
     "render_content_viewport/240x68_density_0.95": {
-      "median_abs_dev_ns": 22307.755178958178,
-      "median_ns": 7644269.625
+      "median_abs_dev_ns": 24928.621282428503,
+      "median_ns": 8522404.125
     },
     "render_content_viewport/320x80_density_0.30": {
-      "median_abs_dev_ns": 19695.917050327276,
-      "median_ns": 4867811.357142857
+      "median_abs_dev_ns": 20995.592427253952,
+      "median_ns": 5144306.5
     },
     "render_content_viewport/320x80_density_0.70": {
-      "median_abs_dev_ns": 23695.468754321337,
-      "median_ns": 9209187.375
+      "median_abs_dev_ns": 25007.01375603676,
+      "median_ns": 10077351.0
     },
     "render_content_viewport/320x80_density_0.95": {
-      "median_abs_dev_ns": 36324.44065511227,
-      "median_ns": 12004101.0
+      "median_abs_dev_ns": 28484.204894303813,
+      "median_ns": 13300814.166666666
     },
     "render_content_viewport/80x24_density_0.30": {
-      "median_abs_dev_ns": 894.2516957367678,
-      "median_ns": 362742.2777992278
+      "median_abs_dev_ns": 794.2573537862335,
+      "median_ns": 377447.5078125
     },
     "render_content_viewport/80x24_density_0.70": {
-      "median_abs_dev_ns": 1491.6138699262474,
-      "median_ns": 690473.6703323559
+      "median_abs_dev_ns": 1459.9100686586517,
+      "median_ns": 754128.8134920634
     },
     "render_content_viewport/80x24_density_0.95": {
-      "median_abs_dev_ns": 1062.9990713706893,
-      "median_ns": 897580.2686826843
+      "median_abs_dev_ns": 1359.5449515521025,
+      "median_ns": 987744.708771294
     },
     "stretch/linear_1280x720_to_1920x1080": {
-      "median_abs_dev_ns": 8702.558586407902,
-      "median_ns": 1383607.5227272727
+      "median_abs_dev_ns": 5436.101063490052,
+      "median_ns": 1524037.525
     },
     "stretch/linear_1280x720_to_2560x1440": {
-      "median_abs_dev_ns": 22091.990551538765,
-      "median_ns": 1979559.8125
+      "median_abs_dev_ns": 23508.500542640595,
+      "median_ns": 2122823.533333333
     },
     "stretch/linear_1280x720_to_3840x2160": {
-      "median_abs_dev_ns": 26361.945398648735,
-      "median_ns": 3666728.722222222
+      "median_abs_dev_ns": 12004.117786884422,
+      "median_ns": 3725920.333333333
     },
     "stretch/linear_320x180_to_1920x1080": {
-      "median_abs_dev_ns": 1337.3230348486056,
-      "median_ns": 450107.81978354976
+      "median_abs_dev_ns": 1048.5440040155354,
+      "median_ns": 489043.36771019676
     },
     "stretch/linear_320x180_to_2560x1440": {
-      "median_abs_dev_ns": 15274.352040115933,
-      "median_ns": 722393.2418128655
+      "median_abs_dev_ns": 8121.571314552716,
+      "median_ns": 734727.056480296
     },
     "stretch/linear_320x180_to_3840x2160": {
-      "median_abs_dev_ns": 103580.15276108471,
-      "median_ns": 2057522.5357142857
+      "median_abs_dev_ns": 23764.40965309739,
+      "median_ns": 1987418.78125
     },
     "stretch/linear_640x360_to_1920x1080": {
-      "median_abs_dev_ns": 2381.735082715721,
-      "median_ns": 753108.4792457949
+      "median_abs_dev_ns": 2357.960632124679,
+      "median_ns": 827436.6082918739
     },
     "stretch/linear_640x360_to_2560x1440": {
-      "median_abs_dev_ns": 22354.701707124594,
-      "median_ns": 1245508.74
+      "median_abs_dev_ns": 49347.45056390766,
+      "median_ns": 1287558.78
     },
     "stretch/linear_640x360_to_3840x2160": {
-      "median_abs_dev_ns": 114129.13076471192,
-      "median_ns": 2784271.0
+      "median_abs_dev_ns": 43308.96913111176,
+      "median_ns": 2502116.7083333335
     },
     "stretch/linear_960x540_to_1920x1080": {
-      "median_abs_dev_ns": 4560.003910710338,
-      "median_ns": 1062506.6041958043
+      "median_abs_dev_ns": 3843.5134059327943,
+      "median_ns": 1171955.964365881
     },
     "stretch/linear_960x540_to_2560x1440": {
-      "median_abs_dev_ns": 45675.27672068092,
-      "median_ns": 1633212.4736842103
+      "median_abs_dev_ns": 12703.228700788652,
+      "median_ns": 1643918.789473684
     },
     "stretch/linear_960x540_to_3840x2160": {
-      "median_abs_dev_ns": 76484.61454212642,
-      "median_ns": 3330238.277777778
+      "median_abs_dev_ns": 18656.222638786116,
+      "median_ns": 3126239.05
     },
     "stretch/nearest_1280x720_to_1920x1080": {
-      "median_abs_dev_ns": 12214.736837690385,
-      "median_ns": 1398065.6590909092
+      "median_abs_dev_ns": 3847.977036684648,
+      "median_ns": 1518029.775
     },
     "stretch/nearest_1280x720_to_2560x1440": {
-      "median_abs_dev_ns": 29792.40169107924,
-      "median_ns": 1982784.5666666667
+      "median_abs_dev_ns": 30035.622216761112,
+      "median_ns": 2145460.3571428573
     },
     "stretch/nearest_1280x720_to_3840x2160": {
-      "median_abs_dev_ns": 24653.001828988086,
-      "median_ns": 3648451.0
+      "median_abs_dev_ns": 11677.451592683332,
+      "median_ns": 3737281.833333333
     },
     "stretch/nearest_320x180_to_1920x1080": {
-      "median_abs_dev_ns": 1859.1201363690284,
-      "median_ns": 440301.61424731184
+      "median_abs_dev_ns": 1289.2632247080076,
+      "median_ns": 488534.6550179211
     },
     "stretch/nearest_320x180_to_2560x1440": {
-      "median_abs_dev_ns": 17823.572591522934,
-      "median_ns": 685503.0948481238
+      "median_abs_dev_ns": 3706.543563020889,
+      "median_ns": 730119.5101343101
     },
     "stretch/nearest_320x180_to_3840x2160": {
-      "median_abs_dev_ns": 67885.9300547835,
-      "median_ns": 2087959.0333333334
+      "median_abs_dev_ns": 8217.310354113579,
+      "median_ns": 1948180.3125
     },
     "stretch/nearest_640x360_to_1920x1080": {
-      "median_abs_dev_ns": 5282.1855060486505,
-      "median_ns": 750626.7562091504
+      "median_abs_dev_ns": 2328.954327541644,
+      "median_ns": 828548.8385714286
     },
     "stretch/nearest_640x360_to_2560x1440": {
-      "median_abs_dev_ns": 32810.47913672831,
-      "median_ns": 1208099.0192307692
+      "median_abs_dev_ns": 50305.036102559294,
+      "median_ns": 1268183.0
     },
     "stretch/nearest_640x360_to_3840x2160": {
-      "median_abs_dev_ns": 82646.2551054631,
-      "median_ns": 2784267.8181818184
+      "median_abs_dev_ns": 11703.27354222536,
+      "median_ns": 2611229.25
     },
     "stretch/nearest_960x540_to_1920x1080": {
-      "median_abs_dev_ns": 7182.064931092201,
-      "median_ns": 1062756.3115433673
+      "median_abs_dev_ns": 3080.847816571445,
+      "median_ns": 1171476.0938967136
     },
     "stretch/nearest_960x540_to_2560x1440": {
-      "median_abs_dev_ns": 26546.537765546895,
-      "median_ns": 1632670.6578947369
+      "median_abs_dev_ns": 22210.006539026974,
+      "median_ns": 1675675.861111111
     },
     "stretch/nearest_960x540_to_3840x2160": {
-      "median_abs_dev_ns": 60528.55239540366,
-      "median_ns": 3315116.45
+      "median_abs_dev_ns": 14851.35219633593,
+      "median_ns": 3095645.45
     },
     "stretch_byte_rows/320x180_to_1920x1080": {
-      "median_abs_dev_ns": 3066.3873955607414,
-      "median_ns": 2718114.0
+      "median_abs_dev_ns": 6756.949380040169,
+      "median_ns": 3773858.5625
     },
     "stretch_cache/ensure_cached_noop": {
-      "median_abs_dev_ns": 0.004617818701190112,
-      "median_ns": 2.5199321397912877
+      "median_abs_dev_ns": 0.0028472642429932834,
+      "median_ns": 2.812388654479177
     },
     "stretch_cache/ensure_rebuild": {
-      "median_abs_dev_ns": 2.415589654084346,
-      "median_ns": 3609.9410873440283
+      "median_abs_dev_ns": 2.693237046658822,
+      "median_ns": 4078.1554486784953
     },
     "stretch_u32_rows/320x180_to_1920x1080": {
-      "median_abs_dev_ns": 1528.7594561686788,
-      "median_ns": 447946.58286290325
+      "median_abs_dev_ns": 861.1932628267206,
+      "median_ns": 488571.38636363635
     }
   },
-  "captured_at": "2026-09-28",
-  "commit": "e12cd1d",
+  "captured_at": "2026-10-05",
+  "commit": "72687d8",
   "note": "Captured by scripts/refresh-baseline.sh from criterion estimates.json",
   "version": 2
 }

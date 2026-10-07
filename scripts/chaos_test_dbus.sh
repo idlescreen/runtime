@@ -17,9 +17,9 @@ test_dbus_flooding() {
 
     echo "[PROOF] Bursting 300 D-Bus method calls across concurrent processes..."
     CHAOS_FLOOD_PIDS=()
-    for i in $(seq 1 5); do
+    for _ in $(seq 1 5); do
         (
-            for j in $(seq 1 60); do
+            for _ in $(seq 1 60); do
                 busctl --auto-start=false --user call io.github.idlescreen.Idle /io/github/idlescreen/Idle io.github.idlescreen.Idle GetStatus >/dev/null 2>&1 || true
                 busctl --auto-start=false --user call io.github.idlescreen.Idle /io/github/idlescreen/Idle io.github.idlescreen.Idle GetStatus >/dev/null 2>&1 || true
                 sleep 0.002

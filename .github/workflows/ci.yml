@@ -80,6 +80,33 @@ jobs:
     - name: clippy
       run: cargo clippy --workspace --all-targets -- -D warnings
 
+  scripts:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+    - name: Install shellcheck
+      run: sudo apt-get update && sudo apt-get install -y shellcheck
+    - name: shellcheck QA and harness scripts
+      run: |
+        shellcheck scripts/qa_hardware_parity.sh
+        shellcheck scripts/qa_hardware_parity_tests.sh
+        shellcheck scripts/qa_package_gate.sh
+        shellcheck scripts/validate_state_alignment.sh
+        # -P scripts: chaos_test.sh sources its helpers via "$SCRIPT_DIR", and
+        # shellcheck resolves source paths against the source-path, not the
+        # script's own location. Without it every helper reports SC1091.
+        shellcheck -x -P scripts scripts/chaos_test.sh
+        shellcheck -x scripts/chaos_test_dbus.sh
+        shellcheck -x scripts/chaos_test_fd.sh
+        shellcheck -x scripts/chaos_test_fs.sh
+    - name: Hardware parity harness self-test
+      # The parity harness can only run on real hardware, so without this it
+      # would never execute in CI and would rot. These mock tests drive it
+      # end to end and caught three real defects on first run: an unimported
+      # `time` in wait_for, an int() cast of a float epoch, and a
+      # `python3 -c` argv off-by-one that made every CPU rate read 0.0.
+      run: bash scripts/qa_hardware_parity_tests.sh
+
   test:
     runs-on: ubuntu-latest
     needs: build

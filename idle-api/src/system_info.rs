@@ -17,6 +17,17 @@ pub struct SystemInfo {
     pub monitors: String,
 }
 
+/// `PRETTY_NAME` from `/etc/os-release`, or `None` when there is no such file
+/// — a browser, a container, or any non-Linux host.
+fn os_pretty_name() -> Option<String> {
+    let content = std::fs::read_to_string("/etc/os-release").ok()?;
+    content.lines().find_map(|line| {
+        let val = line.strip_prefix("PRETTY_NAME=")?;
+        let val = val.trim_matches('"').trim();
+        (!val.is_empty()).then(|| val.to_string())
+    })
+}
+
 impl Default for SystemInfo {
     fn default() -> Self {
         if Self::export_mode_enabled() {
@@ -38,15 +49,19 @@ impl Default for SystemInfo {
             temp_os
         });
 
-        // The product wordmark, not the host OS.
+        // The shared wordmark every saver renders.
         //
-        // This used to be PRETTY_NAME from /etc/os-release, which is what put
-        // "Fedora Linux 44 (Server Edition)" on eleven savers' screens — a
-        // 195-column block render that does not fit a normal grid, and not a
-        // wordmark anyone asked for. The OS is still available as
-        // `SystemInfo::os` for anything that genuinely wants it.
-        let logo_text =
-            crate::env_var_first(&["IDLE_LOGO_TEXT"]).unwrap_or_else(|| "IDLESCREEN".to_string());
+        // One source of truth: the host's OS name, overridable with
+        // IDLE_LOGO_TEXT. Savers used to derive this independently and drift —
+        // eleven read it from here while ascii hardcoded its own string, so
+        // one machine showed different words on different savers.
+        //
+        // The fallback matters for the browser demos, where there is no
+        // /etc/os-release and every saver would otherwise render the bare
+        // string "Linux". Falling back to the product name keeps every demo
+        // identical to every other.
+        let logo_text = crate::env_var_first(&["IDLE_LOGO_TEXT"])
+            .unwrap_or_else(|| os_pretty_name().unwrap_or_else(|| "IDLESCREEN".into()));
 
         let hostname = std::env::var("HOSTNAME").unwrap_or_else(|_| "localhost".to_string());
 

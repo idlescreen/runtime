@@ -10,7 +10,7 @@
 
 use perf_test_support::{assert_no_alloc, count_allocs};
 
-use super::{is_span_layout, span_reach_scale};
+use super::{is_span_layout, place_centered_logo, span_reach_scale};
 
 #[test]
 fn span_layout_predicates_do_not_allocate() {
@@ -29,4 +29,37 @@ fn the_counter_does_see_allocations() {
         std::hint::black_box(owned.len())
     });
     assert!(n >= 1, "the counting allocator reported {n}");
+}
+
+#[test]
+fn a_long_os_name_is_trimmed_to_the_grid_instead_of_overflowing() {
+    // "Fedora Linux 44 (Server Edition)" is the exact string that produced a
+    // 195-column block render and left savers with nothing to draw.
+    let text = "Fedora Linux 44 (Server Edition)";
+    let logo = place_centered_logo(80, 24, text, None).expect("logo");
+    assert!(
+        logo.width <= 80,
+        "block was {} columns wide on an 80-column grid",
+        logo.width
+    );
+}
+
+#[test]
+fn a_short_name_is_left_alone() {
+    // Compare against the untrimmed render rather than a hand-computed
+    // column count: fitting must be a no-op when the text already fits.
+    let name = "Omarchy";
+    let untouched = crate::logo_block::render_logo_block(name, None);
+    let expected = untouched.iter().map(|l| l.chars().count()).max().unwrap();
+
+    let logo = place_centered_logo(200, 50, name, None).expect("logo");
+    assert_eq!(
+        logo.width, expected,
+        "a name that already fits must not be cut"
+    );
+}
+
+#[test]
+fn an_absurdly_narrow_grid_drops_the_logo_rather_than_panicking() {
+    assert!(place_centered_logo(3, 24, "Anything", None).is_none());
 }

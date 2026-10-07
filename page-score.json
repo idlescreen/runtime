@@ -1,6 +1,6 @@
 {
  "repo": "runtime",
- "rev": "2fbbfad",
+ "rev": "c165380",
  "dirty": true,
  "pages": [
   {
@@ -719,7 +719,7 @@
   },
   {
    "path": "./idle-api/src/callbacks.rs",
-   "lines": 28,
+   "lines": 38,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 2
@@ -799,7 +799,7 @@
    "lines": 89,
    "bin_bytes": null,
    "heat_pct": null,
-   "reach": 2
+   "reach": 3
   },
   {
    "path": "./idle-api/src/monitor/bounds.rs",
@@ -922,14 +922,14 @@
   },
   {
    "path": "./idle-api/src/surface/layout.rs",
-   "lines": 112,
+   "lines": 132,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 3
   },
   {
    "path": "./idle-api/src/surface/layout_tests.rs",
-   "lines": 32,
+   "lines": 65,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
@@ -971,7 +971,7 @@
   },
   {
    "path": "./idle-api/src/system_info.rs",
-   "lines": 103,
+   "lines": 118,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 2

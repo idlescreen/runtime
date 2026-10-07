@@ -77,6 +77,20 @@ pub fn span_reach_scale(cols: usize, rows: usize) -> f32 {
 /// assert_eq!(logo.width, 2);
 /// assert_eq!(logo.height, 1);
 /// ```
+/// Trim `text` so its block render fits `width` columns.
+///
+/// The 5x5 block font renders each character to six columns. Rather than let a
+/// long string overflow into nothing, keep as many whole characters as fit.
+fn fit_to_width(text: &str, width: usize) -> String {
+    const CHARS_PER_CHAR: usize = 6;
+    let budget = width / CHARS_PER_CHAR;
+    if budget == 0 {
+        return String::new();
+    }
+    let trimmed: String = text.trim().chars().take(budget).collect();
+    trimmed.trim_end().to_string()
+}
+
 pub fn place_centered_logo(
     cols: usize,
     rows: usize,
@@ -88,7 +102,13 @@ pub fn place_centered_logo(
     }
 
     let primary = get_primary_monitor_bounds(cols, rows);
-    let lines = render_logo_block(text, sub_text);
+    // Fit before rendering. An OS name like "Fedora Linux 44 (Server Edition)"
+    // block-renders to ~195 columns; at that width the centered x saturates
+    // and the saver has nothing sensible to draw. Trimming here fixes every
+    // saver that uses this helper at once, rather than one at a time.
+    let text = fit_to_width(text, primary.width());
+    let sub_text = sub_text.map(|t| fit_to_width(t, primary.width()));
+    let lines = render_logo_block(&text, sub_text.as_deref());
     let logo_w = lines.iter().map(|l| l.chars().count()).max().unwrap_or(0);
     let logo_h = lines.len();
     if logo_w == 0 || logo_h == 0 {

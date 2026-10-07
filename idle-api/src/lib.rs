@@ -60,7 +60,7 @@ mod system_info;
 pub use audio::{AudioBands, query_audio_bands};
 pub use c_abi::{CAbiSaver, IdleCell, IdleSaverOps, OPS_SYMBOL};
 pub use callbacks::{
-    PALETTE_CALLBACK, SYSTEM_INFO_CALLBACK, get_system_info, query_current_palette,
+    PALETTE_CALLBACK, SYSTEM_INFO_CALLBACK, get_system_info, query_current_palette, wordmark,
 };
 pub use caption::{caption_text, clear_caption, publish_caption, with_caption};
 pub use color::{ScreenPalette, Theme, hsl_to_rgb, lerp, percentage, rgb_to_hsl};

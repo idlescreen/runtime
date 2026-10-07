@@ -1,7 +1,7 @@
 {
  "repo": "runtime",
- "rev": "76ebe31",
- "dirty": false,
+ "rev": "332a9c6",
+ "dirty": true,
  "pages": [
   {
    "path": "./crates/idle-dbus/src/client.rs",
@@ -1328,7 +1328,7 @@
   },
   {
    "path": "./idle-daemon/src/dbus_server/mod.rs",
-   "lines": 149,
+   "lines": 158,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
@@ -1362,8 +1362,15 @@
    "reach": 1
   },
   {
+   "path": "./idle-daemon/src/dbus_server/tests/activation.rs",
+   "lines": 99,
+   "bin_bytes": null,
+   "heat_pct": null,
+   "reach": 0
+  },
+  {
    "path": "./idle-daemon/src/dbus_server/tests/mod.rs",
-   "lines": 6,
+   "lines": 7,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 0

@@ -70,6 +70,7 @@ assets = [
     ["target/release/idlescreen-daemon", "usr/bin/idlescreen-daemon", "755"],
     ["assets/idle-daemon.service", "usr/lib/systemd/user/idle-daemon.service", "644"],
     ["assets/io.github.idlescreen.Idle.service", "usr/share/dbus-1/services/io.github.idlescreen.Idle.service", "644"],
+    ["assets/org.freedesktop.ScreenSaver.service", "usr/share/dbus-1/services/org.freedesktop.ScreenSaver.service", "644"],
     ["assets/idle-daemon.1", "usr/share/man/man1/idle-daemon.1", "644"],
     ["assets/packaging/user-service-lib.sh", "usr/lib/idle/user-service-lib.sh", "644"],
 ]
@@ -89,6 +90,7 @@ assets = [
     { source = "target/release/idlescreen-daemon", dest = "/usr/bin/idlescreen-daemon", mode = "755", user = "root", group = "root" },
     { source = "assets/idle-daemon.service", dest = "/usr/lib/systemd/user/idle-daemon.service", mode = "644", user = "root", group = "root" },
     { source = "assets/io.github.idlescreen.Idle.service", dest = "/usr/share/dbus-1/services/io.github.idlescreen.Idle.service", mode = "644", user = "root", group = "root" },
+    { source = "assets/org.freedesktop.ScreenSaver.service", dest = "/usr/share/dbus-1/services/org.freedesktop.ScreenSaver.service", mode = "644", user = "root", group = "root" },
     { source = "assets/idle-daemon.1", dest = "/usr/share/man/man1/idle-daemon.1", mode = "644", user = "root", group = "root" },
     { source = "assets/packaging/user-service-lib.sh", dest = "/usr/lib/idle/user-service-lib.sh", mode = "644", user = "root", group = "root" },
 ]

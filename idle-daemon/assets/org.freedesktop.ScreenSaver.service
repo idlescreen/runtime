@@ -1,0 +1,4 @@
+[D-BUS Service]
+Name=org.freedesktop.ScreenSaver
+Exec=/usr/bin/idle-daemon daemon
+SystemdService=idle-daemon.service

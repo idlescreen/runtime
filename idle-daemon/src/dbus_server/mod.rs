@@ -23,6 +23,15 @@ use crate::monitors::{lock as lock_monitor, media as media_monitor, sleep as sle
 
 use service::TranceService;
 
+/// Bus name for the freedesktop screensaver interface.
+///
+/// Mirrored in `assets/org.freedesktop.ScreenSaver.service` so a portal
+/// `Inhibit` can activate the daemon instead of failing on sessions that ship
+/// no screensaver service. `tests::activation` asserts the two cannot drift.
+pub(crate) const SCREENSAVER_NAME: &str = "org.freedesktop.ScreenSaver";
+/// Object path the [`SCREENSAVER_NAME`] interface is served at.
+pub(crate) const SCREENSAVER_PATH: &str = "/org/freedesktop/ScreenSaver";
+
 pub fn run(controller: Arc<DaemonController>) -> idle_err::Result<()> {
     let runtime = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
@@ -60,7 +69,7 @@ async fn serve(controller: Arc<DaemonController>) -> idle_err::Result<()> {
         )
         .with_context(|| format!("serving object at {OBJECT_PATH}"))?
         .serve_at(
-            "/org/freedesktop/ScreenSaver",
+            SCREENSAVER_PATH,
             screensaver::ScreenSaverService {
                 controller: controller.clone(),
             },
@@ -71,7 +80,7 @@ async fn serve(controller: Arc<DaemonController>) -> idle_err::Result<()> {
         .context("building D-Bus connection")?;
 
     let _ = connection
-        .request_name_with_flags("org.freedesktop.ScreenSaver", flags)
+        .request_name_with_flags(SCREENSAVER_NAME, flags)
         .await;
 
     controller.set_dbus_connection(connection.clone());

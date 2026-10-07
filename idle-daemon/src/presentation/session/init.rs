@@ -30,41 +30,58 @@ pub(crate) fn kill_and_reap(child: &mut Child, socket_path: &Path) {
     let _ = fs::remove_file(socket_path);
 }
 
-/// Read the configured ASCII-art file and render it as the env pair the
-/// runner (and therefore the plugin) will read via `idle_api::asset`.
+/// The session shell's own branding artwork, used when `logo_file` is unset.
+/// It writes this from `omarchy branding screensaver image` (a PNG/SVG
+/// transcoded to ASCII) and then force-relaunches, so honouring it keeps
+/// already-set art working after the hand-off instead of reverting to nothing.
+fn shell_branding_path() -> Option<PathBuf> {
+    let path =
+        PathBuf::from(std::env::var_os("HOME")?).join(".config/omarchy/branding/screensaver.txt");
+    path.is_file().then_some(path)
+}
+
+/// Read the ASCII-art file and render it as the env pair the runner (and
+/// therefore the plugin) will read via `idle_api::asset`.
 ///
-/// The read happens here, in the daemon, before the sandboxed child exists.
-/// That is the whole point: the child never opens a path, so the Landlock
-/// policy is unchanged and no capability grant is needed.
+/// The read happens here, in the daemon, before the sandboxed child exists:
+/// the child never opens a path, so the Landlock policy is unchanged and no
+/// capability grant is needed.
 ///
-/// Returns an empty vec for the overwhelmingly common case of no art file
-/// configured. A configured-but-unreadable file is logged and treated as
-/// absent — a broken logo must not stop the screensaver from working.
+/// `logo_file` wins; otherwise the shell's branding file is used if it exists.
+/// An unreadable file is treated as absent — a broken logo must not stop the
+/// screensaver from working.
 fn logo_asset_env(logo_file: Option<&str>) -> Vec<(String, String)> {
-    let Some(path) = logo_file else {
-        return Vec::new();
+    let (path, explicit) = match logo_file {
+        Some(configured) => (PathBuf::from(configured), true),
+        None => match shell_branding_path() {
+            Some(fallback) => (fallback, false),
+            None => return Vec::new(),
+        },
     };
-    match std::fs::read_to_string(path) {
+    match std::fs::read_to_string(&path) {
         Ok(contents) => {
             if contents.len() > idle_api::asset::MAX_ASSET_BYTES {
                 idle_log::warn!(
-                    path = path,
+                    path = %path.display(),
                     bytes = contents.len(),
                     limit = idle_api::asset::MAX_ASSET_BYTES,
-                    "ignoring logo_file: too large to deliver to the renderer"
+                    "ignoring art file: too large to deliver to the renderer"
                 );
                 return Vec::new();
             }
             vec![(idle_api::asset_env_key(idle_api::ASSET_LOGO), contents)]
         }
-        Err(e) => {
+        Err(e) if explicit => {
             idle_log::warn!(
-                path = path,
+                path = %path.display(),
                 error = %e,
                 "logo_file configured but unreadable; rendering without it"
             );
             Vec::new()
         }
+        // The shell's branding file existed a moment ago and then could not be
+        // read. It is a bonus, not something configured here, so no warning.
+        Err(_) => Vec::new(),
     }
 }
 

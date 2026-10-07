@@ -1,6 +1,6 @@
 {
  "repo": "runtime",
- "rev": "4856c3e",
+ "rev": "14d2c72",
  "dirty": true,
  "pages": [
   {
@@ -1650,14 +1650,14 @@
   },
   {
    "path": "./idle-daemon/src/presentation/session/init.rs",
-   "lines": 236,
+   "lines": 253,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 2
   },
   {
    "path": "./idle-daemon/src/presentation/session/init_tests.rs",
-   "lines": 139,
+   "lines": 181,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 0

@@ -1,6 +1,6 @@
 {
  "repo": "runtime",
- "rev": "d43ddde",
+ "rev": "2fbbfad",
  "dirty": true,
  "pages": [
   {
@@ -971,7 +971,7 @@
   },
   {
    "path": "./idle-api/src/system_info.rs",
-   "lines": 109,
+   "lines": 103,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 2

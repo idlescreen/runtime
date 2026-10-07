@@ -38,21 +38,15 @@ impl Default for SystemInfo {
             temp_os
         });
 
-        let logo_text = crate::env_var_first(&["IDLE_LOGO_TEXT"]).unwrap_or_else(|| {
-            let mut temp_logo = "Linux".to_string();
-            if let Ok(content) = std::fs::read_to_string("/etc/os-release") {
-                for line in content.lines() {
-                    if line.starts_with("PRETTY_NAME=") {
-                        let val = line.split('=').nth(1).unwrap_or("").trim_matches('"');
-                        if !val.is_empty() {
-                            temp_logo = val.to_string();
-                            break;
-                        }
-                    }
-                }
-            }
-            temp_logo
-        });
+        // The product wordmark, not the host OS.
+        //
+        // This used to be PRETTY_NAME from /etc/os-release, which is what put
+        // "Fedora Linux 44 (Server Edition)" on eleven savers' screens — a
+        // 195-column block render that does not fit a normal grid, and not a
+        // wordmark anyone asked for. The OS is still available as
+        // `SystemInfo::os` for anything that genuinely wants it.
+        let logo_text =
+            crate::env_var_first(&["IDLE_LOGO_TEXT"]).unwrap_or_else(|| "IDLESCREEN".to_string());
 
         let hostname = std::env::var("HOSTNAME").unwrap_or_else(|_| "localhost".to_string());
 

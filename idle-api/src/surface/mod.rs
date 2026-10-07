@@ -85,6 +85,7 @@ pub trait OverlaySurface: Send + Sync + 'static {
     /// Notified on every successful frame commit. When
     /// `wayland_present`'s `wl_callback::done` dispatch is wired,
     /// it'll also be notified on actual vsync.
+    #[cfg(target_os = "linux")]
     fn frame_signal(&self) -> Option<wayland_present::FrameSignal> {
         None
     }

@@ -1,6 +1,6 @@
 {
  "repo": "runtime",
- "rev": "14d2c72",
+ "rev": "d43ddde",
  "dirty": true,
  "pages": [
   {
@@ -138,7 +138,7 @@
   },
   {
    "path": "./crates/idle-log/src/lib.rs",
-   "lines": 240,
+   "lines": 254,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
@@ -936,7 +936,7 @@
   },
   {
    "path": "./idle-api/src/surface/mod.rs",
-   "lines": 194,
+   "lines": 195,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 0

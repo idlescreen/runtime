@@ -47,6 +47,9 @@ impl Level {
 
 /// Enabled threshold; `off` (0) disables everything.
 static ENABLED: AtomicU8 = AtomicU8::new(Level::Warn as u8);
+/// No-op on wasm: there is no journald in a browser, and the socket type it
+/// would need (`std::os::unix::net::UnixDatagram`) does not exist there.
+#[cfg(not(target_arch = "wasm32"))]
 static JOURNALD: AtomicBool = AtomicBool::new(false);
 static IDENT: std::sync::RwLock<String> = std::sync::RwLock::new(String::new());
 
@@ -73,6 +76,9 @@ pub fn init(default: &str) {
 /// Mirror records to the systemd journal with `ident` as SYSLOG_IDENTIFIER.
 /// Call when `JOURNAL_STREAM` is set (running under systemd), like the
 /// previous `tracing_journald::layer()` wiring.
+///
+/// No-op on wasm, so the browser host shim can call this unconditionally.
+#[cfg(not(target_arch = "wasm32"))]
 pub fn enable_journald(ident: &str) {
     // Recover from poisoning rather than dropping the ident entirely.
     match IDENT.write() {
@@ -100,6 +106,7 @@ pub fn emit(level: Level, target: &str, msg: std::fmt::Arguments<'_>) {
         Level::Trace => "TRACE",
     };
     let _ = writeln!(std::io::stderr().lock(), "{name} {target}: {text}");
+    #[cfg(not(target_arch = "wasm32"))]
     if JOURNALD.load(Ordering::Relaxed) {
         journald_send(level.priority(), &text);
     }
@@ -112,6 +119,7 @@ pub fn emit(level: Level, target: &str, msg: std::fmt::Arguments<'_>) {
 /// a `socket()` syscall plus a `format!` for every log line, which at
 /// `RUST_LOG=debug` on a busy path is a syscall storm on a daemon whose whole
 /// job is to stay cheap. An unbound datagram socket can `send_to` repeatedly.
+#[cfg(not(target_arch = "wasm32"))]
 fn journald_socket() -> Option<&'static std::os::unix::net::UnixDatagram> {
     static SOCK: std::sync::OnceLock<Option<std::os::unix::net::UnixDatagram>> =
         std::sync::OnceLock::new();
@@ -122,6 +130,7 @@ fn journald_socket() -> Option<&'static std::os::unix::net::UnixDatagram> {
     .as_ref()
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 fn journald_send(priority: u8, msg: &str) {
     let Some(sock) = journald_socket() else {
         return;
@@ -238,3 +247,8 @@ macro_rules! trace {
 
 #[cfg(test)]
 mod tests;
+
+/// wasm shim: there is no journal to mirror to. Kept as a real function so the
+/// browser host never needs its own `cfg`.
+#[cfg(target_arch = "wasm32")]
+pub fn enable_journald(_ident: &str) {}

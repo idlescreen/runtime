@@ -87,8 +87,8 @@ impl From<idle_api::plugin_manifest::ManifestError> for PluginError {
 
 /// The canonical list of allowed saver basenames.
 pub const ALLOWED_SAVERS: &[&str] = &[
-    "aurora", "beams", "bursts", "chaos", "cosmos", "glyphs", "gnats", "radar", "storm", "hearth",
-    "ripple",
+    "ascii", "aurora", "beams", "bursts", "chaos", "cosmos", "glyphs", "gnats", "radar", "storm",
+    "hearth", "ripple",
 ];
 
 /// Controls which directories [`resolve_saver_binary`] may search.

@@ -19,6 +19,9 @@ pub struct IpcPluginSession {
     pub(crate) saver_name: String,
     pub(crate) render_scale: f32,
     pub(crate) saver_params: std::collections::BTreeMap<String, String>,
+    /// Configured ASCII-art file, read by the daemon at spawn. `None` when no
+    /// art file is configured — the common case.
+    pub(crate) logo_file: Option<String>,
     pub(crate) renderer: CellRenderer,
     pub(crate) upscaler: FrameUpscaler,
     pub(crate) grid: Vec<TerminalCell>,
@@ -54,6 +57,7 @@ impl IpcPluginSession {
         render_scale: Option<f32>,
         saver_params: std::collections::BTreeMap<String, String>,
         want_gpu: bool,
+        logo_file: Option<String>,
     ) -> Result<Self, String> {
         // The wgpu probe costs ~400MB of transient driver mappings; only pay
         // it when the caller expects the raster load to justify it.
@@ -69,6 +73,7 @@ impl IpcPluginSession {
             saver_name: saver_name.to_string(),
             render_scale,
             saver_params,
+            logo_file,
             renderer,
             upscaler,
             grid: Vec::new(),
@@ -130,6 +135,7 @@ impl IpcPluginSession {
             rows,
             self.render_scale,
             &self.saver_params,
+            self.logo_file.as_deref(),
         )?;
 
         self.child = Some(init_res.child);

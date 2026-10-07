@@ -121,6 +121,7 @@ fn build_sessions(
                 options.render_scale,
                 options.saver_params.clone(),
                 want_gpu,
+                options.logo_file.clone(),
             )?;
             let (cols, rows) = session.grid_for_pixels(layout.width, layout.height);
             session.init(cols, rows)?;
@@ -138,6 +139,7 @@ fn build_sessions(
             options.render_scale,
             options.saver_params.clone(),
             want_gpu,
+            options.logo_file.clone(),
         )?;
         let (_min_x, _min_y, total_w, total_h) = virtual_desktop(layouts);
         let (virtual_cols, virtual_rows) = span_simulation_grid(&session, total_w, total_h);

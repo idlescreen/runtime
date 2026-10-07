@@ -75,6 +75,7 @@ fn test_empty_sessions_returns_error() {
             render_scale: None,
             launch_mode: idle_runner::launcher::LaunchMode::Daemon,
             saver_params: std::collections::BTreeMap::new(),
+            logo_file: None,
         },
         60.0,
         60.0,

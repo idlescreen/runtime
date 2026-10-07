@@ -45,6 +45,9 @@ pub struct PresentationOptions {
     /// `[saver]`/`[saver.*]` config params; delivered to runners as
     /// `IDLE_SAVER_PARAM_*` env vars (see `idle_api::param`).
     pub saver_params: std::collections::BTreeMap<String, String>,
+    /// Configured ASCII-art file. Read by the daemon and delivered to each
+    /// runner as `IDLE_ASSET_LOGO`; the plugin never opens it.
+    pub logo_file: Option<String>,
 }
 
 pub struct PluginPresentation {
@@ -108,6 +111,7 @@ mod tests {
             render_scale: None,
             launch_mode: LaunchMode::Preview,
             saver_params: std::collections::BTreeMap::new(),
+            logo_file: None,
         };
         let result = PluginPresentation::start(
             presenter,
@@ -170,6 +174,7 @@ mod tests {
             render_scale: None,
             launch_mode: LaunchMode::Preview,
             saver_params: std::collections::BTreeMap::new(),
+            logo_file: None,
         };
         // Invalid saver — the call should fail closed at the saver gate,
         // but the surface dispatch path must still be reachable without

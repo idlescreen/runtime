@@ -34,6 +34,7 @@
 /// (legacy `trance_api_version` still accepted by the loader when present).
 pub const API_VERSION: u32 = 1;
 
+pub mod asset;
 pub mod audio;
 pub mod c_abi;
 mod callbacks;
@@ -49,6 +50,7 @@ pub mod stress;
 pub mod surface;
 pub mod toml;
 
+pub use asset::{ASSET_LOGO, asset, env_key as asset_env_key, logo};
 pub use env_dual::{
     SAVER_PARAM_ENV_PREFIX, env_is_set, env_truthy, env_var_first, param, param_f32,
     saver_param_env_key, set_env,

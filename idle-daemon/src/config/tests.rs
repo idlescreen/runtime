@@ -144,3 +144,40 @@ fn inhibit_on_media_round_trip_persistence() {
     }
     assert_eq!(restored.inhibit_on_media, config.inhibit_on_media);
 }
+
+// ---- logo_file -----------------------------------------------------------
+
+#[test]
+fn logo_file_accepts_an_absolute_path() {
+    let mut config = DaemonConfig::default();
+    let mut section = String::new();
+    apply_config_line(
+        &mut config,
+        &mut section,
+        "logo_file: /home/u/.config/idlescreen/logo.txt",
+    );
+    assert_eq!(
+        config.logo_file.as_deref(),
+        Some("/home/u/.config/idlescreen/logo.txt")
+    );
+}
+
+#[test]
+fn logo_file_rejects_a_relative_path() {
+    // A relative path would resolve against the daemon's cwd, which is not
+    // something a user can reason about from a config file.
+    let mut config = DaemonConfig::default();
+    let mut section = String::new();
+    apply_config_line(&mut config, &mut section, "logo_file: ../../etc/passwd");
+    assert_eq!(config.logo_file, None);
+}
+
+#[test]
+fn logo_file_empty_clears_the_setting() {
+    let mut config = DaemonConfig::default();
+    let mut section = String::new();
+    apply_config_line(&mut config, &mut section, "logo_file: /tmp/a.txt");
+    assert!(config.logo_file.is_some());
+    apply_config_line(&mut config, &mut section, "logo_file:");
+    assert_eq!(config.logo_file, None);
+}

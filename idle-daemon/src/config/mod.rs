@@ -30,6 +30,8 @@ pub struct DaemonConfig {
     pub render_scale: Option<f32>,
     /// Per-saver custom parameters (e.g. speed, density)
     pub saver_params: std::collections::BTreeMap<String, String>,
+    /// ASCII-art file; read by the daemon at spawn, passed to the runner via env.
+    pub logo_file: Option<String>,
     pub theme: idle_api::Theme,
     /// When true, D-Bus control auth refuses the `/proc/pid/comm` fallback
     /// (exe must resolve to a trusted basename). Env `IDLE_STRICT_CONTROL=1`
@@ -47,6 +49,7 @@ impl Default for DaemonConfig {
             show_fps_overlay: false,
             render_scale: None,
             saver_params: std::collections::BTreeMap::new(),
+            logo_file: None,
             theme: idle_api::Theme::default(),
             strict_control: false,
             inhibit_on_media: true,

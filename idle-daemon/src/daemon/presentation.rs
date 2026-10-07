@@ -74,6 +74,7 @@ pub fn start_presentation(
         render_scale: config.render_scale,
         launch_mode,
         saver_params: config.saver_params.clone(),
+        logo_file: config.logo_file.clone(),
     };
     match PluginPresentation::start(overlay_presenter.clone(), saver_name.clone(), options) {
         Ok(plugin) => {

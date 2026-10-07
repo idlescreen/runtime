@@ -3,6 +3,8 @@
 
 //! Key/value application for daemon `config.yaml` lines.
 
+use std::path::Path;
+
 use idle_runner::launcher::{is_allowed_saver, sanitize_saver_name};
 
 use crate::config::DaemonConfig;
@@ -23,6 +25,7 @@ pub(crate) fn apply_config_key(config: &mut DaemonConfig, key: &str, val: &str) 
             }
         }
         "render_scale" => apply_render_scale(config, val),
+        "logo_file" => apply_logo_file(config, val),
         "theme" => {
             if let Ok(theme) = val.parse::<idle_api::Theme>() {
                 config.theme = theme;
@@ -40,6 +43,27 @@ pub(crate) fn apply_config_key(config: &mut DaemonConfig, key: &str, val: &str) 
         }
         _ => {}
     }
+}
+
+/// Absolute path to a user-supplied ASCII-art file.
+///
+/// Rejected rather than silently ignored: a typo'd path that quietly disables
+/// the logo is far harder to diagnose than a startup log line naming it.
+fn apply_logo_file(config: &mut DaemonConfig, val: &str) {
+    let path = val.trim();
+    if path.is_empty() {
+        config.logo_file = None;
+        return;
+    }
+    let candidate = Path::new(path);
+    if !candidate.is_absolute() || path.contains('\0') {
+        idle_log::warn!(
+            path = path,
+            "ignoring logo_file: must be an absolute path with no NUL"
+        );
+        return;
+    }
+    config.logo_file = Some(path.to_string());
 }
 
 fn apply_idle_timeout(config: &mut DaemonConfig, val: &str) {

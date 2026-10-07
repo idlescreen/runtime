@@ -48,6 +48,7 @@ fn kill_child_is_idempotent_without_child() {
         None,
         std::collections::BTreeMap::new(),
         false,
+        None,
     )
     .expect("load");
     // No child yet; kill must not panic.
@@ -63,6 +64,7 @@ fn kill_child_clears_handle() {
         None,
         std::collections::BTreeMap::new(),
         false,
+        None,
     )
     .expect("load");
     // Simulate a live child by inserting a dummy process handle would
@@ -83,6 +85,7 @@ fn expected_stop_is_set_after_kill() {
         None,
         std::collections::BTreeMap::new(),
         false,
+        None,
     )
     .expect("load");
     s.kill_child();
@@ -113,6 +116,7 @@ fn kill_child_reaps_real_process() {
         None,
         std::collections::BTreeMap::new(),
         false,
+        None,
     )
     .expect("load");
     s.child = Some(child);
@@ -159,6 +163,7 @@ fn consecutive_timeouts_are_budgeted_and_progress_resets_them() {
         None,
         std::collections::BTreeMap::new(),
         false,
+        None,
     )
     .expect("load");
 
@@ -193,6 +198,7 @@ fn exhausted_geometry_is_never_retried_again() {
         None,
         std::collections::BTreeMap::new(),
         false,
+        None,
     )
     .expect("load");
 

@@ -30,12 +30,51 @@ pub(crate) fn kill_and_reap(child: &mut Child, socket_path: &Path) {
     let _ = fs::remove_file(socket_path);
 }
 
+/// Read the configured ASCII-art file and render it as the env pair the
+/// runner (and therefore the plugin) will read via `idle_api::asset`.
+///
+/// The read happens here, in the daemon, before the sandboxed child exists.
+/// That is the whole point: the child never opens a path, so the Landlock
+/// policy is unchanged and no capability grant is needed.
+///
+/// Returns an empty vec for the overwhelmingly common case of no art file
+/// configured. A configured-but-unreadable file is logged and treated as
+/// absent — a broken logo must not stop the screensaver from working.
+fn logo_asset_env(logo_file: Option<&str>) -> Vec<(String, String)> {
+    let Some(path) = logo_file else {
+        return Vec::new();
+    };
+    match std::fs::read_to_string(path) {
+        Ok(contents) => {
+            if contents.len() > idle_api::asset::MAX_ASSET_BYTES {
+                idle_log::warn!(
+                    path = path,
+                    bytes = contents.len(),
+                    limit = idle_api::asset::MAX_ASSET_BYTES,
+                    "ignoring logo_file: too large to deliver to the renderer"
+                );
+                return Vec::new();
+            }
+            vec![(idle_api::asset_env_key(idle_api::ASSET_LOGO), contents)]
+        }
+        Err(e) => {
+            idle_log::warn!(
+                path = path,
+                error = %e,
+                "logo_file configured but unreadable; rendering without it"
+            );
+            Vec::new()
+        }
+    }
+}
+
 pub fn initialize_ipc_session(
     saver_name: &str,
     cols: usize,
     rows: usize,
     render_scale: f32,
     saver_params: &std::collections::BTreeMap<String, String>,
+    logo_file: Option<&str>,
 ) -> Result<SessionInitResult, String> {
     validate_grid_dims(cols, rows).map_err(|e| e.to_string())?;
     if !render_scale.is_finite() || !(0.0..=1.0).contains(&render_scale) {
@@ -78,6 +117,7 @@ pub fn initialize_ipc_session(
     // `[saver]` params → `IDLE_SAVER_PARAM_*` env on the runner so plugins
     // read them via `idle_api::param*` without an IPC/ABI change.
     let param_env = saver_param_env(saver_params);
+    let asset_env = logo_asset_env(logo_file);
 
     let mut child = Command::new(current_exe)
         .arg("run-ipc-runner")
@@ -88,6 +128,7 @@ pub fn initialize_ipc_session(
         .arg(rows.to_string())
         .arg(&scale_str)
         .envs(param_env.iter().map(|(k, v)| (k.as_str(), v.as_str())))
+        .envs(asset_env.iter().map(|(k, v)| (k.as_str(), v.as_str())))
         .spawn()
         .map_err(|e| format!("failed to spawn runner process: {}", e))?;
 

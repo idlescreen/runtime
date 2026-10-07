@@ -82,3 +82,58 @@ fn saver_param_env_maps_and_sanitizes() {
     assert!(env.contains(&("IDLE_SAVER_PARAM_GLOW".into(), "0.8".into())));
     assert_eq!(env.len(), 2, "unsanitizable key must be dropped: {env:?}");
 }
+
+// ---- logo asset delivery -------------------------------------------------
+//
+// The daemon is the only process that opens the configured art file. These
+// tests pin that contract: what the plugin eventually reads via
+// `idle_api::asset` is exactly what the daemon read, bounded, and nothing
+// else.
+
+fn temp_art(name: &str, contents: &str) -> std::path::PathBuf {
+    let dir = std::env::temp_dir().join(format!("idle-logo-{}", std::process::id()));
+    fs::create_dir_all(&dir).expect("mkdir");
+    let path = dir.join(name);
+    fs::write(&path, contents).expect("write");
+    path
+}
+
+#[test]
+fn no_logo_file_yields_no_env() {
+    assert!(super::logo_asset_env(None).is_empty());
+}
+
+#[test]
+fn a_configured_logo_is_delivered_under_the_well_known_key() {
+    let art = "  _  _\n | || |\n |__   _|";
+    let path = temp_art("delivered.txt", art);
+    let env = super::logo_asset_env(Some(path.to_str().unwrap()));
+    assert_eq!(env.len(), 1);
+    assert_eq!(env[0].0, idle_api::asset_env_key(idle_api::ASSET_LOGO));
+    assert_eq!(env[0].1, art);
+}
+
+#[test]
+fn an_unreadable_logo_file_is_not_fatal() {
+    // A broken logo must never stop the screensaver from presenting.
+    let env = super::logo_asset_env(Some("/nonexistent/idle/no-such-logo.txt"));
+    assert!(env.is_empty());
+}
+
+#[test]
+fn an_oversized_logo_file_is_refused_rather_than_truncated() {
+    // Truncating would hand the plugin a half-drawn logo that looks like a
+    // rendering bug. Dropping it makes the saver fall back to its default.
+    let big = "x".repeat(idle_api::asset::MAX_ASSET_BYTES + 1);
+    let path = temp_art("too-big.txt", &big);
+    let env = super::logo_asset_env(Some(path.to_str().unwrap()));
+    assert!(env.is_empty());
+}
+
+#[test]
+fn a_logo_exactly_at_the_limit_is_accepted() {
+    let exact = "y".repeat(idle_api::asset::MAX_ASSET_BYTES);
+    let path = temp_art("at-limit.txt", &exact);
+    let env = super::logo_asset_env(Some(path.to_str().unwrap()));
+    assert_eq!(env.len(), 1, "the limit itself must be allowed");
+}

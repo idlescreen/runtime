@@ -41,7 +41,9 @@ fn allowlist_blocks_unknown_savers() {
 #[test]
 fn allowlist_is_complete() {
     assert_eq!(ALLOWED_SAVERS.len(), 13);
-    for name in ["ascii", "aurora", "beams", "brand", "storm", "hearth", "ripple"] {
+    for name in [
+        "ascii", "aurora", "beams", "brand", "storm", "hearth", "ripple",
+    ] {
         assert!(ALLOWED_SAVERS.contains(&name));
     }
 }

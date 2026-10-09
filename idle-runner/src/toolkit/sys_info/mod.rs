@@ -21,11 +21,11 @@ mod linux_proc;
 #[path = "../linux_queries.rs"]
 mod linux_queries;
 
+pub use brand::{detect_brand_text, detect_desktop_environment, detect_host_os};
 pub use idle_api::MonitorCellBounds;
 pub use linux_queries::{
     query_all_monitors as linux_query_all_monitors, query_disk_drives, query_gpu_names,
 };
-pub use brand::{detect_brand_text, detect_desktop_environment, detect_host_os};
 pub use monitors::{
     get_monitor_layouts, get_primary_monitor_bounds, is_secondary_monitor,
     query_monitors_from_xrandr,

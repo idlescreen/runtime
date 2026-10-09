@@ -98,10 +98,20 @@ pub fn detect_desktop_environment() -> Option<String> {
 pub fn detect_brand_text() -> String {
     for key in [
         "IDLE_SAVER_PARAM_ASCII_TEXT",
+        "IDLE_SAVER_PARAM_BRAND_TEXT",
         "IDLE_SAVER_PARAM_TEXT",
         "IDLE_LOGO_TEXT",
     ] {
         if let Ok(v) = std::env::var(key) {
+            let trimmed = v.trim();
+            if !trimmed.is_empty() {
+                return trimmed.to_string();
+            }
+        }
+    }
+
+    for (k, v) in std::env::vars() {
+        if k.starts_with("IDLE_SAVER_PARAM_") && k.ends_with("_TEXT") {
             let trimmed = v.trim();
             if !trimmed.is_empty() {
                 return trimmed.to_string();

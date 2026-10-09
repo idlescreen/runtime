@@ -17,6 +17,43 @@ pub struct SystemInfo {
     pub monitors: String,
 }
 
+fn detect_desktop_name() -> Option<String> {
+    if std::env::var_os("HYPRLAND_INSTANCE_SIGNATURE").is_some() {
+        return Some("Hyprland".to_string());
+    }
+    if std::env::var_os("SWAYSOCK").is_some() {
+        return Some("Sway".to_string());
+    }
+    for key in [
+        "XDG_CURRENT_DESKTOP",
+        "XDG_SESSION_DESKTOP",
+        "DESKTOP_SESSION",
+    ] {
+        if let Ok(val) = std::env::var(key) {
+            let lower = val.to_ascii_lowercase();
+            if lower.contains("cosmic") {
+                return Some("COSMIC".to_string());
+            } else if lower.contains("hyprland") {
+                return Some("Hyprland".to_string());
+            } else if lower.contains("sway") {
+                return Some("Sway".to_string());
+            } else if lower.contains("gnome") {
+                return Some("GNOME".to_string());
+            } else if lower.contains("kde") || lower.contains("plasma") {
+                return Some("KDE Plasma".to_string());
+            } else if lower.contains("xfce") {
+                return Some("Xfce".to_string());
+            } else {
+                let trimmed = val.trim();
+                if !trimmed.is_empty() {
+                    return Some(trimmed.to_string());
+                }
+            }
+        }
+    }
+    None
+}
+
 /// `PRETTY_NAME` from `/etc/os-release`, or `None` when there is no such file
 /// — a browser, a container, or any non-Linux host.
 fn os_pretty_name() -> Option<String> {
@@ -62,9 +99,11 @@ impl Default for SystemInfo {
         // identical to every other.
         let logo_text = crate::env_var_first(&[
             "IDLE_SAVER_PARAM_ASCII_TEXT",
+            "IDLE_SAVER_PARAM_BRAND_TEXT",
             "IDLE_SAVER_PARAM_TEXT",
             "IDLE_LOGO_TEXT",
         ])
+        .or_else(detect_desktop_name)
         .unwrap_or_else(|| os_pretty_name().unwrap_or_else(|| "IDLESCREEN".into()));
 
         let hostname = std::env::var("HOSTNAME").unwrap_or_else(|_| "localhost".to_string());

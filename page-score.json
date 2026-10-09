@@ -1,6 +1,6 @@
 {
  "repo": "runtime",
- "rev": "ab72ece",
+ "rev": "eed018b",
  "dirty": true,
  "pages": [
   {
@@ -985,7 +985,7 @@
   },
   {
    "path": "./idle-api/src/system_info.rs",
-   "lines": 122,
+   "lines": 161,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 2
@@ -2385,7 +2385,7 @@
   },
   {
    "path": "./idle-runner/src/toolkit/sys_info/brand.rs",
-   "lines": 175,
+   "lines": 185,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 1

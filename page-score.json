@@ -1,6 +1,6 @@
 {
  "repo": "runtime",
- "rev": "c165380",
+ "rev": "799f0b0",
  "dirty": true,
  "pages": [
   {
@@ -1279,7 +1279,7 @@
   },
   {
    "path": "./idle-daemon/src/daemon/runtime.rs",
-   "lines": 128,
+   "lines": 208,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 10

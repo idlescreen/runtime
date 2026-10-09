@@ -16,9 +16,75 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use crate::controller::DaemonController;
-use idle_api::{IdleSource, OverlaySurface};
+use idle_api::{BlankAppearance, IdleSource, OutputId, OutputLayout, OverlaySurface};
 
 pub use super::recovery::*;
+
+/// Gracefully degraded idle source for GNOME/compositors without ext-idle-notify-v1.
+#[derive(Debug)]
+pub struct DegradedIdleSource {
+    _timeout: Duration,
+}
+
+impl IdleSource for DegradedIdleSource {
+    fn is_available() -> bool {
+        false
+    }
+
+    fn new(timeout: Duration) -> Option<Self> {
+        Some(Self { _timeout: timeout })
+    }
+
+    fn is_idle(&self) -> bool {
+        false
+    }
+
+    fn is_alive(&self) -> bool {
+        true
+    }
+
+    fn set_timeout(&self, timeout: Duration) {
+        let _ = timeout;
+    }
+}
+
+/// Gracefully degraded overlay surface for GNOME/compositors without zwlr_layer_shell_v1.
+#[derive(Debug)]
+pub struct DegradedOverlay;
+
+impl OverlaySurface for DegradedOverlay {
+    fn is_available() -> bool {
+        false
+    }
+
+    fn new() -> Option<Self> {
+        Some(Self)
+    }
+
+    fn submit_frame(&self, _output: OutputId, _frame: Arc<Vec<u8>>, _width: u32, _height: u32) {}
+
+    fn is_alive(&self) -> bool {
+        true
+    }
+
+    fn is_visible(&self) -> bool {
+        false
+    }
+
+    fn show_blank(&self, _appearance: BlankAppearance) {}
+
+    fn show_screensaver(&self) {}
+
+    fn hide(&self) {}
+
+    fn supports_scaling(&self) -> bool {
+        false
+    }
+
+    fn output_layouts(&self) -> Vec<OutputLayout> {
+        Vec::new()
+    }
+}
 
 /// Log the daemon's posture w.r.t. fail-OPEN defaults. Operators who want
 /// full enforcement must opt in (see `DEPLOYMENT.md` in the org repo).
@@ -71,24 +137,34 @@ pub fn initialize_runtime(
     let idle_monitor: Box<dyn IdleSource> = {
         use wayland_idle::IdleMonitor;
         let timeout = Duration::from_secs(idle_timeout.saturating_mul(60) as u64);
-        Box::new(IdleMonitor::new_timeout(timeout).ok_or_else(|| {
-            anyhow!(
+        if let Some(monitor) = IdleMonitor::new_timeout(timeout) {
+            idle_log::info!("using platform idle source");
+            Box::new(monitor)
+        } else {
+            idle_log::warn!(
                 "DEGRADED: Wayland idle monitoring unavailable (need ext-idle-notify-v1). \
-                 IdleScreen is a compositor client — this DE/compositor does not expose the \
-                 idle protocol. See docs/BOUNDARIES.md. Run: idle doctor --json"
-            )
-        })?)
+                 IdleScreen is running in degraded mode on GNOME/compositor without idle protocol. \
+                 D-Bus interface remains active."
+            );
+            Box::new(DegradedIdleSource { _timeout: timeout })
+        }
     };
     #[cfg(not(target_os = "linux"))]
-    let idle_monitor: Box<dyn IdleSource> =
-        idle_api::platform_idle(Duration::from_secs(idle_timeout.saturating_mul(60) as u64))
-            .ok_or_else(|| anyhow!("DEGRADED: idle source unavailable on this platform."))?;
+    let idle_monitor: Box<dyn IdleSource> = {
+        let timeout = Duration::from_secs(idle_timeout.saturating_mul(60) as u64);
+        if let Some(source) = idle_api::platform_idle(timeout) {
+            source
+        } else {
+            Box::new(DegradedIdleSource { _timeout: timeout })
+        }
+    };
 
-    idle_log::info!("using platform idle source");
-    if !idle_monitor.is_alive() {
-        return Err(anyhow!(
-            "DEGRADED: idle source reports dead at startup; refusing to load"
-        ));
+    if idle_monitor.is_alive() {
+        idle_log::info!("platform idle source is alive");
+    } else {
+        idle_log::warn!(
+            "DEGRADED: idle source reports dead or degraded at startup; continuing in degraded mode"
+        );
     }
 
     if !idle_runner::cell_renderer::font_available() {
@@ -107,16 +183,20 @@ pub fn initialize_runtime(
     // presenter's, except for Arc<Vec<u8>> vs Vec<u8>). The concrete path
     // is used by the presentation pipeline (which has additional methods
     // like `show_screensaver`); Sprint 05 will move those onto the trait.
-    let overlay_presenter: Arc<dyn OverlaySurface> = idle_api::WaylandOverlay::new()
-        .map(|w| Arc::new(w) as Arc<dyn OverlaySurface>)
-        .ok_or_else(|| {
-            anyhow!(
+    let overlay_presenter: Arc<dyn OverlaySurface> = match idle_api::WaylandOverlay::new() {
+        Some(presenter) => {
+            idle_log::info!("using Wayland layer-shell presenter");
+            Arc::new(presenter)
+        }
+        None => {
+            idle_log::warn!(
                 "DEGRADED: Wayland layer-shell presenter unavailable (need zwlr_layer_shell_v1). \
-                 IdleScreen presents as a guest overlay — compositors without layer-shell cannot \
-                 host it (e.g. some GNOME configurations). See docs/BOUNDARIES.md. Run: idle doctor --json"
-            )
-        })?;
-    idle_log::info!("using Wayland layer-shell presenter");
+                 IdleScreen is running in degraded mode on GNOME/compositor without layer-shell. \
+                 D-Bus interface remains active."
+            );
+            Arc::new(DegradedOverlay)
+        }
+    };
     Ok((idle_monitor, overlay_presenter))
 }
 

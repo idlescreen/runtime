@@ -47,8 +47,17 @@ impl GnomeIdleMonitor {
         let event_thread = std::thread::Builder::new()
             .name("gnome-idle".into())
             .spawn(move || {
-                if let Ok(rt) = tokio::runtime::Builder::new_current_thread().enable_all().build() {
-                    rt.block_on(run_idle_loop(thread_idle, thread_alive, timeout_rx, timeout, ready_tx));
+                if let Ok(rt) = tokio::runtime::Builder::new_current_thread()
+                    .enable_all()
+                    .build()
+                {
+                    rt.block_on(run_idle_loop(
+                        thread_idle,
+                        thread_alive,
+                        timeout_rx,
+                        timeout,
+                        ready_tx,
+                    ));
                 } else {
                     let _ = ready_tx.send(false);
                 }
@@ -205,43 +214,5 @@ impl idle_api::IdleSource for GnomeIdleMonitor {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_is_available_matches_wayland() {
-        let _guard = crate::TEST_ENV_LOCK.lock().unwrap();
-        let backup = std::env::var("WAYLAND_DISPLAY").ok();
-        unsafe { std::env::set_var("WAYLAND_DISPLAY", "wayland-mock-test"); }
-        assert!(GnomeIdleMonitor::is_available());
-        unsafe { std::env::remove_var("WAYLAND_DISPLAY"); }
-        assert!(!GnomeIdleMonitor::is_available());
-        if let Some(val) = backup {
-            unsafe { std::env::set_var("WAYLAND_DISPLAY", val); }
-        }
-    }
-
-    #[test]
-    fn test_unavailable_when_wayland_unset() {
-        let _guard = crate::TEST_ENV_LOCK.lock().unwrap();
-        let backup = std::env::var("WAYLAND_DISPLAY").ok();
-        unsafe { std::env::remove_var("WAYLAND_DISPLAY"); }
-        let monitor = GnomeIdleMonitor::new(Duration::from_secs(60));
-        assert!(monitor.is_none());
-        if let Some(val) = backup {
-            unsafe { std::env::set_var("WAYLAND_DISPLAY", val); }
-        }
-    }
-
-    #[test]
-    fn test_returns_none_when_mutter_absent() {
-        let _guard = crate::TEST_ENV_LOCK.lock().unwrap();
-        let backup = std::env::var("WAYLAND_DISPLAY").ok();
-        unsafe { std::env::set_var("WAYLAND_DISPLAY", "wayland-mock-nonexistent"); }
-        let monitor = GnomeIdleMonitor::new(Duration::from_secs(60));
-        assert!(monitor.is_none());
-        if let Some(val) = backup {
-            unsafe { std::env::set_var("WAYLAND_DISPLAY", val); }
-        }
-    }
-}
+#[path = "gnome_idle_tests.rs"]
+mod tests;

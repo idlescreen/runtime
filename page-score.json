@@ -1,6 +1,6 @@
 {
  "repo": "runtime",
- "rev": "8498d0d",
+ "rev": "c6ac286",
  "dirty": true,
  "pages": [
   {
@@ -565,7 +565,7 @@
   },
   {
    "path": "./crates/wayland-present/src/overlay/handlers/registry.rs",
-   "lines": 205,
+   "lines": 206,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
@@ -614,7 +614,7 @@
   },
   {
    "path": "./crates/wayland-present/src/overlay/state/overlay_xdg.rs",
-   "lines": 70,
+   "lines": 78,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
@@ -827,7 +827,7 @@
    "lines": 76,
    "bin_bytes": null,
    "heat_pct": null,
-   "reach": 81
+   "reach": 82
   },
   {
    "path": "./idle-api/src/monitor/env_tests.rs",
@@ -1496,10 +1496,17 @@
   },
   {
    "path": "./idle-daemon/src/monitors/gnome_idle.rs",
-   "lines": 247,
+   "lines": 218,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
+  },
+  {
+   "path": "./idle-daemon/src/monitors/gnome_idle_tests.rs",
+   "lines": 55,
+   "bin_bytes": null,
+   "heat_pct": null,
+   "reach": 0
   },
   {
    "path": "./idle-daemon/src/monitors/lock.rs",

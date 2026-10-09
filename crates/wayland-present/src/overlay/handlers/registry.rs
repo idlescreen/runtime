@@ -52,12 +52,13 @@ impl SessionState {
                 self.layer_shell = Some(registry.bind(name, version.min(4), queue, ()));
             }
             "xdg_wm_base" => {
-                let xdg = registry.bind::<wayland_protocols::xdg::shell::client::xdg_wm_base::XdgWmBase, _, _>(
-                    name,
-                    version.min(2),
-                    queue,
-                    (),
-                );
+                let xdg = registry
+                    .bind::<wayland_protocols::xdg::shell::client::xdg_wm_base::XdgWmBase, _, _>(
+                        name,
+                        version.min(2),
+                        queue,
+                        (),
+                    );
                 self.xdg_wm_base = Some(xdg);
             }
             "wp_viewporter" => {

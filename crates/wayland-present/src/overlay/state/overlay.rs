@@ -16,14 +16,10 @@ impl SessionState {
             return;
         };
 
-        let output = self
-            .outputs
-            .iter()
-            .find(|target| target.id == output_id)
-            .map(|target| &target.output);
-        let Some(output) = output else {
+        let Some(target) = self.outputs.iter().find(|t| t.id == output_id) else {
             return;
         };
+        let output = &target.output;
 
         let surface = compositor.create_surface(&self.queue, output_id);
         let role = if let Some(layer_shell) = &self.layer_shell {
@@ -42,9 +38,8 @@ impl SessionState {
             layer_surface.set_anchor(anchor);
             layer_surface.set_exclusive_zone(Self::exclusive_zone_for(self.screensaver_mode));
             layer_surface.set_margin(0, 0, 0, 0);
-            layer_surface.set_keyboard_interactivity(
-                zwlr_layer_surface_v1::KeyboardInteractivity::OnDemand,
-            );
+            layer_surface
+                .set_keyboard_interactivity(zwlr_layer_surface_v1::KeyboardInteractivity::OnDemand);
             layer_surface.set_size(0, 0);
             surface.commit();
             super::types::OverlayRole::Layer(layer_surface)
@@ -55,14 +50,19 @@ impl SessionState {
             toplevel.set_app_id("idlescreen".to_string());
             toplevel.set_fullscreen(Some(output));
             surface.commit();
-            super::types::OverlayRole::Xdg { xdg_surface, toplevel }
+            super::types::OverlayRole::Xdg {
+                xdg_surface,
+                toplevel,
+            }
         } else {
             idle_log::warn!("wayland-present: missing layer shell and xdg_wm_base");
             return;
         };
 
         let viewport = if std::env::var_os("IDLE_HW_VIEWPORT").is_some() {
-            self.viewporter.as_ref().map(|vp| vp.get_viewport(&surface, &self.queue, ()))
+            self.viewporter
+                .as_ref()
+                .map(|vp| vp.get_viewport(&surface, &self.queue, ()))
         } else {
             None
         };

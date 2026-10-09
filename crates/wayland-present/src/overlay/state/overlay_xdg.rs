@@ -26,8 +26,16 @@ impl SessionState {
                 .get(&output_id)
                 .copied()
                 .unwrap_or((1920, 1080));
-            let render_w = if overlay.width > 0 { overlay.width } else { native_w };
-            let render_h = if overlay.height > 0 { overlay.height } else { native_h };
+            let render_w = if overlay.width > 0 {
+                overlay.width
+            } else {
+                native_w
+            };
+            let render_h = if overlay.height > 0 {
+                overlay.height
+            } else {
+                native_h
+            };
             overlay.width = render_w;
             overlay.height = render_h;
 

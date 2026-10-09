@@ -1,6 +1,6 @@
 {
  "repo": "runtime",
- "rev": "3a21570",
+ "rev": "3dee472",
  "dirty": true,
  "pages": [
   {
@@ -803,7 +803,7 @@
   },
   {
    "path": "./idle-api/src/lib.rs",
-   "lines": 85,
+   "lines": 87,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
@@ -985,7 +985,7 @@
   },
   {
    "path": "./idle-api/src/system_info.rs",
-   "lines": 209,
+   "lines": 224,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 2
@@ -2140,7 +2140,7 @@
   },
   {
    "path": "./idle-runner/src/plugin_session/loading.rs",
-   "lines": 177,
+   "lines": 178,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 1

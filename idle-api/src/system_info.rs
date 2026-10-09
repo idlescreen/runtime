@@ -97,6 +97,22 @@ pub fn detect_host_os() -> Option<String> {
     None
 }
 
+/// Dynamically detects the Kernel version by inspecting `IDLE_KERNEL_VERSION` or `/proc/sys/kernel/osrelease`.
+pub fn detect_kernel() -> Option<String> {
+    if let Some(version) = crate::env_var_first(&["IDLE_KERNEL_VERSION"]) {
+        return Some(version);
+    }
+    for path in ["/proc/sys/kernel/osrelease"] {
+        if let Ok(text) = std::fs::read_to_string(path) {
+            let trimmed = text.trim();
+            if !trimmed.is_empty() {
+                return Some(trimmed.to_string());
+            }
+        }
+    }
+    None
+}
+
 impl Default for SystemInfo {
     fn default() -> Self {
         if Self::export_mode_enabled() {
@@ -127,9 +143,7 @@ impl Default for SystemInfo {
 
         let hostname = std::env::var("HOSTNAME").unwrap_or_else(|_| "localhost".to_string());
 
-        let kernel = std::fs::read_to_string("/proc/sys/kernel/osrelease")
-            .map(|s| s.trim().to_string())
-            .unwrap_or_else(|_| "unknown".to_string());
+        let kernel = detect_kernel().unwrap_or_else(|| "unknown".to_string());
 
         Self {
             os,
@@ -205,5 +219,6 @@ mod tests {
     fn detect_desktop_environment_and_host_os_smoke() {
         let _ = detect_desktop_environment();
         let _ = detect_host_os();
+        let _ = detect_kernel();
     }
 }

@@ -61,6 +61,7 @@ impl PluginSession {
         };
         idle_api::set_env("IDLE_OS_NAME", &sys_info.os);
         idle_api::set_env("IDLE_LOGO_TEXT", &sys_info.logo_text);
+        idle_api::set_env("IDLE_KERNEL_VERSION", &sys_info.kernel);
 
         crate::caption_overlay::init_font();
 

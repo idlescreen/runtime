@@ -79,7 +79,9 @@ pub use surface::{
     BlankAppearance, CenteredLogo, OutputId, OutputLayout, OverlaySurface, StubOverlay,
     TerminalCell, is_span_layout, place_centered_logo, span_reach_scale,
 };
-pub use system_info::{SystemInfo, detect_desktop_environment, detect_host_os, parse_os_release};
+pub use system_info::{
+    SystemInfo, detect_desktop_environment, detect_host_os, detect_kernel, parse_os_release,
+};
 
 /// `.idleplugin.toml` capability manifest (schema v1).
 pub mod plugin_manifest;

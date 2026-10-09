@@ -17,7 +17,8 @@ pub struct SystemInfo {
     pub monitors: String,
 }
 
-fn detect_desktop_name() -> Option<String> {
+/// Dynamically detects the active desktop environment from session environment variables.
+pub fn detect_desktop_environment() -> Option<String> {
     if std::env::var_os("HYPRLAND_INSTANCE_SIGNATURE").is_some() {
         return Some("Hyprland".to_string());
     }
@@ -43,6 +44,12 @@ fn detect_desktop_name() -> Option<String> {
                 return Some("KDE Plasma".to_string());
             } else if lower.contains("xfce") {
                 return Some("Xfce".to_string());
+            } else if lower.contains("cinnamon") {
+                return Some("Cinnamon".to_string());
+            } else if lower.contains("mate") {
+                return Some("MATE".to_string());
+            } else if lower.contains("lxqt") {
+                return Some("LXQt".to_string());
             } else {
                 let trimmed = val.trim();
                 if !trimmed.is_empty() {
@@ -54,15 +61,40 @@ fn detect_desktop_name() -> Option<String> {
     None
 }
 
-/// `PRETTY_NAME` from `/etc/os-release`, or `None` when there is no such file
-/// — a browser, a container, or any non-Linux host.
-fn os_pretty_name() -> Option<String> {
-    let content = std::fs::read_to_string("/etc/os-release").ok()?;
-    content.lines().find_map(|line| {
-        let val = line.strip_prefix("PRETTY_NAME=")?;
-        let val = val.trim_matches('"').trim();
-        (!val.is_empty()).then(|| val.to_string())
-    })
+/// Parses `NAME` and `PRETTY_NAME` from os-release content.
+pub fn parse_os_release(content: &str) -> Option<String> {
+    let mut name = None;
+    let mut pretty = None;
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if let Some(v) = trimmed.strip_prefix("NAME=") {
+            let s = v.trim().trim_matches('"').trim_matches('\'').trim();
+            if !s.is_empty() {
+                name = Some(s.to_string());
+            }
+        } else if let Some(v) = trimmed.strip_prefix("PRETTY_NAME=") {
+            let s = v.trim().trim_matches('"').trim_matches('\'').trim();
+            if !s.is_empty() {
+                pretty = Some(s.to_string());
+            }
+        }
+    }
+    name.or(pretty)
+}
+
+/// Dynamically detects the Host OS by inspecting `/etc/os-release` and `/usr/lib/os-release`.
+pub fn detect_host_os() -> Option<String> {
+    if let Some(name) = crate::env_var_first(&["IDLE_OS_NAME"]) {
+        return Some(name);
+    }
+    for path in ["/etc/os-release", "/usr/lib/os-release"] {
+        if let Ok(text) = std::fs::read_to_string(path)
+            && let Some(os) = parse_os_release(&text)
+        {
+            return Some(os);
+        }
+    }
+    None
 }
 
 impl Default for SystemInfo {
@@ -70,21 +102,7 @@ impl Default for SystemInfo {
         if Self::export_mode_enabled() {
             return Self::export_fixture();
         }
-        let os = crate::env_var_first(&["IDLE_OS_NAME"]).unwrap_or_else(|| {
-            let mut temp_os = "Linux".to_string();
-            if let Ok(content) = std::fs::read_to_string("/etc/os-release") {
-                for line in content.lines() {
-                    if line.starts_with("PRETTY_NAME=") {
-                        let val = line.split('=').nth(1).unwrap_or("").trim_matches('"');
-                        if !val.is_empty() {
-                            temp_os = val.to_string();
-                            break;
-                        }
-                    }
-                }
-            }
-            temp_os
-        });
+        let os = detect_host_os().unwrap_or_else(|| "Linux".to_string());
 
         // The shared wordmark every saver renders.
         //
@@ -103,8 +121,9 @@ impl Default for SystemInfo {
             "IDLE_SAVER_PARAM_TEXT",
             "IDLE_LOGO_TEXT",
         ])
-        .or_else(detect_desktop_name)
-        .unwrap_or_else(|| os_pretty_name().unwrap_or_else(|| "IDLESCREEN".into()));
+        .or_else(detect_desktop_environment)
+        .or_else(detect_host_os)
+        .unwrap_or_else(|| "IDLESCREEN".into());
 
         let hostname = std::env::var("HOSTNAME").unwrap_or_else(|_| "localhost".to_string());
 
@@ -157,5 +176,34 @@ impl SystemInfo {
         crate::env_truthy(&["IDLE_EXPORT_MODE"])
             || std::env::var_os("RENDER_SEED").is_some()
             || std::env::var_os("IDLE_RENDER_SEED").is_some()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_os_release_prefers_name() {
+        let text = "NAME=\"Fedora Linux\"\nVERSION=\"41\"\nPRETTY_NAME=\"Fedora Linux 41\"";
+        assert_eq!(parse_os_release(text).as_deref(), Some("Fedora Linux"));
+    }
+
+    #[test]
+    fn parse_os_release_falls_back_to_pretty_name() {
+        let text = "PRETTY_NAME='Arch Linux'\nID=arch";
+        assert_eq!(parse_os_release(text).as_deref(), Some("Arch Linux"));
+    }
+
+    #[test]
+    fn parse_os_release_empty_returns_none() {
+        assert_eq!(parse_os_release(""), None);
+        assert_eq!(parse_os_release("FOO=bar\nBAZ=qux"), None);
+    }
+
+    #[test]
+    fn detect_desktop_environment_and_host_os_smoke() {
+        let _ = detect_desktop_environment();
+        let _ = detect_host_os();
     }
 }

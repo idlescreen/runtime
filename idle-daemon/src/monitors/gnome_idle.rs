@@ -149,6 +149,9 @@ async fn run_idle_loop(
                             idle_watch = new_id;
                             current_ms = new_ms;
                             sync_idle_state(&proxy, &is_idle, &mut active_watch, new_ms).await;
+                        } else {
+                            is_alive.store(false, Ordering::SeqCst);
+                            break;
                         }
                     }
                 }

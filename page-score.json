@@ -1,7 +1,7 @@
 {
  "repo": "runtime",
- "rev": "119cabb",
- "dirty": false,
+ "rev": "c05828b",
+ "dirty": true,
  "pages": [
   {
    "path": "./crates/idle-dbus/src/client.rs",
@@ -614,7 +614,7 @@
   },
   {
    "path": "./crates/wayland-present/src/overlay/state/overlay_xdg.rs",
-   "lines": 79,
+   "lines": 86,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
@@ -663,7 +663,7 @@
   },
   {
    "path": "./crates/wayland-present/tests/compositor_probe.rs",
-   "lines": 55,
+   "lines": 63,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
@@ -1496,7 +1496,7 @@
   },
   {
    "path": "./idle-daemon/src/monitors/gnome_idle.rs",
-   "lines": 218,
+   "lines": 221,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 1

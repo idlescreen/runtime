@@ -45,11 +45,19 @@ fn real_compositor_exposes_overlay_globals() {
         .roundtrip(&mut globals)
         .expect("registry roundtrip failed against live compositor");
 
-    for required in ["zwlr_layer_shell_v1", "wl_compositor", "wl_shm"] {
+    for required in ["wl_compositor", "wl_shm"] {
         assert!(
             globals.0.iter().any(|i| i == required),
             "live compositor is missing required global {required} — got: {:?}",
             globals.0
         );
     }
+    assert!(
+        globals
+            .0
+            .iter()
+            .any(|i| i == "zwlr_layer_shell_v1" || i == "xdg_wm_base"),
+        "live compositor is missing an overlay global (need zwlr_layer_shell_v1 or xdg_wm_base) — got: {:?}",
+        globals.0
+    );
 }

@@ -1,6 +1,6 @@
 {
  "repo": "runtime",
- "rev": "c05828b",
+ "rev": "ab72ece",
  "dirty": true,
  "pages": [
   {
@@ -827,7 +827,7 @@
    "lines": 76,
    "bin_bytes": null,
    "heat_pct": null,
-   "reach": 82
+   "reach": 83
   },
   {
    "path": "./idle-api/src/monitor/env_tests.rs",
@@ -985,7 +985,7 @@
   },
   {
    "path": "./idle-api/src/system_info.rs",
-   "lines": 118,
+   "lines": 122,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 2
@@ -2384,8 +2384,15 @@
    "reach": 2
   },
   {
+   "path": "./idle-runner/src/toolkit/sys_info/brand.rs",
+   "lines": 175,
+   "bin_bytes": null,
+   "heat_pct": null,
+   "reach": 1
+  },
+  {
    "path": "./idle-runner/src/toolkit/sys_info/mod.rs",
-   "lines": 190,
+   "lines": 191,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 0

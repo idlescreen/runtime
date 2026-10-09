@@ -60,8 +60,12 @@ impl Default for SystemInfo {
         // /etc/os-release and every saver would otherwise render the bare
         // string "Linux". Falling back to the product name keeps every demo
         // identical to every other.
-        let logo_text = crate::env_var_first(&["IDLE_LOGO_TEXT"])
-            .unwrap_or_else(|| os_pretty_name().unwrap_or_else(|| "IDLESCREEN".into()));
+        let logo_text = crate::env_var_first(&[
+            "IDLE_SAVER_PARAM_ASCII_TEXT",
+            "IDLE_SAVER_PARAM_TEXT",
+            "IDLE_LOGO_TEXT",
+        ])
+        .unwrap_or_else(|| os_pretty_name().unwrap_or_else(|| "IDLESCREEN".into()));
 
         let hostname = std::env::var("HOSTNAME").unwrap_or_else(|_| "localhost".to_string());
 

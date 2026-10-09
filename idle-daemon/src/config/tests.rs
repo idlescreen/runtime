@@ -10,9 +10,9 @@ fn default_config_has_5_minute_timeout() {
 }
 
 #[test]
-fn default_saver_is_beams() {
+fn default_saver_is_ascii() {
     let c = DaemonConfig::default();
-    assert_eq!(c.active_saver.as_deref(), Some("beams"));
+    assert_eq!(c.active_saver.as_deref(), Some("ascii"));
 }
 
 #[test]

@@ -3,6 +3,7 @@
 //! Public API: `get_system_info`, `query_dark_mode`,
 //! `query_disk_drives` (delegated to `linux_queries`), `query_current_palette`.
 
+mod brand;
 mod monitors;
 mod theme;
 
@@ -24,6 +25,7 @@ pub use idle_api::MonitorCellBounds;
 pub use linux_queries::{
     query_all_monitors as linux_query_all_monitors, query_disk_drives, query_gpu_names,
 };
+pub use brand::{detect_brand_text, detect_desktop_environment, detect_host_os};
 pub use monitors::{
     get_monitor_layouts, get_primary_monitor_bounds, is_secondary_monitor,
     query_monitors_from_xrandr,
@@ -61,8 +63,7 @@ fn static_host() -> &'static StaticHostInfo {
     STATIC_HOST.get_or_init(|| {
         let os = linux_proc::long_os_version().unwrap_or_else(|| "Linux".to_string());
         let kernel = linux_proc::kernel_version().unwrap_or_else(|| "unknown".to_string());
-        let kernel_short = kernel.split('-').next().unwrap_or(&kernel);
-        let logo_text = format!("Linux {}", kernel_short);
+        let logo_text = detect_brand_text();
         let hostname = linux_proc::host_name().unwrap_or_else(|| "localhost".to_string());
         let cpu = linux_proc::cpu_brand().unwrap_or_else(|| "CPU".to_string());
         let gpus = {

@@ -1,6 +1,6 @@
 {
  "repo": "runtime",
- "rev": "8825859",
+ "rev": "fefc6e9",
  "dirty": true,
  "pages": [
   {
@@ -2091,7 +2091,7 @@
   },
   {
    "path": "./idle-runner/src/launcher/tests.rs",
-   "lines": 254,
+   "lines": 252,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 0

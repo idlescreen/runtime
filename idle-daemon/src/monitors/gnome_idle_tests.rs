@@ -29,7 +29,7 @@ fn test_unavailable_when_wayland_unset() {
     unsafe {
         std::env::remove_var("WAYLAND_DISPLAY");
     }
-    let monitor = GnomeIdleMonitor::new(Duration::from_secs(60));
+    let monitor = GnomeIdleMonitor::new(Duration::from_mins(1));
     assert!(monitor.is_none());
     if let Some(val) = backup {
         unsafe {
@@ -45,7 +45,7 @@ fn test_returns_none_when_mutter_absent() {
     unsafe {
         std::env::set_var("WAYLAND_DISPLAY", "wayland-mock-nonexistent");
     }
-    let monitor = GnomeIdleMonitor::new(Duration::from_secs(60));
+    let monitor = GnomeIdleMonitor::new(Duration::from_mins(1));
     assert!(monitor.is_none());
     if let Some(val) = backup {
         unsafe {

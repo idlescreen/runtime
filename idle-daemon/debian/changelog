@@ -1,3 +1,10 @@
+idle-daemon (3.5.31-1) unstable; urgency=medium
+
+  * Implement GNOME Mutter idle monitoring via D-Bus org.gnome.Mutter.IdleMonitor.
+  * Implement GNOME screensaver presentation support via XDG toplevel fullscreen.
+
+ -- IdleScreen Maintainers <maintainers@idlescreen.dev>  Thu, 08 Oct 2026 12:00:00 +0000
+
 idle-daemon (3.5.29-1) unstable; urgency=medium
 
   * Fix Wayland presentation lifecycle freeze: hide presenter on stop and

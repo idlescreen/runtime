@@ -100,6 +100,7 @@ fn temp_art(name: &str, contents: &str) -> std::path::PathBuf {
 
 #[test]
 fn no_logo_file_yields_no_env() {
+    let _guard = crate::TEST_ENV_LOCK.lock().unwrap();
     assert!(super::logo_asset_env(None).is_empty());
 }
 
@@ -142,6 +143,7 @@ fn a_logo_exactly_at_the_limit_is_accepted() {
 fn shell_branding_is_used_when_no_logo_file_is_configured() {
     // `omarchy branding screensaver image` writes here and then force-relaunches.
     // Honouring it is what keeps already-set artwork working after the hand-off.
+    let _guard = crate::TEST_ENV_LOCK.lock().unwrap();
     let dir = std::env::temp_dir().join(format!("idle-branding-{}", std::process::id()));
     let branding = dir.join("omarchy/branding");
     fs::create_dir_all(&branding).expect("mkdir");
@@ -153,9 +155,14 @@ fn shell_branding_is_used_when_no_logo_file_is_configured() {
     fs::create_dir_all(&target).expect("mkdir");
     fs::write(target.join("screensaver.txt"), "BRANDING").expect("write");
 
+    let orig_home = std::env::var_os("HOME");
     unsafe { std::env::set_var("HOME", &home) };
     let env = super::logo_asset_env(None);
-    unsafe { std::env::remove_var("HOME") };
+    if let Some(h) = orig_home {
+        unsafe { std::env::set_var("HOME", h) };
+    } else {
+        unsafe { std::env::remove_var("HOME") };
+    }
 
     assert_eq!(
         env.len(),
@@ -167,15 +174,21 @@ fn shell_branding_is_used_when_no_logo_file_is_configured() {
 
 #[test]
 fn an_explicit_logo_file_beats_the_shell_branding() {
+    let _guard = crate::TEST_ENV_LOCK.lock().unwrap();
     let home = std::env::temp_dir().join(format!("idle-home-b-{}", std::process::id()));
     let target = home.join(".config/omarchy/branding");
     fs::create_dir_all(&target).expect("mkdir");
     fs::write(target.join("screensaver.txt"), "BRANDING").expect("write");
     let mine = temp_art("explicit.txt", "MINE");
 
+    let orig_home = std::env::var_os("HOME");
     unsafe { std::env::set_var("HOME", &home) };
     let env = super::logo_asset_env(Some(mine.to_str().unwrap()));
-    unsafe { std::env::remove_var("HOME") };
+    if let Some(h) = orig_home {
+        unsafe { std::env::set_var("HOME", h) };
+    } else {
+        unsafe { std::env::remove_var("HOME") };
+    }
 
     assert_eq!(env[0].1, "MINE", "logo_file must win over the fallback");
 }

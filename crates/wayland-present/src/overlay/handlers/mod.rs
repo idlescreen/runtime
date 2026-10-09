@@ -18,6 +18,7 @@ mod buffer_objects;
 mod input;
 mod layer_shell;
 mod registry;
+mod xdg_shell;
 
 // Empty Dispatch stubs remain for protocol objects we bind but do not handle.
 // Layer-shell configure drives buffer allocation in state/overlay.rs.

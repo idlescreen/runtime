@@ -81,6 +81,7 @@ fn run_event_loop(
         compositor: None,
         shm: None,
         layer_shell: None,
+        xdg_wm_base: None,
         viewporter: None,
         presentation: None,
         vrr_feedback: crate::overlay::vrr::VrrFeedbackState::new(),
@@ -114,9 +115,9 @@ fn run_event_loop(
         supports_scaling.store(true, Ordering::SeqCst);
     }
 
-    if state.layer_shell.is_none() {
-        let _ = ready_tx.send(Err("compositor does not expose zwlr_layer_shell_v1"));
-        return Err("compositor does not expose zwlr_layer_shell_v1");
+    if state.layer_shell.is_none() && state.xdg_wm_base.is_none() {
+        let _ = ready_tx.send(Err("compositor lacks zwlr_layer_shell_v1 and xdg_wm_base"));
+        return Err("compositor lacks zwlr_layer_shell_v1 and xdg_wm_base");
     }
 
     if state.compositor.is_none() || state.shm.is_none() {

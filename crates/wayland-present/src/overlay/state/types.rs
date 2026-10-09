@@ -8,6 +8,7 @@ use std::time::Instant;
 use wayland_client::QueueHandle;
 use wayland_client::protocol::{wl_compositor, wl_output, wl_pointer, wl_seat, wl_shm, wl_surface};
 use wayland_protocols_wlr::layer_shell::v1::client::{zwlr_layer_shell_v1, zwlr_layer_surface_v1};
+use wayland_protocols::xdg::shell::client::{xdg_surface, xdg_toplevel, xdg_wm_base};
 
 use wayland_protocols::wp::viewporter::client::{wp_viewport, wp_viewporter};
 
@@ -21,9 +22,17 @@ pub struct OutputTarget {
     pub output: wl_output::WlOutput,
 }
 
+pub enum OverlayRole {
+    Layer(zwlr_layer_surface_v1::ZwlrLayerSurfaceV1),
+    Xdg {
+        xdg_surface: xdg_surface::XdgSurface,
+        toplevel: xdg_toplevel::XdgToplevel,
+    },
+}
+
 pub struct MonitorOverlay {
     pub surface: wl_surface::WlSurface,
-    pub layer_surface: zwlr_layer_surface_v1::ZwlrLayerSurfaceV1,
+    pub role: OverlayRole,
     pub width: u32,
     pub height: u32,
     pub buffers: [Option<MappedBuffer>; 2],
@@ -36,6 +45,7 @@ pub struct SessionState {
     pub compositor: Option<wl_compositor::WlCompositor>,
     pub shm: Option<wl_shm::WlShm>,
     pub layer_shell: Option<zwlr_layer_shell_v1::ZwlrLayerShellV1>,
+    pub xdg_wm_base: Option<xdg_wm_base::XdgWmBase>,
     pub viewporter: Option<wp_viewporter::WpViewporter>,
     pub presentation:
         Option<wayland_protocols::wp::presentation_time::client::wp_presentation::WpPresentation>,

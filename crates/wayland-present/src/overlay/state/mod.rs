@@ -3,6 +3,7 @@
 mod overlay;
 mod overlay_frame;
 mod overlay_geom;
+mod overlay_xdg;
 mod types;
 
 pub use types::{OutputTarget, SessionState};
@@ -71,7 +72,16 @@ impl SessionState {
             if let Some(viewport) = overlay.viewport {
                 viewport.destroy();
             }
-            overlay.layer_surface.destroy();
+            match overlay.role {
+                types::OverlayRole::Layer(layer) => layer.destroy(),
+                types::OverlayRole::Xdg {
+                    toplevel,
+                    xdg_surface,
+                } => {
+                    toplevel.destroy();
+                    xdg_surface.destroy();
+                }
+            }
             overlay.surface.destroy();
         }
 

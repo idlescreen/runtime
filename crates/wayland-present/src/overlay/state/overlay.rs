@@ -11,8 +11,8 @@ impl SessionState {
             self.remove_overlay(output_id);
         }
 
-        let (Some(compositor), Some(layer_shell)) = (&self.compositor, &self.layer_shell) else {
-            idle_log::warn!("wayland-present: missing compositor or layer shell");
+        let Some(compositor) = &self.compositor else {
+            idle_log::warn!("wayland-present: missing compositor");
             return;
         };
 
@@ -26,48 +26,52 @@ impl SessionState {
         };
 
         let surface = compositor.create_surface(&self.queue, output_id);
-        let layer_surface = layer_shell.get_layer_surface(
-            &surface,
-            Some(output),
-            zwlr_layer_shell_v1::Layer::Overlay,
-            "idlescreen".to_string(),
-            &self.queue,
-            output_id,
-        );
+        let role = if let Some(layer_shell) = &self.layer_shell {
+            let layer_surface = layer_shell.get_layer_surface(
+                &surface,
+                Some(output),
+                zwlr_layer_shell_v1::Layer::Overlay,
+                "idlescreen".to_string(),
+                &self.queue,
+                output_id,
+            );
+            let anchor = zwlr_layer_surface_v1::Anchor::Top
+                | zwlr_layer_surface_v1::Anchor::Bottom
+                | zwlr_layer_surface_v1::Anchor::Left
+                | zwlr_layer_surface_v1::Anchor::Right;
+            layer_surface.set_anchor(anchor);
+            layer_surface.set_exclusive_zone(Self::exclusive_zone_for(self.screensaver_mode));
+            layer_surface.set_margin(0, 0, 0, 0);
+            layer_surface.set_keyboard_interactivity(
+                zwlr_layer_surface_v1::KeyboardInteractivity::OnDemand,
+            );
+            layer_surface.set_size(0, 0);
+            surface.commit();
+            super::types::OverlayRole::Layer(layer_surface)
+        } else if let Some(xdg_wm_base) = &self.xdg_wm_base {
+            let xdg_surface = xdg_wm_base.get_xdg_surface(&surface, &self.queue, output_id);
+            let toplevel = xdg_surface.get_toplevel(&self.queue, output_id);
+            toplevel.set_title("idlescreen".to_string());
+            toplevel.set_app_id("idlescreen".to_string());
+            toplevel.set_fullscreen(Some(output));
+            surface.commit();
+            super::types::OverlayRole::Xdg { xdg_surface, toplevel }
+        } else {
+            idle_log::warn!("wayland-present: missing layer shell and xdg_wm_base");
+            return;
+        };
 
-        // Viewport is opt-in: creating wp_viewport + set_destination without a
-        // careful buffer path has disconnected the Wayland client on COSMIC
-        // (see idle-daemon recovery logs: failed to read Wayland events).
         let viewport = if std::env::var_os("IDLE_HW_VIEWPORT").is_some() {
-            self.viewporter
-                .as_ref()
-                .map(|vp| vp.get_viewport(&surface, &self.queue, ()))
+            self.viewporter.as_ref().map(|vp| vp.get_viewport(&surface, &self.queue, ()))
         } else {
             None
         };
-
-        layer_surface.set_anchor(
-            zwlr_layer_surface_v1::Anchor::Top
-                | zwlr_layer_surface_v1::Anchor::Bottom
-                | zwlr_layer_surface_v1::Anchor::Left
-                | zwlr_layer_surface_v1::Anchor::Right,
-        );
-        // Screensaver/preview must cover the panel (exclusive_zone -1). Solid
-        // dim overlays keep 0. Safe configure/ack order is enforced in
-        // configure_overlay (no commit before ack).
-        layer_surface.set_exclusive_zone(Self::exclusive_zone_for(self.screensaver_mode));
-        layer_surface.set_margin(0, 0, 0, 0);
-        // OnDemand: keyboard Exclusive fought terminal focus during TUI preview.
-        layer_surface
-            .set_keyboard_interactivity(zwlr_layer_surface_v1::KeyboardInteractivity::OnDemand);
-        layer_surface.set_size(0, 0);
-        surface.commit();
 
         self.overlays.insert(
             output_id,
             super::types::MonitorOverlay {
                 surface: surface.clone(),
-                layer_surface,
+                role,
                 width: 0,
                 height: 0,
                 buffers: [None, None],
@@ -96,21 +100,19 @@ impl SessionState {
                 return;
             };
 
-            // Layer-shell order: set state → ack_configure → (buffer) → one commit.
-            // Never commit between set_margin and ack (that caused COSMIC disconnects).
-            overlay
-                .layer_surface
-                .set_exclusive_zone(Self::exclusive_zone_for(fullscreen));
-            Self::apply_tiling_margins(
-                &overlay.layer_surface,
-                &overlay.surface,
-                output_id,
-                width,
-                height,
-                &self.output_mode_size,
-                fullscreen,
-            );
-            overlay.layer_surface.ack_configure(serial);
+            if let super::types::OverlayRole::Layer(layer) = &overlay.role {
+                layer.set_exclusive_zone(Self::exclusive_zone_for(fullscreen));
+                Self::apply_tiling_margins(
+                    layer,
+                    &overlay.surface,
+                    output_id,
+                    width,
+                    height,
+                    &self.output_mode_size,
+                    fullscreen,
+                );
+                layer.ack_configure(serial);
+            }
             let (render_w, render_h) = Self::render_dimensions(
                 output_id,
                 width,
@@ -225,17 +227,7 @@ impl SessionState {
             );
             return;
         }
-        // Frame committed. Wake the daemon's frame loop so it can start
-        // producing the next frame as soon as the previous one is on its
-        // way to the compositor. The condvar-signal pattern is the
-        // upgrade path over the prior 2 ms slice-poll: the loop wakes
-        // on commit, then re-waits for the next budget slice.
-        //
-        // When `wl_callback::done` is wired (handlers/buffer_objects.rs),
-        // this should move to that path — that's the true vsync signal
-        // and would let the daemon wait exactly one frame period per
-        // commit rather than waking on commit and immediately re-waiting
-        // for the remaining slice.
+        // Frame committed: notify frame signal to pace render loop.
         self.frame_signal.notify();
     }
 
@@ -245,7 +237,16 @@ impl SessionState {
             if let Some(viewport) = overlay.viewport {
                 viewport.destroy();
             }
-            overlay.layer_surface.destroy();
+            match overlay.role {
+                super::types::OverlayRole::Layer(layer) => layer.destroy(),
+                super::types::OverlayRole::Xdg {
+                    toplevel,
+                    xdg_surface,
+                } => {
+                    toplevel.destroy();
+                    xdg_surface.destroy();
+                }
+            }
             overlay.surface.destroy();
         }
     }

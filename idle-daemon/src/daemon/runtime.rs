@@ -140,10 +140,13 @@ pub fn initialize_runtime(
         if let Some(monitor) = IdleMonitor::new_timeout(timeout) {
             idle_log::info!("using platform idle source");
             Box::new(monitor)
+        } else if let Some(gnome) = crate::monitors::GnomeIdleMonitor::new(timeout) {
+            idle_log::info!("using GNOME Mutter idle monitor");
+            Box::new(gnome)
         } else {
             idle_log::warn!(
-                "DEGRADED: Wayland idle monitoring unavailable (need ext-idle-notify-v1). \
-                 IdleScreen is running in degraded mode on GNOME/compositor without idle protocol. \
+                "DEGRADED: Wayland idle monitoring unavailable (need ext-idle-notify-v1 or org.gnome.Mutter.IdleMonitor). \
+                 IdleScreen is running in degraded mode on compositor without idle protocol. \
                  D-Bus interface remains active."
             );
             Box::new(DegradedIdleSource { _timeout: timeout })
@@ -185,13 +188,13 @@ pub fn initialize_runtime(
     // like `show_screensaver`); Sprint 05 will move those onto the trait.
     let overlay_presenter: Arc<dyn OverlaySurface> = match idle_api::WaylandOverlay::new() {
         Some(presenter) => {
-            idle_log::info!("using Wayland layer-shell presenter");
+            idle_log::info!("using Wayland presenter");
             Arc::new(presenter)
         }
         None => {
             idle_log::warn!(
-                "DEGRADED: Wayland layer-shell presenter unavailable (need zwlr_layer_shell_v1). \
-                 IdleScreen is running in degraded mode on GNOME/compositor without layer-shell. \
+                "DEGRADED: Wayland presenter unavailable (need zwlr_layer_shell_v1 or xdg_wm_base). \
+                 IdleScreen is running in degraded mode on compositor without presentation protocol. \
                  D-Bus interface remains active."
             );
             Arc::new(DegradedOverlay)

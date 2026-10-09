@@ -5,11 +5,12 @@ use super::types::{OverlayRole, SessionState};
 
 impl SessionState {
     pub fn configure_xdg_toplevel(&mut self, output_id: u32, width: i32, height: i32) {
-        if let Some(overlay) = self.overlays.get_mut(&output_id) {
-            if width > 0 && height > 0 {
-                overlay.width = width as u32;
-                overlay.height = height as u32;
-            }
+        if let Some(overlay) = self.overlays.get_mut(&output_id)
+            && width > 0
+            && height > 0
+        {
+            overlay.width = width as u32;
+            overlay.height = height as u32;
         }
     }
 

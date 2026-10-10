@@ -1,0 +1,4 @@
+type = process
+command = /usr/bin/idle-daemon daemon
+ready-notification = pipev3
+restart = yes

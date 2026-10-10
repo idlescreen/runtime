@@ -1,6 +1,6 @@
 {
  "repo": "runtime",
- "rev": "3dee472",
+ "rev": "2db5074",
  "dirty": true,
  "pages": [
   {
@@ -32,11 +32,60 @@
    "reach": 1
   },
   {
-   "path": "./crates/idle-dbus/src/service.rs",
-   "lines": 150,
+   "path": "./crates/idle-dbus/src/service/detect.rs",
+   "lines": 255,
+   "bin_bytes": null,
+   "heat_pct": null,
+   "reach": 1
+  },
+  {
+   "path": "./crates/idle-dbus/src/service/dinit.rs",
+   "lines": 75,
+   "bin_bytes": null,
+   "heat_pct": null,
+   "reach": 1
+  },
+  {
+   "path": "./crates/idle-dbus/src/service/mod.rs",
+   "lines": 174,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
+  },
+  {
+   "path": "./crates/idle-dbus/src/service/openrc.rs",
+   "lines": 75,
+   "bin_bytes": null,
+   "heat_pct": null,
+   "reach": 1
+  },
+  {
+   "path": "./crates/idle-dbus/src/service/runit.rs",
+   "lines": 108,
+   "bin_bytes": null,
+   "heat_pct": null,
+   "reach": 1
+  },
+  {
+   "path": "./crates/idle-dbus/src/service/s6.rs",
+   "lines": 108,
+   "bin_bytes": null,
+   "heat_pct": null,
+   "reach": 1
+  },
+  {
+   "path": "./crates/idle-dbus/src/service/standalone.rs",
+   "lines": 118,
+   "bin_bytes": null,
+   "heat_pct": null,
+   "reach": 2
+  },
+  {
+   "path": "./crates/idle-dbus/src/service/systemd.rs",
+   "lines": 66,
+   "bin_bytes": null,
+   "heat_pct": null,
+   "reach": 1
   },
   {
    "path": "./crates/idle-dbus/src/status_contract.rs",
@@ -51,6 +100,13 @@
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 2
+  },
+  {
+   "path": "./crates/idle-dbus/tests/service_adversarial_tests.rs",
+   "lines": 247,
+   "bin_bytes": null,
+   "heat_pct": null,
+   "reach": 0
   },
   {
    "path": "./crates/idle-err/src/lib.rs",
@@ -138,14 +194,42 @@
   },
   {
    "path": "./crates/idle-log/src/lib.rs",
-   "lines": 254,
+   "lines": 236,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
   },
   {
+   "path": "./crates/idle-log/src/sinks/file.rs",
+   "lines": 96,
+   "bin_bytes": null,
+   "heat_pct": null,
+   "reach": 3
+  },
+  {
+   "path": "./crates/idle-log/src/sinks/journald.rs",
+   "lines": 24,
+   "bin_bytes": null,
+   "heat_pct": null,
+   "reach": 1
+  },
+  {
+   "path": "./crates/idle-log/src/sinks/mod.rs",
+   "lines": 8,
+   "bin_bytes": null,
+   "heat_pct": null,
+   "reach": 0
+  },
+  {
+   "path": "./crates/idle-log/src/sinks/syslog.rs",
+   "lines": 34,
+   "bin_bytes": null,
+   "heat_pct": null,
+   "reach": 2
+  },
+  {
    "path": "./crates/idle-log/src/tests.rs",
-   "lines": 93,
+   "lines": 114,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
@@ -827,7 +911,7 @@
    "lines": 76,
    "bin_bytes": null,
    "heat_pct": null,
-   "reach": 83
+   "reach": 93
   },
   {
    "path": "./idle-api/src/monitor/env_tests.rs",
@@ -1114,7 +1198,7 @@
    "lines": 211,
    "bin_bytes": null,
    "heat_pct": null,
-   "reach": 25
+   "reach": 27
   },
   {
    "path": "./idle-daemon/src/config/tests.rs",
@@ -1209,7 +1293,42 @@
   },
   {
    "path": "./idle-daemon/src/daemon/mod.rs",
-   "lines": 224,
+   "lines": 226,
+   "bin_bytes": null,
+   "heat_pct": null,
+   "reach": 0
+  },
+  {
+   "path": "./idle-daemon/src/daemon/notify/bus.rs",
+   "lines": 58,
+   "bin_bytes": null,
+   "heat_pct": null,
+   "reach": 2
+  },
+  {
+   "path": "./idle-daemon/src/daemon/notify/fd_pipe.rs",
+   "lines": 94,
+   "bin_bytes": null,
+   "heat_pct": null,
+   "reach": 3
+  },
+  {
+   "path": "./idle-daemon/src/daemon/notify/mod.rs",
+   "lines": 47,
+   "bin_bytes": null,
+   "heat_pct": null,
+   "reach": 0
+  },
+  {
+   "path": "./idle-daemon/src/daemon/notify/systemd.rs",
+   "lines": 73,
+   "bin_bytes": null,
+   "heat_pct": null,
+   "reach": 2
+  },
+  {
+   "path": "./idle-daemon/src/daemon/notify/tests.rs",
+   "lines": 106,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
@@ -1300,7 +1419,7 @@
   },
   {
    "path": "./idle-daemon/src/daemon/tick_loop.rs",
-   "lines": 143,
+   "lines": 205,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
@@ -1314,7 +1433,7 @@
   },
   {
    "path": "./idle-daemon/src/daemon/watchdog/mod.rs",
-   "lines": 121,
+   "lines": 126,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
@@ -1373,7 +1492,7 @@
    "lines": 233,
    "bin_bytes": null,
    "heat_pct": null,
-   "reach": 1
+   "reach": 3
   },
   {
    "path": "./idle-daemon/src/dbus_server/sniff_policy.rs",
@@ -1489,7 +1608,7 @@
   },
   {
    "path": "./idle-daemon/src/lib.rs",
-   "lines": 42,
+   "lines": 43,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
@@ -1782,6 +1901,13 @@
    "reach": 0
   },
   {
+   "path": "./idle-daemon/tests/notify_adversarial_tests.rs",
+   "lines": 193,
+   "bin_bytes": null,
+   "heat_pct": null,
+   "reach": 0
+  },
+  {
    "path": "./idle-daemon/tests/state_sync_tests.rs",
    "lines": 118,
    "bin_bytes": null,
@@ -1811,7 +1937,7 @@
   },
   {
    "path": "./idle-runner/src/budget/cgroup.rs",
-   "lines": 69,
+   "lines": 82,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 1
@@ -2259,7 +2385,7 @@
   },
   {
    "path": "./idle-runner/src/tests/frame_perf.rs",
-   "lines": 207,
+   "lines": 209,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 0

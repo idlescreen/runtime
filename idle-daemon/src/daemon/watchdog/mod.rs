@@ -16,7 +16,7 @@
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::thread;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::Duration;
 
 /// Default heartbeat timeout (no recorded heartbeat in 5s = stalled).
 pub const DEFAULT_HEARTBEAT_TIMEOUT_MS: u64 = 5_000;
@@ -35,6 +35,14 @@ impl Default for Watchdog {
     }
 }
 
+static START_INSTANT: std::sync::OnceLock<std::time::Instant> = std::sync::OnceLock::new();
+
+#[inline]
+fn monotonic_now_ms() -> u64 {
+    let start = START_INSTANT.get_or_init(std::time::Instant::now);
+    start.elapsed().as_millis() as u64
+}
+
 impl Watchdog {
     /// Construct a fresh watchdog. Records `now()` so the first monitor
     /// check has a baseline.
@@ -48,20 +56,14 @@ impl Watchdog {
 
     /// Record that the monitored loop made progress. Idempotent.
     pub fn heartbeat(&self) {
-        let now = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .map(|d| d.as_millis() as u64)
-            .unwrap_or(0);
+        let now = monotonic_now_ms();
         self.last_heartbeat_ms.store(now, Ordering::Release);
     }
 
     /// Milliseconds since the last heartbeat.
     pub fn age_ms(&self) -> u64 {
         let last = self.last_heartbeat_ms.load(Ordering::Acquire);
-        let now = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .map(|d| d.as_millis() as u64)
-            .unwrap_or(0);
+        let now = monotonic_now_ms();
         now.saturating_sub(last)
     }
 
@@ -89,6 +91,9 @@ pub fn spawn_monitor(
     thread::spawn(move || {
         let mut escalated = false;
         loop {
+            if shutdown_flag.load(std::sync::atomic::Ordering::Acquire) {
+                break;
+            }
             if watchdog.stalled(timeout_ms) {
                 idle_log::error!(
                     age_ms = watchdog.age_ms(),

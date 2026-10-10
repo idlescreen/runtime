@@ -26,7 +26,7 @@ fn timeout_default_is_250ms() {
 
 #[test]
 fn env_var_overrides_timeout() {
-    let _g = crate::ENV_LOCK.lock().unwrap();
+    let _g = crate::ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     unsafe { std::env::set_var("IDLE_WATCHDOG_TIMEOUT_MS", "1234") };
     let t = watchdog_timeout();
     unsafe { std::env::remove_var("IDLE_WATCHDOG_TIMEOUT_MS") };
@@ -35,7 +35,7 @@ fn env_var_overrides_timeout() {
 
 #[test]
 fn env_var_invalid_falls_back_to_default() {
-    let _g = crate::ENV_LOCK.lock().unwrap();
+    let _g = crate::ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     unsafe { std::env::set_var("IDLE_WATCHDOG_TIMEOUT_MS", "not-a-number") };
     let t = watchdog_timeout();
     unsafe { std::env::remove_var("IDLE_WATCHDOG_TIMEOUT_MS") };

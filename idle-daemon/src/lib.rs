@@ -20,6 +20,7 @@ pub mod monitors;
 pub use monitors::locks;
 pub mod ooda;
 pub mod presentation;
+pub use daemon::notify;
 
 // Re-exports for `benches/draw_frame.rs`.
 //

@@ -2,7 +2,7 @@
 authors = ["idlescreen developers"]
 repository = "https://github.com/idlescreen/idlescreen"
 name = "idle-dbus"
-version = "0.7.0"
+version = "0.8.0"
 edition = "2024"
 description = "D-Bus API definitions and client for the IdleScreen screensaver daemon"
 license = "Apache-2.0"

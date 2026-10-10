@@ -16,6 +16,22 @@ pub(crate) fn cgroup_v2_root() -> Option<PathBuf> {
     }
 }
 
+/// Discover the delegated user slice from `/proc/self/cgroup`.
+pub(crate) fn find_user_cgroup_dir(root: &Path) -> Option<PathBuf> {
+    let content = std::fs::read_to_string("/proc/self/cgroup").ok()?;
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if let Some(slice) = trimmed.strip_prefix("0::") {
+            let clean = slice.trim_start_matches('/');
+            let candidate = root.join(clean);
+            if candidate.exists() {
+                return Some(candidate);
+            }
+        }
+    }
+    None
+}
+
 /// Try to mkdir the child, write `cpu.max`, and attach the current thread.
 /// Any failure (no v2, no write perm, etc.) bubbles up so the caller falls
 /// back to in-process measurement only.
@@ -26,7 +42,8 @@ pub(crate) fn try_attach_cgroup(
 ) -> io::Result<PathBuf> {
     let root = cgroup_v2_root()
         .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "cgroup v2 not mounted"))?;
-    let dir = root.join("idle").join(plugin_id);
+    let parent = find_user_cgroup_dir(&root).unwrap_or(root);
+    let dir = parent.join("idle").join(plugin_id);
     std::fs::create_dir_all(&dir)?;
     // cpu.max format: "<quota> <period>" — "max <period>" disables the cap.
     std::fs::write(dir.join("cpu.max"), format!("{quota_us} {period_us}"))?;
@@ -42,11 +59,7 @@ pub(crate) fn try_attach_cgroup(
     if let Err(e) = std::fs::write(dir.join("memory.max"), mem_bytes.to_string()) {
         idle_log::debug!("memory.max write skipped (controller not delegated?): {e}");
     }
-    // Attach the current thread (id matches cgroup.procs; thread-id is valid
-    // when cgroup v2 is enabled with `cgroup.threads`).
-    let tid = format!("{}", unsafe { libc::syscall(libc::SYS_gettid) });
-    std::fs::write(dir.join("cgroup.threads"), tid.as_bytes())?;
-    // Also attach the process so the worker thread inherits the budget.
+    // Attach the process so worker threads inherit the resource budget.
     let pid = format!("{}", std::process::id());
     std::fs::write(dir.join("cgroup.procs"), pid.as_bytes())?;
     Ok(dir)

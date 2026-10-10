@@ -42,6 +42,8 @@ pub fn tick_loop_until_shutdown(controller: Arc<DaemonController>) -> idle_err::
         std::thread::current(),
     );
 
+    super::notify::notify_ready();
+
     // PowerWatcher: spawned before the loop so the first OODA tick reads
     // the cached value populated by the watcher's startup sample. If
     // both UPower and inotify fail, fall back to the prior 250 ms sleep.
@@ -66,6 +68,8 @@ pub fn tick_loop_until_shutdown(controller: Arc<DaemonController>) -> idle_err::
     // parking_lot, but possible if Notify_All races). Recheck on mismatch.
     let last_seen_generation = AtomicU64::new(power.notify_generation());
 
+    let mut last_clock_sample = sample_clocks();
+
     while !controller.shutdown.load(Ordering::Relaxed) {
         // Wait up to HEARTBEAT for an event (Notified) or to time out
         // (Heartbeat). Stopped returns immediately if `controller.shutdown`
@@ -89,6 +93,8 @@ pub fn tick_loop_until_shutdown(controller: Arc<DaemonController>) -> idle_err::
             }
         }
 
+        check_clock_divergence(&mut last_clock_sample, &watchdog);
+
         if let Err(err) =
             ooda_loop.step_tick(&controller, &mut idle_monitor, &mut overlay_presenter)
         {
@@ -98,9 +104,11 @@ pub fn tick_loop_until_shutdown(controller: Arc<DaemonController>) -> idle_err::
         // `watchdog.heartbeat()` runs on every OODA step (notified OR
         // heartbeat). Keeps the supervisor happy.
         watchdog.heartbeat();
+        super::notify::notify_watchdog();
     }
 
     ooda_loop.shutdown(&overlay_presenter);
+    super::notify::notify_stopping();
     if controller.watchdog_stalled.load(Ordering::Relaxed) {
         idle_err::bail!("render loop watchdog stall — exiting non-zero for systemd restart");
     }
@@ -118,11 +126,14 @@ fn tick_loop_polling_fallback(
     watchdog: watchdog::Watchdog,
 ) -> idle_err::Result<()> {
     use crate::controller::MAIN_LOOP_INTERVAL;
+    super::notify::notify_ready();
+    let mut last_clock_sample = sample_clocks();
     while !controller
         .shutdown
         .load(std::sync::atomic::Ordering::Relaxed)
     {
         std::thread::sleep(MAIN_LOOP_INTERVAL);
+        check_clock_divergence(&mut last_clock_sample, &watchdog);
 
         if let Err(err) =
             ooda_loop.step_tick(&controller, &mut idle_monitor, &mut overlay_presenter)
@@ -131,8 +142,10 @@ fn tick_loop_polling_fallback(
         }
 
         watchdog.heartbeat();
+        super::notify::notify_watchdog();
     }
     ooda_loop.shutdown(&overlay_presenter);
+    super::notify::notify_stopping();
     if controller
         .watchdog_stalled
         .load(std::sync::atomic::Ordering::Relaxed)
@@ -140,4 +153,53 @@ fn tick_loop_polling_fallback(
         idle_err::bail!("render loop watchdog stall — exiting non-zero for systemd restart");
     }
     Ok(())
+}
+
+fn check_clock_divergence(last_sample: &mut Option<ClockSample>, watchdog: &watchdog::Watchdog) {
+    let current_sample = sample_clocks();
+    if let (Some(prev), Some(curr)) = (*last_sample, current_sample) {
+        let delta_boot = curr.boottime_ns.saturating_sub(prev.boottime_ns);
+        let delta_mono = curr.monotonic_ns.saturating_sub(prev.monotonic_ns);
+        let divergence_ns = delta_boot.saturating_sub(delta_mono);
+        if divergence_ns >= 1_000_000_000 {
+            let div_ms = divergence_ns / 1_000_000;
+            idle_log::info!(
+                divergence_ms = div_ms,
+                "suspend/resume detected via clock divergence — resetting watchdog"
+            );
+            watchdog.heartbeat();
+            super::notify::notify_watchdog();
+        }
+    }
+    *last_sample = current_sample;
+}
+
+#[derive(Debug, Clone, Copy)]
+struct ClockSample {
+    boottime_ns: u64,
+    monotonic_ns: u64,
+}
+
+fn sample_clocks() -> Option<ClockSample> {
+    let mut ts_boot = libc::timespec {
+        tv_sec: 0,
+        tv_nsec: 0,
+    };
+    let mut ts_mono = libc::timespec {
+        tv_sec: 0,
+        tv_nsec: 0,
+    };
+    // SAFETY: pointers are to valid stack-allocated timespec structs.
+    let res_boot = unsafe { libc::clock_gettime(libc::CLOCK_BOOTTIME, &mut ts_boot) };
+    let res_mono = unsafe { libc::clock_gettime(libc::CLOCK_MONOTONIC, &mut ts_mono) };
+    if res_boot == 0 && res_mono == 0 {
+        let boottime_ns = (ts_boot.tv_sec as u64) * 1_000_000_000 + (ts_boot.tv_nsec as u64);
+        let monotonic_ns = (ts_mono.tv_sec as u64) * 1_000_000_000 + (ts_mono.tv_nsec as u64);
+        Some(ClockSample {
+            boottime_ns,
+            monotonic_ns,
+        })
+    } else {
+        None
+    }
 }

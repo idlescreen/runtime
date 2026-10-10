@@ -655,7 +655,7 @@ dependencies = [
 
 [[package]]
 name = "idle-daemon"
-version = "3.5.33"
+version = "3.6.0"
 dependencies = [
  "criterion",
  "idle-api",
@@ -675,7 +675,7 @@ dependencies = [
 
 [[package]]
 name = "idle-dbus"
-version = "0.7.0"
+version = "0.8.0"
 dependencies = [
  "idle-log",
  "libc",
@@ -696,7 +696,7 @@ dependencies = [
 
 [[package]]
 name = "idle-log"
-version = "0.1.0"
+version = "0.2.0"
 
 [[package]]
 name = "idle-runner"

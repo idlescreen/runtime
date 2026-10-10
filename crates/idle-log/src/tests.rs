@@ -91,3 +91,24 @@ fn target_override_is_dropped() {
     // record keeps module_path — only the message text survives.
     assert_eq!(__log_msg!(target: "custom::target", "hello"), "hello");
 }
+
+#[test]
+fn syslog_pri_and_packet_format() {
+    let pri = sinks::syslog::rfc3164_pri(3, 6);
+    assert_eq!(pri, 30);
+    let packet = sinks::syslog::format_rfc3164(pri, "test-daemon", 1234, "service live");
+    assert_eq!(packet, "<30>test-daemon[1234]: service live\n");
+}
+
+#[test]
+fn rolling_file_append_and_rotation() {
+    let temp = std::env::temp_dir().join(format!("idle-log-test-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&temp);
+    let file_path = temp.join("test.log");
+    let mut log = sinks::file::RollingLog::new(file_path.clone(), 30);
+    assert!(log.append("test line 1").is_ok());
+    assert!(file_path.exists());
+    assert!(log.append("test line 2 that exceeds cap").is_ok());
+    assert!(temp.join("test.log.1").exists());
+    let _ = std::fs::remove_dir_all(&temp);
+}

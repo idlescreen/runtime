@@ -10,6 +10,7 @@ pub(crate) mod decision;
 pub(crate) use decision as idle_decision;
 #[cfg(test)]
 mod m2_concurrency_stress_tests;
+pub mod notify;
 pub(crate) mod pidfile;
 pub(crate) mod power;
 pub(crate) use power::battery;
@@ -64,6 +65,7 @@ pub fn run_daemon() -> idle_err::Result<()> {
     runtime::log_posture();
     let dbus_handle = spawn_dbus_thread(Arc::clone(&controller))?;
     let result = tick_loop_until_shutdown(Arc::clone(&controller));
+    notify::notify_stopping();
     controller.shutdown.store(true, Ordering::Relaxed);
     let _ = dbus_handle.join();
     pidfile::release_pidfile(&pidfile);

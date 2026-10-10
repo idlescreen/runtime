@@ -1,16 +1,18 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2026 IdleScreen
 
-//! Minimal logging replacing `tracing`/`tracing-subscriber`/
-//! `tracing-journald` across the idle workspace: level-filtered
-//! `error!`..`trace!` macros writing to stderr, controlled by `RUST_LOG`
-//! (bare level or `target=level` list — the max enabled level wins, like
-//! EnvFilter's global threshold). [`enable_journald`] additionally mirrors
-//! records to the systemd journal via the native sd-journal datagram
-//! protocol (`/run/systemd/journal/socket`).
+//! Minimal logging replacing `tracing` across the idle workspace.
+//!
+//! Provides level-filtered `error!`..`trace!` macros writing to stderr,
+//! controlled by `RUST_LOG`. Supports three optional persistent sinks:
+//! - Systemd journal datagram socket (`/run/systemd/journal/socket`)
+//! - Syslog RFC 3164 datagram socket (`/dev/log`)
+//! - Atomic rolling log file (`~/.local/state/idlescreen/idle-daemon.log`)
 
 use std::io::Write;
 use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
+
+pub mod sinks;
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(u8)]
@@ -35,7 +37,6 @@ impl Level {
     }
 
     fn priority(self) -> u8 {
-        // syslog priorities used by the journal: 3=err .. 7=debug.
         match self {
             Self::Error => 3,
             Self::Warn => 4,
@@ -45,16 +46,16 @@ impl Level {
     }
 }
 
-/// Enabled threshold; `off` (0) disables everything.
 static ENABLED: AtomicU8 = AtomicU8::new(Level::Warn as u8);
-/// No-op on wasm: there is no journald in a browser, and the socket type it
-/// would need (`std::os::unix::net::UnixDatagram`) does not exist there.
 #[cfg(not(target_arch = "wasm32"))]
 static JOURNALD: AtomicBool = AtomicBool::new(false);
+#[cfg(not(target_arch = "wasm32"))]
+static SYSLOG: AtomicBool = AtomicBool::new(false);
+#[cfg(not(target_arch = "wasm32"))]
+static FILE_LOG: AtomicBool = AtomicBool::new(false);
+
 static IDENT: std::sync::RwLock<String> = std::sync::RwLock::new(String::new());
 
-/// Install the level filter from `RUST_LOG` (or `default` when unset).
-/// Accepts `RUST_LOG=debug`, `RUST_LOG=idle=debug,zbus=warn`, `RUST_LOG=off`.
 pub fn init(default: &str) {
     let spec = std::env::var("RUST_LOG").unwrap_or_else(|_| default.to_string());
     let mut max = 0u8;
@@ -73,26 +74,44 @@ pub fn init(default: &str) {
     ENABLED.store(max, Ordering::Relaxed);
 }
 
-/// Mirror records to the systemd journal with `ident` as SYSLOG_IDENTIFIER.
-/// Call when `JOURNAL_STREAM` is set (running under systemd), like the
-/// previous `tracing_journald::layer()` wiring.
-///
-/// No-op on wasm, so the browser host shim can call this unconditionally.
 #[cfg(not(target_arch = "wasm32"))]
 pub fn enable_journald(ident: &str) {
-    // Recover from poisoning rather than dropping the ident entirely.
+    set_ident(ident);
+    JOURNALD.store(true, Ordering::Relaxed);
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+pub fn enable_syslog(ident: &str) {
+    set_ident(ident);
+    SYSLOG.store(true, Ordering::Relaxed);
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+pub fn enable_file(path: Option<&std::path::Path>) {
+    sinks::file::init_file(path);
+    FILE_LOG.store(true, Ordering::Relaxed);
+}
+
+#[inline]
+fn set_ident(ident: &str) {
     match IDENT.write() {
         Ok(mut g) => *g = ident.to_string(),
         Err(e) => *e.into_inner() = ident.to_string(),
     }
-    JOURNALD.store(true, Ordering::Relaxed);
+}
+
+#[inline]
+fn get_ident() -> String {
+    IDENT
+        .read()
+        .map(|s| s.clone())
+        .unwrap_or_else(|e| e.into_inner().clone())
 }
 
 pub fn enabled(level: Level) -> bool {
     level as u8 <= ENABLED.load(Ordering::Relaxed)
 }
 
-/// Emit one record (stderr always; journal too when enabled).
 pub fn emit(level: Level, target: &str, msg: std::fmt::Arguments<'_>) {
     if !enabled(level) {
         return;
@@ -105,63 +124,26 @@ pub fn emit(level: Level, target: &str, msg: std::fmt::Arguments<'_>) {
         Level::Debug => "DEBUG",
         Level::Trace => "TRACE",
     };
-    let _ = writeln!(std::io::stderr().lock(), "{name} {target}: {text}");
+    let line = format!("{name} {target}: {text}");
+    let _ = writeln!(std::io::stderr().lock(), "{line}");
     #[cfg(not(target_arch = "wasm32"))]
-    if JOURNALD.load(Ordering::Relaxed) {
-        journald_send(level.priority(), &text);
+    {
+        if JOURNALD.load(Ordering::Relaxed) {
+            sinks::journald::send(level.priority(), &get_ident(), &text);
+        }
+        if SYSLOG.load(Ordering::Relaxed) {
+            let pri = sinks::syslog::rfc3164_pri(3, level.priority());
+            sinks::syslog::send(pri, &get_ident(), &text);
+        }
+        if FILE_LOG.load(Ordering::Relaxed) {
+            sinks::file::append(&line);
+        }
     }
 }
-
-/// sd-journal over `/run/systemd/journal/socket`: newline-separated
-/// `KEY=value` fields in a single datagram. Best-effort; failures ignored.
-///
-/// The socket is created once and reused. It used to be rebuilt per record —
-/// a `socket()` syscall plus a `format!` for every log line, which at
-/// `RUST_LOG=debug` on a busy path is a syscall storm on a daemon whose whole
-/// job is to stay cheap. An unbound datagram socket can `send_to` repeatedly.
-#[cfg(not(target_arch = "wasm32"))]
-fn journald_socket() -> Option<&'static std::os::unix::net::UnixDatagram> {
-    static SOCK: std::sync::OnceLock<Option<std::os::unix::net::UnixDatagram>> =
-        std::sync::OnceLock::new();
-    SOCK.get_or_init(|| {
-        use std::os::unix::net::UnixDatagram;
-        UnixDatagram::unbound().ok()
-    })
-    .as_ref()
-}
-
-#[cfg(not(target_arch = "wasm32"))]
-fn journald_send(priority: u8, msg: &str) {
-    let Some(sock) = journald_socket() else {
-        return;
-    };
-    // A poisoned lock means some other thread panicked while setting IDENT.
-    // Recover the value rather than silently logging with an empty
-    // SYSLOG_IDENTIFIER, which makes records unattributable in the journal.
-    let ident = IDENT
-        .read()
-        .map(|s| s.clone())
-        .unwrap_or_else(|e| e.into_inner().clone());
-    let payload = format!(
-        "PRIORITY={priority}\nMESSAGE={}\nSYSLOG_IDENTIFIER={ident}\n",
-        msg.replace('\n', " ")
-    );
-    let _ = sock.send_to(payload.as_bytes(), "/run/systemd/journal/socket");
-}
-
-// `#[macro_export]` rather than `pub use`: `warn` is a builtin attribute
-// name and cannot be re-exported through a `use` path (E0659).
-//
-// The macros accept both plain `format!`-style messages and tracing's
-// structured-field syntax (`field = %v` Display, `field = ?v` Debug,
-// `field = v` Display, `target: "name"`) — fields are flattened into the
-// message text as `k = v` pairs so call sites keep their information.
 
 #[doc(hidden)]
 #[macro_export]
 macro_rules! __log_msg {
-    // `target:` override — kept for source compatibility; the emitted
-    // record target stays `module_path!()` like tracing's fmt default.
     (target: $t:literal, $($rest:tt)*) => {
         $crate::__log_msg!($($rest)*)
     };
@@ -174,11 +156,9 @@ macro_rules! __log_msg {
     ($k:tt = $v:expr, $($rest:tt)*) => {
         format!("{} = {}, ", stringify!($k), $v) + &$crate::__log_msg!($($rest)*)
     };
-    // Shorthand field: `output_id,` means `output_id = output_id`.
     ($k:ident, $($rest:tt)*) => {
         format!("{} = {}, ", stringify!($k), $k) + &$crate::__log_msg!($($rest)*)
     };
-    // Sigil shorthand: `%v,` / `?v,` mean `v = %v` / `v = ?v`.
     (% $k:ident, $($rest:tt)*) => {
         format!("{} = {}, ", stringify!($k), $k) + &$crate::__log_msg!($($rest)*)
     };
@@ -248,7 +228,9 @@ macro_rules! trace {
 #[cfg(test)]
 mod tests;
 
-/// wasm shim: there is no journal to mirror to. Kept as a real function so the
-/// browser host never needs its own `cfg`.
 #[cfg(target_arch = "wasm32")]
 pub fn enable_journald(_ident: &str) {}
+#[cfg(target_arch = "wasm32")]
+pub fn enable_syslog(_ident: &str) {}
+#[cfg(target_arch = "wasm32")]
+pub fn enable_file(_path: Option<&std::path::Path>) {}

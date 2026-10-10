@@ -4,9 +4,9 @@
 use super::*;
 
 #[test]
-fn default_config_has_5_minute_timeout() {
+fn default_config_has_2_minute_timeout() {
     let c = DaemonConfig::default();
-    assert_eq!(c.idle_timeout_mins, 5);
+    assert_eq!(c.idle_timeout_mins, 2);
 }
 
 #[test]

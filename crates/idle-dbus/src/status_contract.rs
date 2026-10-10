@@ -37,7 +37,7 @@ pub fn sample_preview_status() -> DaemonStatus {
     DaemonStatus {
         running: true,
         idle_enabled: true,
-        idle_timeout_mins: 5,
+        idle_timeout_mins: 2,
         active_saver: "ripple".into(),
         presentation_active: true,
         preview_active: true,

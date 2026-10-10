@@ -45,7 +45,7 @@ impl Default for DaemonConfig {
         Self {
             active_saver: Some("ascii".to_string()),
             idle_enabled: true,
-            idle_timeout_mins: 5,
+            idle_timeout_mins: 2,
             show_fps_overlay: false,
             render_scale: None,
             saver_params: std::collections::BTreeMap::new(),

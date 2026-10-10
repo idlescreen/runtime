@@ -78,9 +78,40 @@ fn test_fd_pipe_notification_lifecycle() {
         .expect("read pipe content");
     assert_eq!(out, "\n");
 
-    // Subsequent notification on the same process is rejected by atomic guard
-    let second = fd_pipe::notify_fd(write_fd).expect("second notify");
-    assert!(!second);
+    // Subsequent notification on the closed descriptor fails FIFO check and returns false
+    let second = fd_pipe::notify_fd(write_fd).expect("second notify on closed fd");
+    assert!(!second, "second notify on closed fd must return false");
+}
+
+#[test]
+fn test_fd_pipe_notify_ready_atomic_guard() {
+    let _env_guard = crate::TEST_ENV_LOCK.lock().unwrap();
+    fd_pipe::reset_for_test();
+
+    let mut fds = [0i32; 2];
+    assert_eq!(unsafe { libc::pipe(fds.as_mut_ptr()) }, 0);
+    let (read_fd, write_fd) = (fds[0], fds[1]);
+
+    unsafe {
+        std::env::set_var("NOTIFICATION_FD", write_fd.to_string());
+    }
+
+    // First call successfully signals readiness and returns Ok(true)
+    let first = fd_pipe::notify_ready().expect("first notify_ready");
+    assert!(first, "first notify_ready must succeed");
+
+    // Second call is rejected by the atomic guard (FD_NOTIFIED) and returns Ok(false)
+    let second = fd_pipe::notify_ready().expect("second notify_ready");
+    assert!(
+        !second,
+        "second notify_ready must be rejected by atomic guard"
+    );
+
+    unsafe {
+        std::env::remove_var("NOTIFICATION_FD");
+        libc::close(read_fd);
+    }
+    fd_pipe::reset_for_test();
 }
 
 #[test]

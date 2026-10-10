@@ -11,6 +11,12 @@ use std::sync::atomic::{AtomicBool, Ordering};
 /// at most once across the daemon lifecycle.
 static FD_NOTIFIED: AtomicBool = AtomicBool::new(false);
 
+/// Reset the single-shot notification guard for testing purposes.
+#[cfg(test)]
+pub(crate) fn reset_for_test() {
+    FD_NOTIFIED.store(false, Ordering::SeqCst);
+}
+
 fn is_fifo(fd: i32) -> bool {
     let mut stat = std::mem::MaybeUninit::<libc::stat>::uninit();
     // SAFETY: fstat queries descriptor status into uninitialized stat struct.
@@ -28,7 +34,12 @@ fn is_fifo(fd: i32) -> bool {
 /// Validates descriptor liveness, writes `\n`, closes the descriptor,
 /// and guards against collision with systemd socket activation.
 pub fn notify_fd(fd: i32) -> std::io::Result<bool> {
-    if fd < 0 {
+    // Descriptors 0 (stdin), 1 (stdout), and 2 (stderr) are reserved for standard I/O.
+    // Writing or closing them corrupts process streams. Readiness descriptors must be >= 3.
+    if fd < 3 {
+        idle_log::debug!(
+            "refusing readiness notification on low/standard descriptor fd {fd} (< 3)"
+        );
         return Ok(false);
     }
 
@@ -48,10 +59,12 @@ pub fn notify_fd(fd: i32) -> std::io::Result<bool> {
     while written < buf.len() {
         // SAFETY: fd is validated as an open FIFO descriptor.
         let res = unsafe { libc::write(fd, buf[written..].as_ptr().cast(), buf.len() - written) };
-        if res < 0 {
-            let err = std::io::Error::last_os_error();
-            if err.kind() == std::io::ErrorKind::Interrupted {
-                continue;
+        if res <= 0 {
+            if res < 0 {
+                let err = std::io::Error::last_os_error();
+                if err.kind() == std::io::ErrorKind::Interrupted {
+                    continue;
+                }
             }
             break;
         }

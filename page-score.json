@@ -1,6 +1,6 @@
 {
  "repo": "runtime",
- "rev": "2db5074",
+ "rev": "c4a7121",
  "dirty": true,
  "pages": [
   {
@@ -75,10 +75,10 @@
   },
   {
    "path": "./crates/idle-dbus/src/service/standalone.rs",
-   "lines": 118,
+   "lines": 182,
    "bin_bytes": null,
    "heat_pct": null,
-   "reach": 2
+   "reach": 3
   },
   {
    "path": "./crates/idle-dbus/src/service/systemd.rs",
@@ -100,6 +100,13 @@
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 2
+  },
+  {
+   "path": "./crates/idle-dbus/tests/argv0_verification_tests.rs",
+   "lines": 190,
+   "bin_bytes": null,
+   "heat_pct": null,
+   "reach": 0
   },
   {
    "path": "./crates/idle-dbus/tests/service_adversarial_tests.rs",
@@ -911,7 +918,7 @@
    "lines": 76,
    "bin_bytes": null,
    "heat_pct": null,
-   "reach": 93
+   "reach": 94
   },
   {
    "path": "./idle-api/src/monitor/env_tests.rs",
@@ -1307,7 +1314,7 @@
   },
   {
    "path": "./idle-daemon/src/daemon/notify/fd_pipe.rs",
-   "lines": 94,
+   "lines": 107,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 3
@@ -1328,7 +1335,7 @@
   },
   {
    "path": "./idle-daemon/src/daemon/notify/tests.rs",
-   "lines": 106,
+   "lines": 137,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 0
@@ -1492,7 +1499,7 @@
    "lines": 233,
    "bin_bytes": null,
    "heat_pct": null,
-   "reach": 3
+   "reach": 4
   },
   {
    "path": "./idle-daemon/src/dbus_server/sniff_policy.rs",
@@ -1902,7 +1909,7 @@
   },
   {
    "path": "./idle-daemon/tests/notify_adversarial_tests.rs",
-   "lines": 193,
+   "lines": 196,
    "bin_bytes": null,
    "heat_pct": null,
    "reach": 0

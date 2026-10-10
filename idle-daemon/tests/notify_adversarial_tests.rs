@@ -90,6 +90,7 @@ fn test_pathname_socket_abnormal_targets() {
 
 #[test]
 fn test_fd_pipe_non_fifo_protection() {
+    let _guard = NOTIFY_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
     // 1. Negative FDs must return Ok(false)
     assert!(!fd_pipe::notify_fd(-1).unwrap());
     assert!(!fd_pipe::notify_fd(-100).unwrap());
@@ -144,6 +145,7 @@ fn test_fd_pipe_listen_fds_guard() {
 
 #[test]
 fn test_fd_pipe_broken_pipe_safety() {
+    let _guard = NOTIFY_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
     // Pipe with read end immediately closed
     let mut fds = [0i32; 2];
     assert_eq!(unsafe { libc::pipe(fds.as_mut_ptr()) }, 0);
@@ -163,6 +165,7 @@ fn test_fd_pipe_broken_pipe_safety() {
 
 #[test]
 fn test_fd_pipe_notification_lifecycle_roundtrip() {
+    let _guard = NOTIFY_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
     let mut fds = [0i32; 2];
     assert_eq!(unsafe { libc::pipe(fds.as_mut_ptr()) }, 0);
     let (read_fd, write_fd) = (fds[0], fds[1]);
